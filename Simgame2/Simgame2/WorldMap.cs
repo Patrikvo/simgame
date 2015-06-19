@@ -133,10 +133,10 @@ namespace Simgame2
             }
 
 
-            SetUpVertices();
-            SetUpIndices();
+         //   SetUpVertices();
+          //  SetUpIndices();
 
-            vertices = CalculateNormals(vertices, indices);
+            //vertices = CalculateNormals(vertices, indices);
 
         }
 
@@ -147,14 +147,17 @@ namespace Simgame2
 
 //            frustum.Contains(Vector3 point)
 
-       //     List<VertexPositionNormalColored> verticesList = new List<VertexPositionNormalColored>();
+            List<VertexPositionNormalColored> verticesList = new List<VertexPositionNormalColored>();
             int regionWidth = 0;
             int regionHeight = 0;
 
-            int regionLeft = -1;
-            int regionRight = -1;
-            int regionUp = -1;
-            int regionDown = -1;
+            int regionLeft = int.MaxValue;
+            int regionRight = int.MinValue;
+            int regionUp = int.MaxValue;
+            int regionDown = int.MinValue;
+
+
+
 
             // look for upper left corner of the visual region
             for (int x = 0; x < this.width; x++)
@@ -171,76 +174,18 @@ namespace Simgame2
                         frustum.Contains(v3) == ContainmentType.Contains ||
                         frustum.Contains(v4) == ContainmentType.Contains)
                     {
-                        regionLeft = x;
-                        regionUp = y;
-                        break;
+                        if (x < regionLeft) { regionLeft = x;  }
+                        if (x > regionRight) { regionRight = x; }
+                        if (y < regionUp) { regionUp = y; }
+                        if (y > regionDown) { regionDown = y; }
                     }
-                }
-                if (regionLeft != -1)
-                {
-                    break;
                 }
             }
 
-
-            // look for the upper right corner of the visual region
-            for (int x = regionLeft; x < this.width; x++)
-            {
-                for (int y = regionUp; y < this.height; y++)
-                {
-                    // four point of the square cell
-                    Vector3 v1 = new Vector3(x, getCell(x, y), -y);
-                    Vector3 v2 = new Vector3(x + 1, getCell(x, y), -y);
-                    Vector3 v3 = new Vector3(x, getCell(x, y), -(y + 1));
-                    Vector3 v4 = new Vector3(x + 1, getCell(x, y), -(y + 1));
-                    if (frustum.Contains(v1) == ContainmentType.Contains ||
-                        frustum.Contains(v2) == ContainmentType.Contains ||
-                        frustum.Contains(v3) == ContainmentType.Contains ||
-                        frustum.Contains(v4) == ContainmentType.Contains)
-                    {
-                       
-                    }
-                    else
-                    {
-                        regionRight = x;
-
-                        // region reaches till right edge
-                        if (regionRight == 0)
-                        {
-                            regionRight = this.width;
-                        }
-
-                        break;
-                    }
-
-
-                }
-                if (regionRight != -1)
-                {
-                    break;
-                }
-            }
-
-            // look for the lower left corner of the visual region
-            for (int y = regionUp; y < this.height; y++)
-            {
-
-                // four point of the square cell
-                Vector3 v1 = new Vector3(regionLeft, getCell(regionLeft, y), -y);
-                Vector3 v2 = new Vector3(regionLeft + 1, getCell(regionLeft, y), -y);
-                Vector3 v3 = new Vector3(regionLeft, getCell(regionLeft, y), -(y + 1));
-                Vector3 v4 = new Vector3(regionLeft + 1, getCell(regionLeft, y), -(y + 1));
-                if (frustum.Contains(v1) == ContainmentType.Contains ||
-                        frustum.Contains(v2) == ContainmentType.Contains ||
-                        frustum.Contains(v3) == ContainmentType.Contains ||
-                        frustum.Contains(v4) == ContainmentType.Contains)
-                { }
-                else
-                {
-                    regionDown = y;
-                    break;
-                }
-            }
+            regionLeft -= 2; if (regionLeft < 0) regionLeft = 0;
+            regionRight += 2; if (regionRight > this.width) regionRight = this.width;
+            regionUp -= 2; if (regionUp < 0) regionUp = 0;
+            regionDown += 2; if (regionDown > this.height) regionDown = this.height;
 
             regionWidth = regionRight - regionLeft;
             regionHeight = regionDown - regionUp;
@@ -250,8 +195,12 @@ namespace Simgame2
             {
                 for (int y = regionUp; y < regionDown; y++)
                 {
-                    int adress = (x - regionLeft) + (y - regionUp) * this.width;
+                    int adress = (x - regionLeft) + (y - regionUp) * regionWidth;
+
                     vertices[adress].Position = new Vector3(x, getCell(x, y), -y);
+                    
+                    //VertexPositionNormalColored vertex = new VertexPositionNormalColored();
+                    //vertex.Position = new Vector3(x, getCell(x, y), -y);
 
                     if (getCell(x, y) == 0)
                         vertices[adress].Color = Color.Blue;
@@ -262,22 +211,30 @@ namespace Simgame2
                     else
                         vertices[adress].Color = Color.White;
 
+                 //   verticesList.Add(vertex);
+
+                    
+
                 }
             }
+
+
+         //   vertices = verticesList.ToArray();
 
 
 
 
             indices = new Int16[(regionWidth - 1) * (regionHeight - 1) * 6];
+            //indices = new Int16[verticesList.Count * 6];
             int counter = 0;
             for (int y = 0; y < regionHeight - 1; y++)
             {
-                for (int x = 0; x < regionRight - 1; x++)
+                for (int x = 0; x < regionWidth - 1; x++)
                 {
-                    Int16 lowerLeft = (Int16)(x + y * this.width);
-                    Int16 lowerRight = (Int16)((x + 1) + y * this.width);
-                    Int16 topLeft = (Int16)(x + (y + 1) * this.width);
-                    Int16 topRight = (Int16)((x + 1) + (y + 1) * this.width);
+                    Int16 lowerLeft = (Int16)(x + y * regionWidth);
+                    Int16 lowerRight = (Int16)((x + 1) + y * regionWidth);
+                    Int16 topLeft = (Int16)(x + (y + 1) * regionWidth);
+                    Int16 topRight = (Int16)((x + 1) + (y + 1) * regionWidth);
 
                     indices[counter++] = topLeft;
                     indices[counter++] = lowerRight;
@@ -346,14 +303,14 @@ namespace Simgame2
 
         private VertexPositionNormalColored[] CalculateNormals(VertexPositionNormalColored[] vertices, Int16[] indices)
         {
-            for (int i = 0; i < vertices.Length; i++)
+            for (long i = 0; i < vertices.Length; i++)
                 vertices[i].Normal = new Vector3(0, 0, 0);
 
-            for (int i = 0; i < indices.Length / 3; i++)
+            for (long i = 0; i < indices.Length / 3; i++)
             {
-                int index1 = indices[i * 3];
-                int index2 = indices[i * 3 + 1];
-                int index3 = indices[i * 3 + 2];
+                long index1 = indices[i * 3];
+                long index2 = indices[i * 3 + 1];
+                long index3 = indices[i * 3 + 2];
 
                 Vector3 side1 = vertices[index1].Position - vertices[index3].Position;
                 Vector3 side2 = vertices[index1].Position - vertices[index2].Position;
@@ -364,7 +321,7 @@ namespace Simgame2
                 vertices[index3].Normal += normal;
             }
 
-            for (int i = 0; i < vertices.Length; i++)
+            for (long i = 0; i < vertices.Length; i++)
                 vertices[i].Normal.Normalize();
 
             return vertices;
