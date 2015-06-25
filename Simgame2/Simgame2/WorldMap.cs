@@ -17,6 +17,52 @@ namespace Simgame2
     /// </summary>
     public class WorldMap : Microsoft.Xna.Framework.GameComponent
     {
+        private const int mapCellScale = 5;
+        private const int mapHeightScale = 2;
+
+        class Node
+        {
+            public int left;
+            public int upper;
+            public int width;
+            public int height;
+
+            public BoundingBox boundingBox;
+
+            public int depth;
+
+            public Node(int left, int upper, int width, int height, int depth)
+            {
+                this.depth = depth;
+
+                this.left = left;
+                this.upper = upper;
+                this.width = width;
+                this.height = height;
+
+
+                Vector3[] bbPoints = new Vector3[2];
+                bbPoints[0] = new Vector3(left * mapCellScale, -1, -upper * mapCellScale);
+                bbPoints[1] = new Vector3((left + width) * mapCellScale, 999, -(upper + height) * mapCellScale - 1);
+                boundingBox = BoundingBox.CreateFromPoints(bbPoints);
+            }
+
+
+
+
+            public override string ToString()
+            {
+                return "(" + left + ", " + upper + ", " + (left+width) + ", " + (upper+height) +")" ;
+            }
+
+            
+
+
+            public Node A;
+            public Node B;
+        }
+
+
         public WorldMap(Game game, int mapWidth, int mapHeight)
             : base(game)
         {
@@ -132,22 +178,336 @@ namespace Simgame2
                 }
             }
 
+            GenerateSearchTree();
+        }
 
-         //   SetUpVertices();
-          //  SetUpIndices();
 
-            //vertices = CalculateNormals(vertices, indices);
+        private void GenerateSearchTree()
+        {
+            root = GenerateTree(new Node(0, 0, this.width, this.height, 0),false);
+        }
+
+        private Node GenerateTree(Node current, bool direction)
+        {
+            // stop condition
+       //     if (current.width <= 10 && current.height <= 10) { return current; }
+
+            current.A = current.B = null;
+            if (direction) // vertical division
+            {
+                
+                if (current.width > 10)
+                {
+                    current.A = GenerateTree(new Node(current.left, current.upper, current.width / 2, current.height, current.depth + 1), !direction);
+                    current.B = GenerateTree(new Node(current.left + (current.width / 2), current.upper, current.width / 2, current.height, current.depth + 1), !direction);
+                }
+            }
+            else // horizontal division
+            {
+                if (current.height > 10)
+                {
+                    current.A = GenerateTree(new Node(current.left, current.upper, current.width, current.height / 2, current.depth + 1), !direction);
+                    current.B = GenerateTree(new Node(current.left, current.upper + (current.height / 2), current.width, current.height / 2, current.depth + 1), !direction);
+
+                }
+            }
+
+            return current;
 
         }
 
+
+        private void debugout(string text)
+        {
+            System.Diagnostics.Debug.Write(text);
+        }
+
+        private void debugOutLn(string text)
+        {
+           // System.Diagnostics.Debug.WriteLine(text);
+        }
+
+        public void debugPrintTree()
+        {
+            System.Diagnostics.Debug.WriteLine("--------------------------------------------------------------------------");
+            System.Diagnostics.Debug.WriteLine("Printing tree");
+
+            Queue<Node> nodes = new Queue<Node>();
+            nodes.Enqueue(root);
+            int depth = 0;
+
+            while (nodes.Count > 0)
+            {
+                Node n = nodes.Dequeue();
+
+                if (n.A != null)
+                {
+                    nodes.Enqueue(n.A);
+                }
+
+                if (n.B != null)
+                {
+                    nodes.Enqueue(n.B);
+                }
+
+                if (depth != n.depth)
+                {
+                    System.Diagnostics.Debug.WriteLine("");
+                    depth = n.depth;
+                }
+
+                System.Diagnostics.Debug.Write(n.ToString());
+
+            }
+
+            System.Diagnostics.Debug.WriteLine("--------------------------------------------------------------------------");
+
+        }
+
+
+
+
+        public bool useTree = true;
+
         public void GenerateView()
         {
-            //TODO write setupvertices and setupindices so that these contain only those vertices that are withing the frustrum
+            //TODO speed up methode
 
 
-//            frustum.Contains(Vector3 point)
+            int regionWidth = 0;
+            int regionHeight = 0;
 
-            List<VertexPositionNormalColored> verticesList = new List<VertexPositionNormalColored>();
+            int regionLeft = int.MaxValue;
+            int regionRight = int.MinValue;
+            int regionUp = int.MaxValue;
+            int regionDown = int.MinValue;
+
+
+
+
+
+            // look for edge corners of the visual region
+            Queue<Node> expandNode = new Queue<Node>();
+
+            expandNode.Enqueue(root);
+
+
+
+            Node currentNode;
+            while (expandNode.Count > 0)
+            {
+                currentNode = expandNode.Dequeue();
+
+                //  debugOutLn("expanding node: " + currentNode.ToString());
+
+                if (currentNode.A == null && currentNode.B == null)
+                {
+                    //  debugOutLn("reached leaf: " + currentNode.ToString());
+                    if (currentNode.left < regionLeft) { regionLeft = currentNode.left; }
+                    if (currentNode.left + currentNode.width > regionRight) { regionRight = currentNode.left + currentNode.width; }
+                    if (currentNode.upper < regionUp) { regionUp = currentNode.upper; }
+                    if (currentNode.upper + currentNode.height > regionDown) { regionDown = currentNode.upper + currentNode.height; }
+
+                    //  debugOutLn("region lurd: " + regionLeft + ", " + regionUp + ", " + regionRight + ", " + regionDown);
+                }
+                else
+                {
+                    if (currentNode.A != null &&
+                        IsBoxInFrustum(currentNode.A.boundingBox.Min, currentNode.A.boundingBox.Max, frustum))
+                    {
+                        //  debugOutLn("adding A");
+                        expandNode.Enqueue(currentNode.A);
+                    }
+
+                    if (currentNode.B != null &&
+                        IsBoxInFrustum(currentNode.B.boundingBox.Min, currentNode.B.boundingBox.Max, frustum))
+                    {
+                        //   debugOutLn("adding B");
+                        expandNode.Enqueue(currentNode.B);
+                    }
+
+
+
+                }
+            }
+
+           
+
+
+
+            
+
+
+         //   debugOutLn("done");
+     //       debugOutLn("region lurd: " + regionLeft + ", " + regionUp + ", " + regionRight + ", " + regionDown);
+
+            regionLeft -= 2; if (regionLeft < 0) regionLeft = 0;
+            regionRight += 2; if (regionRight > this.width) regionRight = this.width;
+            regionUp -= 2; if (regionUp < 0) regionUp = 0;
+            regionDown += 2; if (regionDown > this.height) regionDown = this.height;
+
+            regionWidth = regionRight - regionLeft;
+            regionHeight = regionDown - regionUp;
+
+
+            Vector3[] curners = frustum.GetCorners();
+            debugOutLn("frustum corners:");
+            foreach (Vector3 c in curners)
+            {
+                debugOutLn(c.ToString());
+            }
+
+            debugOutLn("final region lurd: " + regionLeft + ", " + regionUp + ", " + regionRight + ", " + regionDown);
+
+            vertices = new VertexPositionNormalColored[regionWidth * regionHeight];
+            for (int x = regionLeft; x < regionRight; x++)
+            {
+                for (int y = regionUp; y < regionDown; y++)
+                {
+                    int adress = (x - regionLeft) + (y - regionUp) * regionWidth;
+
+                    vertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
+                    
+                    if (getCell(x, y) == 0)
+                        vertices[adress].Color = Color.Blue;
+                    else if (getCell(x, y) < 3)
+                        vertices[adress].Color = Color.Green;
+                    else if (getCell(x, y) < 7)
+                        vertices[adress].Color = Color.Brown;
+                    else
+                        vertices[adress].Color = Color.White;
+                }
+            }
+
+
+
+
+            indices = new Int16[(regionWidth - 1) * (regionHeight - 1) * 6];
+            int counter = 0;
+            for (int y = 0; y < regionHeight - 1; y++)
+            {
+                for (int x = 0; x < regionWidth - 1; x++)
+                {
+                    Int16 lowerLeft = (Int16)(x + y * regionWidth);
+                    Int16 lowerRight = (Int16)((x + 1) + y * regionWidth);
+                    Int16 topLeft = (Int16)(x + (y + 1) * regionWidth);
+                    Int16 topRight = (Int16)((x + 1) + (y + 1) * regionWidth);
+
+                    indices[counter++] = topLeft;
+                    indices[counter++] = lowerRight;
+                    indices[counter++] = lowerLeft;
+
+                    indices[counter++] = topLeft;
+                    indices[counter++] = topRight;
+                    indices[counter++] = lowerRight;
+                }
+            }
+
+
+            vertices = CalculateNormals(vertices, indices);
+
+        }
+
+
+
+
+
+
+        bool IsBoxInFrustum(Vector3 bMin, Vector3 bMax, BoundingFrustum Frustum)
+        {
+            Vector3 NearPoint;
+
+            Plane[] plane = new Plane[6];
+            plane[0] = frustum.Bottom;
+            plane[1] = frustum.Far;
+            plane[2] = frustum.Left;
+            plane[3] = frustum.Near;
+            plane[4] = frustum.Right;
+            plane[5] = frustum.Top;
+                
+            //plane[0].Normal.X
+            
+            for (int i = 0; i < 6; i++)
+            {
+                if (plane[i].Normal.X > 0.0f)
+                {
+                    if (plane[i].Normal.Y > 0.0f)//
+                    {
+                        if (plane[i].Normal.Z > 0.0f)
+                        {
+                            NearPoint.X = bMin.X; NearPoint.Y = bMin.Y; NearPoint.Z = bMin.Z;
+                        }
+                        else
+                        {
+                            NearPoint.X = bMin.X; NearPoint.Y = bMin.Y; NearPoint.Z = bMax.Z;
+                        }
+                    }
+                    else
+                    {
+                        if (plane[i].Normal.Z > 0.0f)
+                        {
+                            NearPoint.X = bMin.X; NearPoint.Y = bMax.Y; NearPoint.Z= bMin.Z;
+                        }
+                        else
+                        {
+                            NearPoint.X = bMin.X; NearPoint.Y = bMax.Y; NearPoint.Z = bMax.Z;
+                        }
+                    }
+                }
+                else
+                {
+                    if (plane[i].Normal.Y > 0.0f)
+                    {
+                        if (plane[i].Normal.Z > 0.0f)
+                        {
+                            NearPoint.X = bMax.X; NearPoint.Y = bMin.Y; NearPoint.Z = bMin.Z;
+                        }
+                        else
+                        {
+                            NearPoint.X = bMax.X; NearPoint.Y = bMin.Y; NearPoint.Z = bMax.Z;
+                        }
+                    }
+                    else
+                    {
+                        if (plane[i].Normal.Z > 0.0f)
+                        {
+                            NearPoint.X = bMax.X; NearPoint.Y = bMax.Y; NearPoint.Z = bMin.Z;
+                        }
+                        else
+                        {
+                            NearPoint.X = bMax.X; NearPoint.Y = bMax.Y; NearPoint.Z = bMax.Z;
+                        }
+                    }
+                }
+
+                // near extreme point is outside, and thus
+                // the AABB is totally outside the polyhedron
+
+                float dotProduct;
+                Vector3.Dot(ref plane[i].Normal, ref NearPoint, out dotProduct);
+                if (dotProduct + plane[i].D > 0)
+                    return false;
+                
+            }
+            return true;
+        }
+
+
+
+
+
+
+
+
+
+
+
+        /*
+        public void GenerateView()
+        {
+            //TODO speed up methode
+
+
             int regionWidth = 0;
             int regionHeight = 0;
 
@@ -182,6 +542,10 @@ namespace Simgame2
                 }
             }
 
+
+
+
+
             regionLeft -= 2; if (regionLeft < 0) regionLeft = 0;
             regionRight += 2; if (regionRight > this.width) regionRight = this.width;
             regionUp -= 2; if (regionUp < 0) regionUp = 0;
@@ -199,9 +563,6 @@ namespace Simgame2
 
                     vertices[adress].Position = new Vector3(x, getCell(x, y), -y);
                     
-                    //VertexPositionNormalColored vertex = new VertexPositionNormalColored();
-                    //vertex.Position = new Vector3(x, getCell(x, y), -y);
-
                     if (getCell(x, y) == 0)
                         vertices[adress].Color = Color.Blue;
                     else if (getCell(x, y) < 10)
@@ -210,22 +571,13 @@ namespace Simgame2
                         vertices[adress].Color = Color.Brown;
                     else
                         vertices[adress].Color = Color.White;
-
-                 //   verticesList.Add(vertex);
-
-                    
-
                 }
             }
-
-
-         //   vertices = verticesList.ToArray();
 
 
 
 
             indices = new Int16[(regionWidth - 1) * (regionHeight - 1) * 6];
-            //indices = new Int16[verticesList.Count * 6];
             int counter = 0;
             for (int y = 0; y < regionHeight - 1; y++)
             {
@@ -250,32 +602,38 @@ namespace Simgame2
             vertices = CalculateNormals(vertices, indices);
 
         }
+         
+        */
 
-        
 
-        private void SetUpVertices()
-        {
-            vertices = new VertexPositionNormalColored[this.width * this.height];
-            for (int x = 0; x < this.width; x++)
-            {
-                for (int y = 0; y < this.height; y++)
+
+
+
+
+        /*
+                private void SetUpVertices()
                 {
-                    vertices[x + y * this.width].Position = new Vector3(x, getCell(x, y), -y);
+                    vertices = new VertexPositionNormalColored[this.width * this.height];
+                    for (int x = 0; x < this.width; x++)
+                    {
+                        for (int y = 0; y < this.height; y++)
+                        {
+                            vertices[x + y * this.width].Position = new Vector3(x, getCell(x, y), -y);
 
-                    if (getCell(x,y) == 0)
-                        vertices[x + y * this.width].Color = Color.Blue;
-                    else if (getCell(x, y) < 10)
-                        vertices[x + y * this.width].Color = Color.Green;
-                    else if (getCell(x, y) < 25)
-                        vertices[x + y * this.width].Color = Color.Brown;
-                    else
-                        vertices[x + y * this.width].Color = Color.White;
+                            if (getCell(x,y) == 0)
+                                vertices[x + y * this.width].Color = Color.Blue;
+                            else if (getCell(x, y) < 10)
+                                vertices[x + y * this.width].Color = Color.Green;
+                            else if (getCell(x, y) < 25)
+                                vertices[x + y * this.width].Color = Color.Brown;
+                            else
+                                vertices[x + y * this.width].Color = Color.White;
 
+                        }
+                    }
                 }
-            }
-        }
-
-        
+                */
+      /*  
         private void SetUpIndices()
         {
             indices = new Int16[(this.width - 1) * (this.height - 1) * 6];
@@ -298,7 +656,7 @@ namespace Simgame2
                     indices[counter++] = lowerRight;
                 }
             }
-        }
+        }*/
 
 
         private VertexPositionNormalColored[] CalculateNormals(VertexPositionNormalColored[] vertices, Int16[] indices)
@@ -339,6 +697,9 @@ namespace Simgame2
         public const int WaterLevel = 0;
 
         public BoundingFrustum frustum;
+
+        // search tree
+        private Node root;
 
     }
 }
