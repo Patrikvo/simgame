@@ -18,7 +18,7 @@ namespace Simgame2
         public Color Color;
         public Vector3 Normal;
 
-
+        
 
         public static int SizeInBytes = 7 * 4;
 
@@ -41,7 +41,7 @@ namespace Simgame2
     /// </summary>
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        private const int mapSize = 640;   // 20 40 80 160 320 640
+        private const int mapSize = 160;   // 20 40 80 160 320 640 1280
 
 
         GraphicsDeviceManager graphics;
@@ -57,7 +57,19 @@ namespace Simgame2
 
         private WorldMap worldMap;
 
+        Model xwingModel;
+        Vector3 xwingLocation;
 
+        SpriteFont font;
+
+        private Model LoadModel(string assetName)
+        {
+
+            Model newModel = Content.Load<Model>(assetName); foreach (ModelMesh mesh in newModel.Meshes)
+                foreach (ModelMeshPart meshPart in mesh.MeshParts)
+                    meshPart.Effect = effect.Clone();
+            return newModel;
+        }
 
 
         public Game1()
@@ -85,7 +97,7 @@ namespace Simgame2
             // TODO: Add your initialization logic here
             
             
-
+            
 
 
             base.Initialize();
@@ -100,14 +112,23 @@ namespace Simgame2
         private Effect effect;
         private VertexBuffer terrainVertexBuffer;
         private IndexBuffer terrainIndexBuffer;
+
+
+        private TextureGenerator textureGenerator;
+        private Texture2D texture;
+
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
         /// all of your content.
         /// </summary>
         protected override void LoadContent()
         {
-
+            font = Content.Load<SpriteFont>("Courier New");
             
+
+
+            textureGenerator = new TextureGenerator(this);
+            texture = textureGenerator.GenerateGroundTexture(new Color(0,200,0,1), 500);
 
             device = graphics.GraphicsDevice;
             //effect = Content.Load<Effect>("Series4Effects");
@@ -117,9 +138,9 @@ namespace Simgame2
             worldMap = new WorldMap(this, mapSize, mapSize);  
             UpdateViewMatrix();
 
-            
-            
-            
+
+            xwingModel = LoadModel("xwing");
+            xwingLocation = new Vector3(50, 12, -150);
 
             Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
 
@@ -127,6 +148,7 @@ namespace Simgame2
 
         }
 
+        float speed = 10;
         /// <summary>
         /// UnloadContent will be called once per game and is the place to unload
         /// all content.
@@ -135,6 +157,8 @@ namespace Simgame2
         {
             // TODO: Unload any non ContentManager content here
         }
+
+        int fps;
 
         /// <summary>
         /// Allows the game to run logic such as updating the world,
@@ -151,7 +175,15 @@ namespace Simgame2
             float timeDifference = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000.0f;
             ProcessInput(timeDifference);
 
+            fps = (int)(1 / timeDifference);
+
             
+
+            float y = xwingLocation.Y + speed * timeDifference;
+
+            if (y < -50 || y > 50) { speed = - speed;}
+
+            xwingLocation = new Vector3(xwingLocation.X, y, xwingLocation.Z);
 
 
 
@@ -171,6 +203,7 @@ namespace Simgame2
 
         }
 
+        SpriteBatch spriteBatch;
 
         /// <summary>
         /// This is called when the game should draw itself.
@@ -178,9 +211,22 @@ namespace Simgame2
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+            spriteBatch = new SpriteBatch(this.device);
             GraphicsDevice.Clear(Color.Black);
+ 
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
 
             DrawTerrain(viewMatrix);
+
+            DrawModel(viewMatrix);
+
+            spriteBatch.Begin();
+            Vector2 pos = new Vector2(20, 20);
+            //spriteBatch.DrawString(font, "fps: " + fps.ToString(), pos,Color.White);
+            spriteBatch.Draw(texture, pos, Color.White);
+            spriteBatch.End();
+            
+
 
             base.Draw(gameTime);
         }
@@ -217,7 +263,27 @@ namespace Simgame2
 
 
 
+        private void DrawModel(Matrix currentViewMatrix)
+        {
+            Matrix worldMatrix = Matrix.CreateScale(0.05f, 0.05f, 0.05f) * Matrix.CreateRotationY(MathHelper.Pi) * Matrix.CreateTranslation(xwingLocation);
 
+            Matrix[] xwingTransforms = new Matrix[xwingModel.Bones.Count];
+            xwingModel.CopyAbsoluteBoneTransformsTo(xwingTransforms);
+
+            
+
+            foreach (ModelMesh mesh in xwingModel.Meshes)
+            {
+                foreach (Effect currentEffect in mesh.Effects)
+                {
+                    currentEffect.CurrentTechnique = currentEffect.Techniques["Colored"];
+                    currentEffect.Parameters["xWorld"].SetValue(xwingTransforms[mesh.ParentBone.Index] * worldMatrix);
+                    currentEffect.Parameters["xView"].SetValue(currentViewMatrix);
+                    currentEffect.Parameters["xProjection"].SetValue(projectionMatrix);
+                }
+                mesh.Draw();
+            }
+        }
 
 
 

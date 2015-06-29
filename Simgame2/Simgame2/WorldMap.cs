@@ -10,6 +10,10 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
 
+// TODO fixed drawing of the terrain. depth sort is wrong
+
+
+
 namespace Simgame2
 {
     /// <summary>
@@ -163,6 +167,7 @@ namespace Simgame2
 
             int modifier;
             // create land mass
+            int adder = 1;
             for (int y = 2; y < this.height-2; y++)
             {
                 modifier = 1;
@@ -170,9 +175,20 @@ namespace Simgame2
                 {
                     //int randval = rand.Next(0, 100);
 
-                    modifier += rand.Next(-2, 2);
-                    if (modifier < 1) modifier = 1;
-                    if (modifier > 30) modifier = 30;
+                    //modifier += rand.Next(-2, 2);
+
+                    modifier += adder;
+
+                    if (modifier < 1) 
+                    { 
+                        //modifier = 1;
+                        adder = 1;
+                    }
+                    if (modifier > 10) 
+                    {
+                        adder = -1;
+                        //modifier = 30; 
+                    }
 
                     setCell(x, y, modifier);
                 }
@@ -498,165 +514,6 @@ namespace Simgame2
 
 
 
-
-
-
-
-        /*
-        public void GenerateView()
-        {
-            //TODO speed up methode
-
-
-            int regionWidth = 0;
-            int regionHeight = 0;
-
-            int regionLeft = int.MaxValue;
-            int regionRight = int.MinValue;
-            int regionUp = int.MaxValue;
-            int regionDown = int.MinValue;
-
-
-
-
-            // look for upper left corner of the visual region
-            for (int x = 0; x < this.width; x++)
-            {
-                for (int y = 0; y < this.height; y++)
-                {
-                    // four point of the square cell
-                    Vector3 v1 = new Vector3(x, getCell(x, y), -y);
-                    Vector3 v2 = new Vector3(x+1, getCell(x, y), -y);
-                    Vector3 v3 = new Vector3(x, getCell(x, y), -(y+1));
-                    Vector3 v4 = new Vector3(x+1, getCell(x, y), -(y+1));
-                    if (frustum.Contains(v1) == ContainmentType.Contains ||
-                        frustum.Contains(v2) == ContainmentType.Contains ||
-                        frustum.Contains(v3) == ContainmentType.Contains ||
-                        frustum.Contains(v4) == ContainmentType.Contains)
-                    {
-                        if (x < regionLeft) { regionLeft = x;  }
-                        if (x > regionRight) { regionRight = x; }
-                        if (y < regionUp) { regionUp = y; }
-                        if (y > regionDown) { regionDown = y; }
-                    }
-                }
-            }
-
-
-
-
-
-            regionLeft -= 2; if (regionLeft < 0) regionLeft = 0;
-            regionRight += 2; if (regionRight > this.width) regionRight = this.width;
-            regionUp -= 2; if (regionUp < 0) regionUp = 0;
-            regionDown += 2; if (regionDown > this.height) regionDown = this.height;
-
-            regionWidth = regionRight - regionLeft;
-            regionHeight = regionDown - regionUp;
-
-            vertices = new VertexPositionNormalColored[regionWidth * regionHeight];
-            for (int x = regionLeft; x < regionRight; x++)
-            {
-                for (int y = regionUp; y < regionDown; y++)
-                {
-                    int adress = (x - regionLeft) + (y - regionUp) * regionWidth;
-
-                    vertices[adress].Position = new Vector3(x, getCell(x, y), -y);
-                    
-                    if (getCell(x, y) == 0)
-                        vertices[adress].Color = Color.Blue;
-                    else if (getCell(x, y) < 10)
-                        vertices[adress].Color = Color.Green;
-                    else if (getCell(x, y) < 25)
-                        vertices[adress].Color = Color.Brown;
-                    else
-                        vertices[adress].Color = Color.White;
-                }
-            }
-
-
-
-
-            indices = new Int16[(regionWidth - 1) * (regionHeight - 1) * 6];
-            int counter = 0;
-            for (int y = 0; y < regionHeight - 1; y++)
-            {
-                for (int x = 0; x < regionWidth - 1; x++)
-                {
-                    Int16 lowerLeft = (Int16)(x + y * regionWidth);
-                    Int16 lowerRight = (Int16)((x + 1) + y * regionWidth);
-                    Int16 topLeft = (Int16)(x + (y + 1) * regionWidth);
-                    Int16 topRight = (Int16)((x + 1) + (y + 1) * regionWidth);
-
-                    indices[counter++] = topLeft;
-                    indices[counter++] = lowerRight;
-                    indices[counter++] = lowerLeft;
-
-                    indices[counter++] = topLeft;
-                    indices[counter++] = topRight;
-                    indices[counter++] = lowerRight;
-                }
-            }
-
-
-            vertices = CalculateNormals(vertices, indices);
-
-        }
-         
-        */
-
-
-
-
-
-
-        /*
-                private void SetUpVertices()
-                {
-                    vertices = new VertexPositionNormalColored[this.width * this.height];
-                    for (int x = 0; x < this.width; x++)
-                    {
-                        for (int y = 0; y < this.height; y++)
-                        {
-                            vertices[x + y * this.width].Position = new Vector3(x, getCell(x, y), -y);
-
-                            if (getCell(x,y) == 0)
-                                vertices[x + y * this.width].Color = Color.Blue;
-                            else if (getCell(x, y) < 10)
-                                vertices[x + y * this.width].Color = Color.Green;
-                            else if (getCell(x, y) < 25)
-                                vertices[x + y * this.width].Color = Color.Brown;
-                            else
-                                vertices[x + y * this.width].Color = Color.White;
-
-                        }
-                    }
-                }
-                */
-      /*  
-        private void SetUpIndices()
-        {
-            indices = new Int16[(this.width - 1) * (this.height - 1) * 6];
-            int counter = 0;
-            for (ushort y = 0; y < this.height - 1; y++)
-            {
-                for (ushort x = 0; x < this.width - 1; x++)
-                {
-                    Int16 lowerLeft = (Int16)(x + y * this.width);
-                    Int16 lowerRight = (Int16)((x + 1) + y * this.width);
-                    Int16 topLeft = (Int16)(x + (y + 1) * this.width);
-                    Int16 topRight = (Int16)((x + 1) + (y + 1) * this.width);
-
-                    indices[counter++] = topLeft;
-                    indices[counter++] = lowerRight;
-                    indices[counter++] = lowerLeft;
-
-                    indices[counter++] = topLeft;
-                    indices[counter++] = topRight;
-                    indices[counter++] = lowerRight;
-                }
-            }
-        }*/
 
 
         private VertexPositionNormalColored[] CalculateNormals(VertexPositionNormalColored[] vertices, Int16[] indices)
