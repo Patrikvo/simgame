@@ -38,12 +38,55 @@ namespace Simgame2
         }
 
 
+        public Texture2D baseTexture { get; set; }
 
-
-        public Texture2D GenerateGroundTexture(Color maxColor, int size)
+        public Texture2D GenerateGroundTexture(Color maxColor, Vector3 margin, int size)
         {
-            return CreateStaticMap(maxColor, size);
+            Texture2D text;
+            text = CreateStaticMap(maxColor, margin, size);
+
+            //text = GroundImage(maxColor, margin, size);
+
+
+            return text;
         }
+
+
+
+        private Texture2D GroundImage(Color maxColor, Vector3 margin, int size)
+        {
+            Color[] noisyColors = new Color[size * size];
+            int r, g, b;
+
+
+            for (int x = 0; x < size; x++)
+            {
+                for (int y = 0; y < size; y++)
+                {
+                    float value = (float)((1 + Math.Sin((x + SimplexNoise.Noise.Generate(x * 5, y * 5) / 2) * 50)) / 2);
+
+
+                    r = (int)(maxColor.R - (value * margin.X));
+                    b = (int)(maxColor.B - (value * margin.Y));
+                    g = (int)(maxColor.G - (value * margin.Z));
+
+                    // rbg must be int (range 0-255) or floats (range 0-1);
+                    noisyColors[x + y * size] = new Color(r, g, b);
+
+                }
+            }
+
+
+            Texture2D noiseImage = new Texture2D(device, size, size, false, SurfaceFormat.Color);
+            noiseImage.SetData(noisyColors);
+            return noiseImage;
+        }
+
+
+
+
+
+        
 
         float scale = 0.006f;
         double[,] noise;
@@ -54,28 +97,50 @@ namespace Simgame2
             for (int x = 0; x < resolution; x++)
                 for (int y = 0; y < resolution; y++)
                 {
-                    noise[x, y] = (rand.Next(32768)) / 32768.0 * scale;
+                    //noise[x, y] = (rand.Next(32768)) / 32768.0 * scale;
+                    noise[x, y] = SimplexNoise.Noise.Generate(x, y);
+
                 }
         }
 
-        private Texture2D CreateStaticMap(Color maxColor, int resolution)
+        private Texture2D CreateStaticMap(Color maxColor, Vector3 margin, int resolution)
         {
             generateNoise(resolution);
 
             Color[] noisyColors = new Color[resolution * resolution];
-            float r, g, b;
+            int r, g, b;
             double randomValue;
-            for (int x = 0; x < resolution; x++)
-                for (int y = 0; y < resolution; y++)
+            for (int x = 0; x < resolution/2; x++)
+                for (int y = 0; y < resolution/2; y++)
                 {
-                    randomValue = (turbulence(x, y, 64, resolution));
+                    //randomValue = (turbulence(x, y, 512, resolution));
+                    randomValue = smoothNoise(x, y, resolution);
 
-                    r = (float)(randomValue * (maxColor.R / 2));
+                    r = (int)(maxColor.R - (randomValue * margin.X));
+                    b = (int)(maxColor.B - (randomValue * margin.Y));
+                    g = (int)(maxColor.G - (randomValue * margin.Z));
+
+             /*       r = (float)(randomValue * (maxColor.R / 2));
                     b = (float)(randomValue * (maxColor.B / 2));
                     g = (float)(randomValue * (maxColor.G / 2));
+                    */
 
                     noisyColors[x + y * resolution] = new Color(r, g, b);
+
+                    // copy to the right
+                    noisyColors[(resolution-1 - x) + y * resolution] = new Color(r, g, b);
+
+
+                    // copy down
+                    noisyColors[x + (resolution-1 - y) * resolution] = new Color(r, g, b);
+
+                    // copy down right
+                    noisyColors[(resolution-1 - x) + (resolution-1 - y) * resolution] = new Color(r, g, b);
+
                 }  
+
+
+
 
 
             Texture2D noiseImage = new Texture2D(device, resolution, resolution, false, SurfaceFormat.Color);

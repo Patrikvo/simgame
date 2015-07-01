@@ -132,6 +132,9 @@ namespace Simgame2
             // TODO implement
         }
 
+
+        private int maxHeight = 10;
+        private int minHeight = 1;
         public void generateMap()
         {
             Random rand = new Random();
@@ -165,32 +168,38 @@ namespace Simgame2
                 setCell(this.width - 2, y, 1);
             }
 
-            int modifier;
             // create land mass
-            int adder = 1;
+            float value;
             for (int y = 2; y < this.height-2; y++)
             {
-                modifier = 1;
                 for (int x = 2; x < this.width-2; x++)
                 {
-                    //int randval = rand.Next(0, 100);
+                    //value = (getCell(x - 1, y - 1) + getCell(x - 1, y) + getCell(x, y - 1)) / 3;
 
-                    //modifier += rand.Next(-2, 2);
+                    value = (getCell(x - 1, y - 1) + getCell(x - 1, y) + getCell(x, y - 1));
+                    value += getCell(x - 2, y - 2) + getCell(x - 1, y - 2) + getCell(x, y - 2);
+                    value += getCell(x - 1, y - 2) + getCell(x, y - 2);
+                    value = value / 8;
 
-                    modifier += adder;
-
-                    if (modifier < 1) 
-                    { 
-                        //modifier = 1;
-                        adder = 1;
-                    }
-                    if (modifier > 10) 
+                    value += (float)(( Math.Sin((x + SimplexNoise.Noise.Generate(x * 5, y * 5) / 2) * 50)) * 2);
+                    value = (float)Math.Ceiling(value);
+                    if (value < minHeight)
                     {
-                        adder = -1;
-                        //modifier = 30; 
+                        value = minHeight;
+                    }
+                    if (value > maxHeight)
+                    {
+                        value = maxHeight;
                     }
 
-                    setCell(x, y, modifier);
+                    setCell(x, y, (int)(value));
+
+
+
+
+                    
+
+
                 }
             }
 
@@ -287,8 +296,6 @@ namespace Simgame2
 
         public void GenerateView()
         {
-            //TODO speed up methode
-
 
             int regionWidth = 0;
             int regionHeight = 0;
@@ -299,63 +306,41 @@ namespace Simgame2
             int regionDown = int.MinValue;
 
 
-
-
-
             // look for edge corners of the visual region
             Queue<Node> expandNode = new Queue<Node>();
 
             expandNode.Enqueue(root);
-
-
 
             Node currentNode;
             while (expandNode.Count > 0)
             {
                 currentNode = expandNode.Dequeue();
 
-                //  debugOutLn("expanding node: " + currentNode.ToString());
-
                 if (currentNode.A == null && currentNode.B == null)
                 {
-                    //  debugOutLn("reached leaf: " + currentNode.ToString());
                     if (currentNode.left < regionLeft) { regionLeft = currentNode.left; }
                     if (currentNode.left + currentNode.width > regionRight) { regionRight = currentNode.left + currentNode.width; }
                     if (currentNode.upper < regionUp) { regionUp = currentNode.upper; }
                     if (currentNode.upper + currentNode.height > regionDown) { regionDown = currentNode.upper + currentNode.height; }
-
-                    //  debugOutLn("region lurd: " + regionLeft + ", " + regionUp + ", " + regionRight + ", " + regionDown);
                 }
                 else
                 {
                     if (currentNode.A != null &&
                         IsBoxInFrustum(currentNode.A.boundingBox.Min, currentNode.A.boundingBox.Max, frustum))
                     {
-                        //  debugOutLn("adding A");
                         expandNode.Enqueue(currentNode.A);
                     }
 
                     if (currentNode.B != null &&
                         IsBoxInFrustum(currentNode.B.boundingBox.Min, currentNode.B.boundingBox.Max, frustum))
                     {
-                        //   debugOutLn("adding B");
                         expandNode.Enqueue(currentNode.B);
                     }
-
-
-
                 }
             }
 
            
 
-
-
-            
-
-
-         //   debugOutLn("done");
-     //       debugOutLn("region lurd: " + regionLeft + ", " + regionUp + ", " + regionRight + ", " + regionDown);
 
             regionLeft -= 2; if (regionLeft < 0) regionLeft = 0;
             regionRight += 2; if (regionRight > this.width) regionRight = this.width;
@@ -367,15 +352,15 @@ namespace Simgame2
 
 
             Vector3[] curners = frustum.GetCorners();
-            debugOutLn("frustum corners:");
-            foreach (Vector3 c in curners)
-            {
-                debugOutLn(c.ToString());
-            }
+ //           foreach (Vector3 c in curners)
+ //           {
+ //               debugOutLn(c.ToString());
+ //           }
 
-            debugOutLn("final region lurd: " + regionLeft + ", " + regionUp + ", " + regionRight + ", " + regionDown);
+            
 
-            vertices = new VertexPositionNormalColored[regionWidth * regionHeight];
+            //vertices = new VertexPositionNormalColored[regionWidth * regionHeight];
+            vertices = new VertexPositionNormalTexture[regionWidth * regionHeight];
             for (int x = regionLeft; x < regionRight; x++)
             {
                 for (int y = regionUp; y < regionDown; y++)
@@ -383,7 +368,13 @@ namespace Simgame2
                     int adress = (x - regionLeft) + (y - regionUp) * regionWidth;
 
                     vertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
-                    
+
+
+                    vertices[adress].TextureCoordinate.X = (float)x % textureSize;
+                    vertices[adress].TextureCoordinate.Y = (float)y % textureSize;
+
+
+                    /*
                     if (getCell(x, y) == 0)
                         vertices[adress].Color = Color.Blue;
                     else if (getCell(x, y) < 3)
@@ -392,6 +383,7 @@ namespace Simgame2
                         vertices[adress].Color = Color.Brown;
                     else
                         vertices[adress].Color = Color.White;
+                     */
                 }
             }
 
@@ -408,6 +400,7 @@ namespace Simgame2
                     Int16 lowerRight = (Int16)((x + 1) + y * regionWidth);
                     Int16 topLeft = (Int16)(x + (y + 1) * regionWidth);
                     Int16 topRight = (Int16)((x + 1) + (y + 1) * regionWidth);
+
 
                     indices[counter++] = topLeft;
                     indices[counter++] = lowerRight;
@@ -511,12 +504,12 @@ namespace Simgame2
 
 
 
+        
 
 
 
-
-
-        private VertexPositionNormalColored[] CalculateNormals(VertexPositionNormalColored[] vertices, Int16[] indices)
+        //private VertexPositionNormalColored[] CalculateNormals(VertexPositionNormalColored[] vertices, Int16[] indices)
+        private VertexPositionNormalTexture[] CalculateNormals(VertexPositionNormalTexture[] vertices, Int16[] indices)
         {
             for (long i = 0; i < vertices.Length; i++)
                 vertices[i].Normal = new Vector3(0, 0, 0);
@@ -548,7 +541,13 @@ namespace Simgame2
 
         private int[] heightMap;
 
-        public VertexPositionNormalColored[] vertices;
+        //public VertexPositionNormalColored[] vertices;
+        public VertexPositionNormalTexture[] vertices;
+
+        public Texture2D groundTexture { get; set; }
+        public float textureSize { get; set; }
+
+
         public Int16[] indices;
 
         public const int WaterLevel = 0;

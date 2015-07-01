@@ -41,7 +41,7 @@ namespace Simgame2
     /// </summary>
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        private const int mapSize = 160;   // 20 40 80 160 320 640 1280
+        private const int mapSize = 640;   // 20 40 80 160 320 640 1280
 
 
         GraphicsDeviceManager graphics;
@@ -87,8 +87,8 @@ namespace Simgame2
         protected override void Initialize()
         {
 
-            graphics.PreferredBackBufferWidth = 500;
-            graphics.PreferredBackBufferHeight = 500;
+            graphics.PreferredBackBufferWidth = 750;
+            graphics.PreferredBackBufferHeight = 750;
             graphics.IsFullScreen = false;
             graphics.ApplyChanges();
 
@@ -127,15 +127,25 @@ namespace Simgame2
             
 
 
-            textureGenerator = new TextureGenerator(this);
-            texture = textureGenerator.GenerateGroundTexture(new Color(0,200,0,1), 500);
+            
 
             device = graphics.GraphicsDevice;
             //effect = Content.Load<Effect>("Series4Effects");
             effect = Content.Load<Effect>("Effects"); 
             SetUpCamera();
 
-            worldMap = new WorldMap(this, mapSize, mapSize);  
+            textureGenerator = new TextureGenerator(this);
+         //   textureGenerator.baseTexture = Content.Load<Texture2D>("dirt");
+
+           // texture = textureGenerator.GenerateGroundTexture(new Color(124, 124, 124, 1), new Vector3(0,39,39), 512);
+            texture = textureGenerator.GenerateGroundTexture(new Color(120, 62, 62, 1), new Vector3(20, 20, 20), 512);
+
+
+
+            worldMap = new WorldMap(this, mapSize, mapSize);
+            worldMap.groundTexture = texture;
+            worldMap.textureSize = 64;
+
             UpdateViewMatrix();
 
 
@@ -190,10 +200,10 @@ namespace Simgame2
             base.Update(gameTime);
         }
 
-        private void CopyToTerrainBuffers(VertexPositionNormalColored[] vertices, Int16[] indices)
+        private void CopyToTerrainBuffers(VertexPositionNormalTexture[] vertices, Int16[] indices)
         {
 
-            terrainVertexBuffer = new VertexBuffer(device, typeof(VertexPositionNormalColored), vertices.Length, BufferUsage.WriteOnly);
+            terrainVertexBuffer = new VertexBuffer(device, typeof(VertexPositionNormalTexture), vertices.Length, BufferUsage.WriteOnly);
 
             terrainVertexBuffer.SetData(vertices);
 
@@ -212,7 +222,7 @@ namespace Simgame2
         protected override void Draw(GameTime gameTime)
         {
             spriteBatch = new SpriteBatch(this.device);
-            GraphicsDevice.Clear(Color.Black);
+            GraphicsDevice.Clear(Color.Aquamarine);
  
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
 
@@ -222,8 +232,10 @@ namespace Simgame2
 
             spriteBatch.Begin();
             Vector2 pos = new Vector2(20, 20);
-            //spriteBatch.DrawString(font, "fps: " + fps.ToString(), pos,Color.White);
-            spriteBatch.Draw(texture, pos, Color.White);
+            Rectangle rect = new Rectangle(20, 50, 32, 32);
+            spriteBatch.DrawString(font, "fps: " + fps.ToString(), pos,Color.White);
+            spriteBatch.Draw(worldMap.groundTexture, rect, Color.White);
+            
             spriteBatch.End();
             
 
@@ -235,11 +247,13 @@ namespace Simgame2
 
         private void DrawTerrain(Matrix currentViewMatrix)
         {
-            effect.CurrentTechnique = effect.Techniques["Colored"];
+            effect.CurrentTechnique = effect.Techniques["Textured"];
             Matrix worldMatrix = Matrix.Identity;
             effect.Parameters["xWorld"].SetValue(worldMatrix);
             effect.Parameters["xView"].SetValue(currentViewMatrix);
             effect.Parameters["xProjection"].SetValue(projectionMatrix);
+
+            effect.Parameters["xTexture"].SetValue(worldMap.groundTexture);
 
             effect.Parameters["xEnableLighting"].SetValue(true);
             effect.Parameters["xAmbient"].SetValue(0.4f);
