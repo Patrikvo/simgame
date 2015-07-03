@@ -10,7 +10,7 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
 
-// TODO fixed drawing of the terrain. depth sort is wrong
+
 
 
 
@@ -133,7 +133,7 @@ namespace Simgame2
         }
 
 
-        private int maxHeight = 10;
+        private int maxHeight = 30;
         private int minHeight = 1;
         public void generateMap()
         {
@@ -181,8 +181,13 @@ namespace Simgame2
                     value += getCell(x - 1, y - 2) + getCell(x, y - 2);
                     value = value / 8;
 
-                    value += (float)(( Math.Sin((x + SimplexNoise.Noise.Generate(x * 5, y * 5) / 2) * 50)) * 2);
-                    value = (float)Math.Ceiling(value);
+         //           value += (float)(( Math.Sin((x + SimplexNoise.Noise.Generate(x * 5, y * 5) / 2) * 50)) * 2);
+         //           value = (float)Math.Ceiling(value);
+                    if (rand.Next(100) < 10)
+                    {
+                        value += (float)((Math.Sin((x + SimplexNoise.Noise.Generate(x * 5, y * 5) / 2) * 50)) * 2);
+                        value = (float)Math.Ceiling(value);
+                    }
                     if (value < minHeight)
                     {
                         value = minHeight;
@@ -194,14 +199,31 @@ namespace Simgame2
 
                     setCell(x, y, (int)(value));
 
-
-
-
-                    
-
-
                 }
             }
+
+
+
+            // Add lake
+            int lakex = 15;
+            int lakey = 15;
+            int lakeWidth = 6;
+            int lakeHeight = 8;
+
+
+            for (int y = lakey-(lakeWidth/2); y < lakey+(lakeWidth/2); y++)
+            {
+                for (int x = lakex-(lakeHeight/2); x < lakex+(lakeHeight/2); x++)
+                {
+                    setCell(x, y, 0);
+                }
+            }
+
+
+
+
+            // TODO add flat plains, rivers, lakes
+
 
             GenerateSearchTree();
         }
@@ -351,16 +373,7 @@ namespace Simgame2
             regionHeight = regionDown - regionUp;
 
 
-            Vector3[] curners = frustum.GetCorners();
- //           foreach (Vector3 c in curners)
- //           {
- //               debugOutLn(c.ToString());
- //           }
-
-            
-
-            //vertices = new VertexPositionNormalColored[regionWidth * regionHeight];
-            vertices = new VertexPositionNormalTexture[regionWidth * regionHeight];
+            vertices = new VertexMultitextured[regionWidth * regionHeight];
             for (int x = regionLeft; x < regionRight; x++)
             {
                 for (int y = regionUp; y < regionDown; y++)
@@ -372,18 +385,24 @@ namespace Simgame2
 
                     vertices[adress].TextureCoordinate.X = (float)x % textureSize;
                     vertices[adress].TextureCoordinate.Y = (float)y % textureSize;
+                    
+
+                    vertices[adress].TexWeights.X = MathHelper.Clamp(1.0f - Math.Abs(getCell(x,y) - 0) / 8.0f, 0, 1);
+                    vertices[adress].TexWeights.Y = MathHelper.Clamp(1.0f - Math.Abs(getCell(x,y) - 2) / 6.0f, 0, 1);
+                    vertices[adress].TexWeights.Z = MathHelper.Clamp(1.0f - Math.Abs(getCell(x,y) - 4) / 6.0f, 0, 1);
+                    vertices[adress].TexWeights.W = MathHelper.Clamp(1.0f - Math.Abs(getCell(x,y) - 10) / 6.0f, 0, 1);
+
+                    float total = vertices[adress].TexWeights.X;
+                    total += vertices[adress].TexWeights.Y;
+                    total += vertices[adress].TexWeights.Z;
+                    total += vertices[adress].TexWeights.W;
+ 
+                    vertices[adress].TexWeights.X /= total;
+                    vertices[adress].TexWeights.Y /= total;
+                    vertices[adress].TexWeights.Z /= total;
+                    vertices[adress].TexWeights.W /= total;
 
 
-                    /*
-                    if (getCell(x, y) == 0)
-                        vertices[adress].Color = Color.Blue;
-                    else if (getCell(x, y) < 3)
-                        vertices[adress].Color = Color.Green;
-                    else if (getCell(x, y) < 7)
-                        vertices[adress].Color = Color.Brown;
-                    else
-                        vertices[adress].Color = Color.White;
-                     */
                 }
             }
 
@@ -414,11 +433,23 @@ namespace Simgame2
 
 
             vertices = CalculateNormals(vertices, indices);
-
+            CopyToTerrainBuffers();
         }
 
 
 
+        private void CopyToTerrainBuffers()
+        {
+
+            terrainVertexBuffer = new VertexBuffer(device, typeof(VertexMultitextured), vertices.Length, BufferUsage.WriteOnly);
+
+            terrainVertexBuffer.SetData(vertices);
+
+            terrainIndexBuffer = new IndexBuffer(device, typeof(Int16), indices.Length, BufferUsage.WriteOnly);
+            terrainIndexBuffer.SetData(indices);
+
+
+        }
 
 
 
@@ -509,7 +540,7 @@ namespace Simgame2
 
 
         //private VertexPositionNormalColored[] CalculateNormals(VertexPositionNormalColored[] vertices, Int16[] indices)
-        private VertexPositionNormalTexture[] CalculateNormals(VertexPositionNormalTexture[] vertices, Int16[] indices)
+        private VertexMultitextured[] CalculateNormals(VertexMultitextured[] vertices, Int16[] indices)
         {
             for (long i = 0; i < vertices.Length; i++)
                 vertices[i].Normal = new Vector3(0, 0, 0);
@@ -536,23 +567,98 @@ namespace Simgame2
         }
 
 
+
+        public void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
+        {
+            BoundingFrustum frustum = new BoundingFrustum(currentViewMatrix * projectionMatrix);
+            this.frustum = frustum;
+
+            GenerateView();
+
+
+            Matrix worldMatrix = Matrix.Identity;
+            effect.Parameters["xWorld"].SetValue(worldMatrix);
+            effect.Parameters["xView"].SetValue(currentViewMatrix);
+            effect.Parameters["xProjection"].SetValue(projectionMatrix);
+
+            effect.Parameters["xTexture"].SetValue(this.groundTexture);
+
+
+            effect.CurrentTechnique = effect.Techniques["MultiTextured"];
+            effect.Parameters["xTexture0"].SetValue(this.sandTexture);
+            effect.Parameters["xTexture1"].SetValue(this.groundTexture);
+            effect.Parameters["xTexture2"].SetValue(this.rockTexture);
+            effect.Parameters["xTexture3"].SetValue(this.snowTexture);
+
+            effect.Parameters["xEnableLighting"].SetValue(true);
+            effect.Parameters["xAmbient"].SetValue(0.4f);
+            effect.Parameters["xLightDirection"].SetValue(new Vector3(-0.5f, -1, -0.5f));
+
+
+            //FOG
+            float FOGNEAR = 150.0f;
+            float FOGFAR = 200.0f;
+
+            effect.Parameters["FogColor"].SetValue(Color.Black.ToVector4());
+            effect.Parameters["FogNear"].SetValue(FOGNEAR);
+            effect.Parameters["FogFar"].SetValue(FOGFAR);
+            effect.Parameters["cameraPos"].SetValue(cameraPosition);
+            
+
+
+            effect.CurrentTechnique.Passes[0].Apply();
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                device.SetVertexBuffer(terrainVertexBuffer);
+                device.Indices = terrainIndexBuffer;
+
+
+
+                int noVertices = terrainVertexBuffer.VertexCount;
+                int noTriangles = terrainIndexBuffer.IndexCount / 3;
+                device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, noVertices, 0, noTriangles);
+            }
+        }
+
+
+        public string GetStats()
+        {
+            int maxVertices = width * height * 2;
+            int maxIndices = maxVertices * 3;
+            return "vertices: " + terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + terrainIndexBuffer.IndexCount + "/" + maxVertices;
+        }
+        
+
+
+
         public int width { get; set; }
         public int height { get; set; }
 
         private int[] heightMap;
 
         //public VertexPositionNormalColored[] vertices;
-        public VertexPositionNormalTexture[] vertices;
+        public VertexMultitextured[] vertices;
 
         public Texture2D groundTexture { get; set; }
         public float textureSize { get; set; }
 
+        public Texture2D sandTexture { get; set; }
+        public Texture2D rockTexture { get; set; }
+        public Texture2D snowTexture { get; set; }
+
+
+
+        public GraphicsDevice device { get; set; }
 
         public Int16[] indices;
+        private VertexBuffer terrainVertexBuffer;
+        private IndexBuffer terrainIndexBuffer;
 
         public const int WaterLevel = 0;
 
         public BoundingFrustum frustum;
+        public Effect effect { get; set; }
+        public Matrix projectionMatrix { get; set; }
 
         // search tree
         private Node root;

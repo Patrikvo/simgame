@@ -34,21 +34,40 @@ namespace Simgame2
 
     }
 
-    
+    public struct VertexMultitextured : IVertexType
+    {
+        public Vector3 Position;
+        public Vector3 Normal;
+        public Vector4 TextureCoordinate;
+        public Vector4 TexWeights;
+
+        public static int SizeInBytes = (3 + 3 + 4 + 4) * sizeof(float);
+        public readonly static VertexDeclaration VertexDeclaration = new VertexDeclaration
+     (
+         new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0 ),
+         new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0 ),
+         new VertexElement(sizeof(float) * 6, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 0 ),
+         new VertexElement(sizeof(float) * 10, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 1 )
+     );
+
+        VertexDeclaration IVertexType.VertexDeclaration { get { return VertexDeclaration; } }
+    }
+
+
 
     /// <summary>
     /// This is the main type for your game
     /// </summary>
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        private const int mapSize = 640;   // 20 40 80 160 320 640 1280
+        private const int mapSize = 320;   // 20 40 80 160 320 640 1280
 
 
         GraphicsDeviceManager graphics;
 //        SpriteBatch spriteBatch;
         GraphicsDevice device;
 
-        Vector3 cameraPosition = new Vector3(50, 50, -50);
+        Vector3 cameraPosition = new Vector3(50, 25, -50);
         float leftrightRot = 2*MathHelper.Pi; // .PiOver2;
         float updownRot = -MathHelper.Pi / 10.0f;
         const float rotationSpeed = 0.3f;
@@ -64,10 +83,10 @@ namespace Simgame2
 
         private Model LoadModel(string assetName)
         {
-
+            Effect modelEffect = Content.Load<Effect>("Effects");
             Model newModel = Content.Load<Model>(assetName); foreach (ModelMesh mesh in newModel.Meshes)
                 foreach (ModelMeshPart meshPart in mesh.MeshParts)
-                    meshPart.Effect = effect.Clone();
+                    meshPart.Effect = modelEffect.Clone();
             return newModel;
         }
 
@@ -130,12 +149,16 @@ namespace Simgame2
             
 
             device = graphics.GraphicsDevice;
-            //effect = Content.Load<Effect>("Series4Effects");
-            effect = Content.Load<Effect>("Effects"); 
+            effect = Content.Load<Effect>("Series4Effects");
+          //  effect = Content.Load<Effect>("Effects");
+           
+
+            
             SetUpCamera();
 
             textureGenerator = new TextureGenerator(this);
-         //   textureGenerator.baseTexture = Content.Load<Texture2D>("dirt");
+
+
 
            // texture = textureGenerator.GenerateGroundTexture(new Color(124, 124, 124, 1), new Vector3(0,39,39), 512);
             texture = textureGenerator.GenerateGroundTexture(new Color(120, 62, 62, 1), new Vector3(20, 20, 20), 512);
@@ -143,8 +166,17 @@ namespace Simgame2
 
 
             worldMap = new WorldMap(this, mapSize, mapSize);
+            worldMap.effect = effect;
+            worldMap.projectionMatrix = projectionMatrix;
+            worldMap.device = device;
+
             worldMap.groundTexture = texture;
             worldMap.textureSize = 64;
+
+            worldMap.sandTexture = Content.Load<Texture2D>("sand");
+            worldMap.rockTexture = Content.Load<Texture2D>("rock");
+            worldMap.snowTexture = Content.Load<Texture2D>("snow");
+
 
             UpdateViewMatrix();
 
@@ -164,6 +196,7 @@ namespace Simgame2
         /// all content.
         /// </summary>
         protected override void UnloadContent()
+
         {
             // TODO: Unload any non ContentManager content here
         }
@@ -185,7 +218,7 @@ namespace Simgame2
             float timeDifference = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000.0f;
             ProcessInput(timeDifference);
 
-            fps = (int)(1 / timeDifference);
+            
 
             
 
@@ -200,10 +233,10 @@ namespace Simgame2
             base.Update(gameTime);
         }
 
-        private void CopyToTerrainBuffers(VertexPositionNormalTexture[] vertices, Int16[] indices)
+        private void CopyToTerrainBuffers(VertexMultitextured[] vertices, Int16[] indices)
         {
 
-            terrainVertexBuffer = new VertexBuffer(device, typeof(VertexPositionNormalTexture), vertices.Length, BufferUsage.WriteOnly);
+            terrainVertexBuffer = new VertexBuffer(device, typeof(VertexMultitextured), vertices.Length, BufferUsage.WriteOnly);
 
             terrainVertexBuffer.SetData(vertices);
 
@@ -221,19 +254,22 @@ namespace Simgame2
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
+            fps = (int)(1000 / gameTime.ElapsedGameTime.Milliseconds);
+
+
             spriteBatch = new SpriteBatch(this.device);
             GraphicsDevice.Clear(Color.Aquamarine);
  
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
 
-            DrawTerrain(viewMatrix);
+            worldMap.Draw(viewMatrix, cameraPosition);
 
             DrawModel(viewMatrix);
 
             spriteBatch.Begin();
             Vector2 pos = new Vector2(20, 20);
             Rectangle rect = new Rectangle(20, 50, 32, 32);
-            spriteBatch.DrawString(font, "fps: " + fps.ToString(), pos,Color.White);
+            spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + worldMap.GetStats(), pos,Color.White);
             spriteBatch.Draw(worldMap.groundTexture, rect, Color.White);
             
             spriteBatch.End();
@@ -245,34 +281,7 @@ namespace Simgame2
 
 
 
-        private void DrawTerrain(Matrix currentViewMatrix)
-        {
-            effect.CurrentTechnique = effect.Techniques["Textured"];
-            Matrix worldMatrix = Matrix.Identity;
-            effect.Parameters["xWorld"].SetValue(worldMatrix);
-            effect.Parameters["xView"].SetValue(currentViewMatrix);
-            effect.Parameters["xProjection"].SetValue(projectionMatrix);
-
-            effect.Parameters["xTexture"].SetValue(worldMap.groundTexture);
-
-            effect.Parameters["xEnableLighting"].SetValue(true);
-            effect.Parameters["xAmbient"].SetValue(0.4f);
-            effect.Parameters["xLightDirection"].SetValue(new Vector3(-0.5f, -1, -0.5f));
-
-            effect.CurrentTechnique.Passes[0].Apply();
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                device.SetVertexBuffer(terrainVertexBuffer);
-                device.Indices = terrainIndexBuffer;
-
-                    
-
-                int noVertices = terrainVertexBuffer.VertexCount; 
-                int noTriangles = terrainIndexBuffer.IndexCount / 3;
-                device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, noVertices, 0, noTriangles);
-            }
-        }
-
+        
 
 
 
@@ -307,7 +316,7 @@ namespace Simgame2
         private void SetUpCamera()
         {
             viewMatrix = Matrix.CreateLookAt(new Vector3(0, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 0, -1));
-            projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 300.0f);
+            projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 250.0f);
 
             
         }
@@ -357,7 +366,7 @@ namespace Simgame2
 
 
             if (keyState.IsKeyDown(Keys.Space))
-                yDifference = yDifference;
+               // yDifference = yDifference;
 
 
          //   if (keyState.IsKeyDown(Keys.Z))
@@ -376,15 +385,6 @@ namespace Simgame2
 
             AddToCameraPosition(moveVector * amount);
 
-            BoundingFrustum frustum = new BoundingFrustum(viewMatrix * projectionMatrix);
-            worldMap.frustum = frustum;
-
-            worldMap.GenerateView();
-
-            if (worldMap.vertices.Length > 0 && worldMap.indices.Length > 0)
-            {
-                CopyToTerrainBuffers(worldMap.vertices, worldMap.indices);
-            }
 
 
         }
