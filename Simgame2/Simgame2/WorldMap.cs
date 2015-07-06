@@ -566,10 +566,14 @@ namespace Simgame2
             return vertices;
         }
 
+        float FOGNEAR = 100.0f;
+        float FOGFAR = 250.0f;
+        Color FOGCOLOR = new Color(100,100, 70);
 
 
         public void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
+            
             DrawSkyDome(currentViewMatrix, cameraPosition);
 
             BoundingFrustum frustum = new BoundingFrustum(currentViewMatrix * projectionMatrix);
@@ -598,10 +602,8 @@ namespace Simgame2
 
 
             //FOG
-            float FOGNEAR = 150.0f;
-            float FOGFAR = 200.0f;
 
-            effect.Parameters["FogColor"].SetValue(Color.Black.ToVector4());
+            effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
             effect.Parameters["FogNear"].SetValue(FOGNEAR);
             effect.Parameters["FogFar"].SetValue(FOGFAR);
             effect.Parameters["cameraPos"].SetValue(cameraPosition);
@@ -642,6 +644,14 @@ namespace Simgame2
                     currentEffect.Parameters["xProjection"].SetValue(projectionMatrix);
                     currentEffect.Parameters["xTexture0"].SetValue(cloudMap);
                     currentEffect.Parameters["xEnableLighting"].SetValue(false);
+
+                    // FOG
+
+                    effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
+                    effect.Parameters["FogNear"].SetValue(FOGNEAR);
+                    effect.Parameters["FogFar"].SetValue(FOGFAR);
+                    effect.Parameters["cameraPos"].SetValue(cameraPosition);
+
                 }
                 mesh.Draw();
             }

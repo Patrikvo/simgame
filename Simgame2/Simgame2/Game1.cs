@@ -75,12 +75,10 @@ namespace Simgame2
         MouseState originalMouseState;
 
         private WorldMap worldMap;
-
-        Model xwingModel;
-        Vector3 xwingLocation;
+        private Entity xwing;
 
         SpriteFont font;
-
+/*
         private Model LoadModel(string assetName)
         {
             Effect modelEffect = Content.Load<Effect>("Effects");
@@ -89,7 +87,7 @@ namespace Simgame2
                     meshPart.Effect = modelEffect.Clone();
             return newModel;
         }
-
+*/
 
         public Game1()
         {
@@ -150,8 +148,7 @@ namespace Simgame2
 
             device = graphics.GraphicsDevice;
             effect = Content.Load<Effect>("Series4Effects");
-          //  effect = Content.Load<Effect>("Effects");
-           
+          
 
             
             SetUpCamera();
@@ -184,10 +181,19 @@ namespace Simgame2
 
 
             UpdateViewMatrix();
+            Effect modelEffect = Content.Load<Effect>("Effects");
+
+            xwing = new Entity(this);
+
+            xwing.LoadModel("xwing", modelEffect);
+            xwing.location = new Vector3(50, 12, -150);
+            xwing.scale = new Vector3(0.05f, 0.05f, 0.05f);
+            xwing.rotation = new Vector3(0, MathHelper.Pi, 0);
+            xwing.projectionMatrix = projectionMatrix;
 
 
-            xwingModel = LoadModel("xwing");
-            xwingLocation = new Vector3(50, 12, -150);
+       //     xwingModel = LoadModel("xwing");
+            //xwingLocation = new Vector3(50, 12, -150);
 
             Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
 
@@ -219,7 +225,6 @@ namespace Simgame2
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
-            // TODO: Add your update logic here
             float timeDifference = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000.0f;
             ProcessInput(timeDifference);
 
@@ -227,11 +232,11 @@ namespace Simgame2
 
             
 
-            float y = xwingLocation.Y + speed * timeDifference;
+            float y = xwing.location.Y + speed * timeDifference;
 
             if (y < -50 || y > 50) { speed = - speed;}
 
-            xwingLocation = new Vector3(xwingLocation.X, y, xwingLocation.Z);
+            xwing.location = new Vector3(xwing.location.X, y, xwing.location.Z);
 
 
 
@@ -269,7 +274,9 @@ namespace Simgame2
 
             worldMap.Draw(viewMatrix, cameraPosition);
 
-            DrawModel(viewMatrix);
+            xwing.Draw(viewMatrix);
+
+            
 
             spriteBatch.Begin();
             Vector2 pos = new Vector2(20, 20);
@@ -286,42 +293,13 @@ namespace Simgame2
 
 
 
-        
-
-
-
-
-        private void DrawModel(Matrix currentViewMatrix)
-        {
-            Matrix worldMatrix = Matrix.CreateScale(0.05f, 0.05f, 0.05f) * Matrix.CreateRotationY(MathHelper.Pi) * Matrix.CreateTranslation(xwingLocation);
-
-            Matrix[] xwingTransforms = new Matrix[xwingModel.Bones.Count];
-            xwingModel.CopyAbsoluteBoneTransformsTo(xwingTransforms);
-
-            
-
-            foreach (ModelMesh mesh in xwingModel.Meshes)
-            {
-                foreach (Effect currentEffect in mesh.Effects)
-                {
-                    currentEffect.CurrentTechnique = currentEffect.Techniques["Colored"];
-                    currentEffect.Parameters["xWorld"].SetValue(xwingTransforms[mesh.ParentBone.Index] * worldMatrix);
-                    currentEffect.Parameters["xView"].SetValue(currentViewMatrix);
-                    currentEffect.Parameters["xProjection"].SetValue(projectionMatrix);
-                }
-                mesh.Draw();
-            }
-        }
-
-
-
 
 
 
         private void SetUpCamera()
         {
             viewMatrix = Matrix.CreateLookAt(new Vector3(0, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 0, -1));
-            projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 250.0f);
+            projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 300.0f);
 
             
         }
