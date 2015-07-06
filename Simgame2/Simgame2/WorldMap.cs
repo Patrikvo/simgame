@@ -570,6 +570,8 @@ namespace Simgame2
 
         public void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
+            DrawSkyDome(currentViewMatrix, cameraPosition);
+
             BoundingFrustum frustum = new BoundingFrustum(currentViewMatrix * projectionMatrix);
             this.frustum = frustum;
 
@@ -621,6 +623,37 @@ namespace Simgame2
         }
 
 
+        private void DrawSkyDome(Matrix currentViewMatrix, Vector3 cameraPosition)
+        {
+            device.DepthStencilState = DepthStencilState.None;
+
+            Matrix[] modelTransforms = new Matrix[skyDome.Bones.Count];
+            skyDome.CopyAbsoluteBoneTransformsTo(modelTransforms);
+
+            Matrix wMatrix = Matrix.CreateTranslation(0, -0.3f, 0) * Matrix.CreateScale(100) * Matrix.CreateTranslation(cameraPosition);
+            foreach (ModelMesh mesh in skyDome.Meshes)
+            {
+                foreach (Effect currentEffect in mesh.Effects)
+                {
+                    Matrix worldMatrix = modelTransforms[mesh.ParentBone.Index] * wMatrix;
+                    currentEffect.CurrentTechnique = currentEffect.Techniques["SkyDome"];
+                    currentEffect.Parameters["xWorld"].SetValue(worldMatrix);
+                    currentEffect.Parameters["xView"].SetValue(currentViewMatrix);
+                    currentEffect.Parameters["xProjection"].SetValue(projectionMatrix);
+                    currentEffect.Parameters["xTexture0"].SetValue(cloudMap);
+                    currentEffect.Parameters["xEnableLighting"].SetValue(false);
+                }
+                mesh.Draw();
+            }
+
+            device.DepthStencilState = DepthStencilState.Default;
+        }
+
+
+
+
+
+
         public string GetStats()
         {
             int maxVertices = width * height * 2;
@@ -662,6 +695,16 @@ namespace Simgame2
 
         // search tree
         private Node root;
+
+
+        // sky dome
+
+        public Texture2D cloudMap;
+        public Model skyDome;
+
+
+
+
 
     }
 }

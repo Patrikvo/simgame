@@ -177,6 +177,11 @@ namespace Simgame2
             worldMap.rockTexture = Content.Load<Texture2D>("rock");
             worldMap.snowTexture = Content.Load<Texture2D>("snow");
 
+            // skydome
+            worldMap.skyDome = Content.Load<Model>("dome");
+            worldMap.skyDome.Meshes[0].MeshParts[0].Effect = effect.Clone();
+            worldMap.cloudMap = Content.Load<Texture2D>("cloudMap");
+
 
             UpdateViewMatrix();
 
@@ -258,7 +263,7 @@ namespace Simgame2
 
 
             spriteBatch = new SpriteBatch(this.device);
-            GraphicsDevice.Clear(Color.Aquamarine);
+            GraphicsDevice.Clear(Color.Black);
  
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
 
