@@ -16,13 +16,11 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    /// <summary>
-    /// This is a game component that implements IUpdateable.
-    /// </summary>
+
     public class WorldMap : Microsoft.Xna.Framework.GameComponent
     {
-        private const int mapCellScale = 5;
-        private const int mapHeightScale = 2;
+        public const int mapCellScale = 5;
+        public const int mapHeightScale = 2;
 
         class Node
         {
@@ -70,34 +68,92 @@ namespace Simgame2
         public WorldMap(Game game, int mapWidth, int mapHeight)
             : base(game)
         {
+            entities = new List<Entity>();
+
             this.width = mapWidth;
             this.height = mapHeight;
 
             this.heightMap = new int[width * height];
             generateMap();
+
+            lookingAt = new Vector3(float.MinValue);
+            
         }
 
-        /// <summary>
-        /// Allows the game component to perform any initialization it needs to before starting
-        /// to run.  This is where it can query for any required services and load content.
-        /// </summary>
+
         public override void Initialize()
         {
-            // TODO: Add your initialization code here
-
             base.Initialize();
         }
 
-        /// <summary>
-        /// Allows the game component to update itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+
         public override void Update(GameTime gameTime)
         {
-            // TODO: Add your update code here
-
             base.Update(gameTime);
         }
+
+
+        public int getCellFromWorldCoor(float wx, float wz)
+        {
+            float wy = wz;  // transform z in worldcoor (3D) to y in mapcoor (2D)
+
+            int x = (int)Math.Floor(wx / mapCellScale);
+            int y = (int)Math.Floor(wy / mapCellScale);
+
+            return getCell(x, y);
+        }
+
+
+        public int levelTerrainWorldCoor(float wx_min, float wz_min, float wx_max, float wz_max)
+        {
+            // transform z in worldcoor (3D) to y in mapcoor (2D)
+            int xMin = (int)Math.Floor(wx_min / mapCellScale);
+            int yMin = (int)Math.Floor(wz_min / mapCellScale);
+            int xMax = (int)Math.Floor(wx_max / mapCellScale);
+            int yMax = (int)Math.Floor(wz_max / mapCellScale);
+
+
+            if (yMin > yMax)
+            {
+                int temp = yMin;
+                yMin = yMax;
+                yMax = temp;
+            }
+
+            if (xMin > xMax)
+            {
+                int temp = xMin;
+                xMin = xMax;
+                xMax = temp;
+            }
+
+            int altitude;
+
+            int averageAltitude = 0;
+            int cnt = 0;
+            for (int x = xMin; x <= xMax; x++)
+            {
+                for (int y = yMin; y <= yMax; y++)
+                {
+                    averageAltitude += getCell(x, y);
+                    cnt++;
+                }
+            }
+
+            altitude = averageAltitude / cnt;
+
+            for (int x = xMin - 2; x <= xMax + 2; x++)
+            {
+                for (int y = yMin - 2; y <= yMax + 2; y++)
+                {
+                    setCell(x, y, altitude);
+                }
+            }
+
+            return altitude;
+        }
+
+
 
 
 
@@ -183,7 +239,7 @@ namespace Simgame2
 
          //           value += (float)(( Math.Sin((x + SimplexNoise.Noise.Generate(x * 5, y * 5) / 2) * 50)) * 2);
          //           value = (float)Math.Ceiling(value);
-                    if (rand.Next(100) < 10)
+                    if (rand.Next(100) < 50)
                     {
                         value += (float)((Math.Sin((x + SimplexNoise.Noise.Generate(x * 5, y * 5) / 2) * 50)) * 2);
                         value = (float)Math.Ceiling(value);
@@ -236,8 +292,6 @@ namespace Simgame2
 
         private Node GenerateTree(Node current, bool direction)
         {
-            // stop condition
-       //     if (current.width <= 10 && current.height <= 10) { return current; }
 
             current.A = current.B = null;
             if (direction) // vertical division
@@ -316,7 +370,7 @@ namespace Simgame2
 
         public bool useTree = true;
 
-        public void GenerateView()
+        public void GenerateView(Vector3 cameraPosition)
         {
 
             int regionWidth = 0;
@@ -380,8 +434,8 @@ namespace Simgame2
                 {
                     int adress = (x - regionLeft) + (y - regionUp) * regionWidth;
 
+                   
                     vertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
-
 
                     vertices[adress].TextureCoordinate.X = (float)x % textureSize;
                     vertices[adress].TextureCoordinate.Y = (float)y % textureSize;
@@ -405,7 +459,6 @@ namespace Simgame2
 
                 }
             }
-
 
 
 
@@ -579,7 +632,7 @@ namespace Simgame2
             BoundingFrustum frustum = new BoundingFrustum(currentViewMatrix * projectionMatrix);
             this.frustum = frustum;
 
-            GenerateView();
+            GenerateView(cameraPosition);
 
 
             Matrix worldMatrix = Matrix.Identity;
@@ -622,6 +675,21 @@ namespace Simgame2
                 int noTriangles = terrainIndexBuffer.IndexCount / 3;
                 device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, noVertices, 0, noTriangles);
             }
+
+            enitiesDrawn = 0;
+            foreach (Entity e in entities)
+            {
+                if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
+                {
+                    enitiesDrawn++;
+                    e.Draw(currentViewMatrix);
+                }
+            }
+
+
+            
+
+
         }
 
 
@@ -660,15 +728,22 @@ namespace Simgame2
         }
 
 
+        public void updateCameraRay(Ray ray)
+        {
+            this.cameraRay = ray;
+        }
 
 
 
-
+        int enitiesDrawn;
+        
+        
         public string GetStats()
         {
             int maxVertices = width * height * 2;
             int maxIndices = maxVertices * 3;
-            return "vertices: " + terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + terrainIndexBuffer.IndexCount + "/" + maxVertices;
+            return "vertices: " + terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + terrainIndexBuffer.IndexCount + "/" + maxVertices +
+               Environment.NewLine + " - entities: " + enitiesDrawn + "/" + entities.Count;
         }
         
 
@@ -713,8 +788,124 @@ namespace Simgame2
         public Model skyDome;
 
 
+        public List<Entity> entities;
 
 
+        // selection
+
+        public Vector3 lookingAt;
+        public Ray cameraRay;
+        public Texture2D selectionTexture;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+        // Copyright 2001 softSurfer, 2012 Dan Sunday
+        // This code may be freely used, distributed and modified for any purpose
+        // providing that this copyright notice is included with it.
+        // SoftSurfer makes no warranty for this code, and cannot be held
+        // liable for any real or imagined damage resulting from its use.
+        // Users of this code must verify correctness for their application.
+
+
+        // Assume that classes are already given for the objects:
+        //    Point and Vector with
+        //        coordinates {float x, y, z;}
+        //        operators for:
+        //            == to test  equality
+        //            != to test  inequality
+        //            (Vector)0 =  (0,0,0)         (null vector)
+        //            Point   = Point ± Vector
+        //            Vector =  Point - Point
+        //            Vector =  Scalar * Vector    (scalar product)
+        //            Vector =  Vector * Vector    (cross product)
+        //    Line and Ray and Segment with defining  points {Point P0, P1;}
+        //        (a Line is infinite, Rays and  Segments start at P0)
+        //        (a Ray extends beyond P1, but a  Segment ends at P1)
+        //    Plane with a point and a normal {Point V0; Vector  n;}
+        //    Triangle with defining vertices {Point V0, V1, V2;}
+        //    Polyline and Polygon with n vertices {int n;  Point *V;}
+        //        (a Polygon has V[n]=V[0])
+        //===================================================================
+
+
+        const float SMALL_NUM = 0.00000001f; // anything that avoids division overflow
+        // dot product (3D) which allows vector operations in arguments
+        //#define dot(u,v)   ((u).x * (v).x + (u).y * (v).y + (u).z * (v).z)
+
+
+
+        // intersect3D_RayTriangle(): find the 3D intersection of a ray with a triangle
+        //    Input:  a ray R, and a triangle T
+        //    Output: *I = intersection point (when it exists)
+        //    Return: -1 = triangle is degenerate (a segment or point)
+        //             0 =  disjoint (no intersect)
+        //             1 =  intersect in unique point I1
+        //             2 =  are in the same plane
+        int intersect3D_RayTriangle(Vector3[] R, Vector3[] T, Vector3 I)
+        {
+            Vector3 u, v, n;              // triangle vectors
+            Vector3 dir, w0, w;           // ray vectors
+            float r, a, b;              // params to calc ray-plane intersect
+
+            // get triangle edge vectors and plane normal
+            u = T[1] - T[0];
+            v = T[2] - T[0];
+            n = Vector3.Cross(u,v);              // cross product
+            if (n == Vector3.Zero)             // triangle is degenerate
+                return -1;                  // do not deal with this case
+
+            dir = R[1]- R[0];              // ray direction vector
+            w0 = R[0] - T[0];
+            a = - Vector3.Dot(n, w0);
+            b = Vector3.Dot(n, dir);
+            if (Math.Abs(b) < SMALL_NUM)
+            {     // ray is  parallel to triangle plane
+                if (a == 0)                 // ray lies in triangle plane
+                    return 2;
+                else return 0;              // ray disjoint from plane
+            }
+
+            // get intersect point of ray with triangle plane
+            r = a / b;
+            if (r < 0.0)                    // ray goes away from triangle
+                return 0;                   // => no intersect
+            // for a segment, also test if (r > 1.0) => no intersect
+
+            I = R[0] + r * dir;            // intersect point of ray and plane
+
+            // is I inside T?
+            float uu, uv, vv, wu, wv, D;
+            uu = Vector3.Dot(u, u);
+            uv = Vector3.Dot(u, v);
+            vv = Vector3.Dot(v, v);
+            w = I - T[0];
+            wu = Vector3.Dot(w, u);
+            wv = Vector3.Dot(w, v);
+            D = uv * uv - uu * vv;
+
+            // get and test parametric coords
+            float s, t;
+            s = (uv * wv - vv * wu) / D;
+            if (s < 0.0 || s > 1.0)         // I is outside T
+                return 0;
+            t = (uv * wu - uu * wv) / D;
+            if (t < 0.0 || (s + t) > 1.0)  // I is outside T
+                return 0;
+
+            return 1;                       // I is in T
+        }
 
     }
 }

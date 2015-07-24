@@ -54,40 +54,45 @@ namespace Simgame2
     }
 
 
-
-    /// <summary>
-    /// This is the main type for your game
-    /// </summary>
     public class Game1 : Microsoft.Xna.Framework.Game
     {
         private const int mapSize = 320;   // 20 40 80 160 320 640 1280
+        private const float rotationSpeed = 0.3f;
+        private const float moveSpeed = 60.0f;
+
+        // Rendering objects
+        private GraphicsDeviceManager graphics;
+        private GraphicsDevice device;
+        private Matrix viewMatrix;
+        public Matrix projectionMatrix;
+        private Effect effect;
+
+        // Camera objects
+        private Vector3 cameraPosition = new Vector3(50, 25, -50);
+        private float leftrightRot = 2 * MathHelper.Pi;
+        private float updownRot = -MathHelper.Pi / 10.0f;
+
+        // Input/output objects
+        private MouseState originalMouseState;
+        private SpriteFont font;
 
 
-        GraphicsDeviceManager graphics;
-//        SpriteBatch spriteBatch;
-        GraphicsDevice device;
-
-        Vector3 cameraPosition = new Vector3(50, 25, -50);
-        float leftrightRot = 2*MathHelper.Pi; // .PiOver2;
-        float updownRot = -MathHelper.Pi / 10.0f;
-        const float rotationSpeed = 0.3f;
-        const float moveSpeed = 60.0f;
-        MouseState originalMouseState;
-
+        // Game Objects
         private WorldMap worldMap;
         private Entity xwing;
+        private EntityBuilding building;
+        public TextureGenerator textureGenerator;
 
-        SpriteFont font;
-/*
-        private Model LoadModel(string assetName)
-        {
-            Effect modelEffect = Content.Load<Effect>("Effects");
-            Model newModel = Content.Load<Model>(assetName); foreach (ModelMesh mesh in newModel.Meshes)
-                foreach (ModelMeshPart meshPart in mesh.MeshParts)
-                    meshPart.Effect = modelEffect.Clone();
-            return newModel;
-        }
-*/
+        
+        // test objects
+
+        private EntityBuilding selBuilding;
+
+
+       
+
+        
+
 
         public Game1()
         {
@@ -95,12 +100,7 @@ namespace Simgame2
             Content.RootDirectory = "Content";
         }
 
-        /// <summary>
-        /// Allows the game to perform any initialization it needs to before starting to run.
-        /// This is where it can query for any required services and load any non-graphic
-        /// related content.  Calling base.Initialize will enumerate through any components
-        /// and initialize them as well.
-        /// </summary>
+
         protected override void Initialize()
         {
 
@@ -109,56 +109,31 @@ namespace Simgame2
             graphics.IsFullScreen = false;
             graphics.ApplyChanges();
 
-
-
-            // TODO: Add your initialization logic here
-            
-            
-            
-
-
             base.Initialize();
         }
 
 
 
-//        Texture2D mapimage;
-        //Rectangle screenRectangle;
-        private Matrix viewMatrix;
-        private Matrix projectionMatrix;
-        private Effect effect;
-        private VertexBuffer terrainVertexBuffer;
-        private IndexBuffer terrainIndexBuffer;
+        private EntityFactory entityFactory;
 
 
-        private TextureGenerator textureGenerator;
-        private Texture2D texture;
-
-        /// <summary>
-        /// LoadContent will be called once per game and is the place to load
-        /// all of your content.
-        /// </summary>
         protected override void LoadContent()
         {
             font = Content.Load<SpriteFont>("Courier New");
-            
-
-
-            
-
             device = graphics.GraphicsDevice;
             effect = Content.Load<Effect>("Series4Effects");
-          
-
             
             SetUpCamera();
 
+            // Place mouse position to the center of the screen.
+            Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
+            originalMouseState = Mouse.GetState();
+
+
+
             textureGenerator = new TextureGenerator(this);
-
-
-
            // texture = textureGenerator.GenerateGroundTexture(new Color(124, 124, 124, 1), new Vector3(0,39,39), 512);
-            texture = textureGenerator.GenerateGroundTexture(new Color(120, 62, 62, 1), new Vector3(20, 20, 20), 512);
+            Texture2D texture = textureGenerator.GenerateGroundTexture(new Color(120, 62, 62, 1), new Vector3(20, 20, 20), 512);
 
 
 
@@ -174,51 +149,109 @@ namespace Simgame2
             worldMap.rockTexture = Content.Load<Texture2D>("rock");
             worldMap.snowTexture = Content.Load<Texture2D>("snow");
 
+            worldMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, WorldMap.mapCellScale);
+
             // skydome
             worldMap.skyDome = Content.Load<Model>("dome");
             worldMap.skyDome.Meshes[0].MeshParts[0].Effect = effect.Clone();
             worldMap.cloudMap = Content.Load<Texture2D>("cloudMap");
 
 
+
             UpdateViewMatrix();
+
+
+
+
+
             Effect modelEffect = Content.Load<Effect>("Effects");
 
-            xwing = new Entity(this);
+            entityFactory = EntityFactory.CreateFactory(this, this.worldMap);
 
-            xwing.LoadModel("xwing", modelEffect);
-            xwing.location = new Vector3(50, 12, -150);
-            xwing.scale = new Vector3(0.05f, 0.05f, 0.05f);
-            xwing.rotation = new Vector3(0, MathHelper.Pi, 0);
-            xwing.projectionMatrix = projectionMatrix;
+            EntityBuilding minebuilding = entityFactory.CreateBasicMine(new Vector3(100, 0, -100), true);
+
+            EntityBuilding tower = entityFactory.CreateWindTower(new Vector3(100, 0, -150), true);
 
 
-       //     xwingModel = LoadModel("xwing");
-            //xwingLocation = new Vector3(50, 12, -150);
 
-            Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
+            building = new EntityBuilding(this);
+            building.LoadModel("testbuilding", modelEffect);
+        //    building.location = new Vector3(100, 12, -100);
+            building.scale = new Vector3(1f, 1f, 1f);
+            building.rotation = new Vector3(0, MathHelper.Pi, 0);
+            building.projectionMatrix = projectionMatrix;
+            building.texture = Content.Load<Texture2D>("testbuildingtex");
+            building.PlaceBuilding(this.worldMap, 50, -50, true);
 
-            originalMouseState = Mouse.GetState();
+          //  EntityBuilding minebuilding = new EntityBuilding(this);
+           // minebuilding.LoadModel("BasicMine", modelEffect);
+          //  minebuilding.scale = new Vector3(5f, 5f, 5f);
+         //   minebuilding.rotation = new Vector3(0, MathHelper.Pi, 0);
+         //   minebuilding.projectionMatrix = projectionMatrix;
+         //   minebuilding.texture = Content.Load<Texture2D>("BasicMineTex");
+         //   minebuilding.PlaceBuilding(this.worldMap, 100, -100, true);
+
+
+            EntityBuilding melterbuilding = new EntityBuilding(this);
+            melterbuilding.LoadModel("BasicMelter", modelEffect);
+            melterbuilding.scale = new Vector3(5f, 5f, 5f);
+            melterbuilding.rotation = new Vector3(0, MathHelper.Pi, 0);
+            melterbuilding.projectionMatrix = projectionMatrix;
+            melterbuilding.texture = Content.Load<Texture2D>("BasicMelterTex");
+            melterbuilding.PlaceBuilding(this.worldMap, 150, -150, true);
+
+            EntityBuilding solarBuilding = new EntityBuilding(this);
+            solarBuilding.LoadModel("SolarPlant", modelEffect);
+            solarBuilding.scale = new Vector3(5f, 5f, 5f);
+            solarBuilding.rotation = new Vector3(0, MathHelper.Pi, 0);
+            solarBuilding.projectionMatrix = projectionMatrix;
+            solarBuilding.texture = Content.Load<Texture2D>("SolarPlantTex");
+            solarBuilding.PlaceBuilding(this.worldMap, 200, -200, true);
+
+
+            
+
+
+
+
+
+            selBuilding = new EntityBuilding(this);
+            selBuilding.LoadModel("testbuilding", modelEffect);
+            selBuilding.location = new Vector3(50, 12, -50);
+            selBuilding.scale = new Vector3(1f, 1f, 1f);
+            selBuilding.rotation = new Vector3(0, MathHelper.Pi, 0);
+            selBuilding.projectionMatrix = projectionMatrix;
+            selBuilding.texture = Content.Load<Texture2D>("testbuildingtex");
+
+
+
+            EntityBuilding[] buildings = new EntityBuilding[10];
+
+            for (int i = 0; i < 0; i++)
+            {
+                buildings[i] = new EntityBuilding(this);
+                buildings[i].LoadModel("testbuilding", modelEffect);
+                buildings[i].location = new Vector3(60 + (i * 20), 12, -(60 + (i * 20)));
+                buildings[i].scale = new Vector3(1f, 1f, 1f);
+                buildings[i].rotation = new Vector3(0, 0, 0);
+                buildings[i].projectionMatrix = projectionMatrix;
+                buildings[i].texture = Content.Load<Texture2D>("testbuildingtex");
+                buildings[i].PlaceBuilding(this.worldMap, 60+(i*20), -(60 + (i*20)),true );
+            }
 
         }
 
-        float speed = 10;
-        /// <summary>
-        /// UnloadContent will be called once per game and is the place to unload
-        /// all content.
-        /// </summary>
+
+
         protected override void UnloadContent()
 
         {
             // TODO: Unload any non ContentManager content here
         }
 
-        int fps;
 
-        /// <summary>
-        /// Allows the game to run logic such as updating the world,
-        /// checking for collisions, gathering input, and playing audio.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+
+
         protected override void Update(GameTime gameTime)
         {
             // Allows the game to exit
@@ -228,62 +261,51 @@ namespace Simgame2
             float timeDifference = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000.0f;
             ProcessInput(timeDifference);
 
-            
+            entityFactory.Update(gameTime);
 
-            
 
-            float y = xwing.location.Y + speed * timeDifference;
+            // place building code
+            selBuilding.RemoveBuilding(worldMap);
+            if (isPlacingBuilding)
+            {
+                
 
-            if (y < -50 || y > 50) { speed = - speed;}
+                Vector3 offset = Vector3.Transform(new Vector3(0, 0, -50), Matrix.CreateRotationY(leftrightRot));
+                selBuilding.location = cameraPosition + offset;
 
-            xwing.location = new Vector3(xwing.location.X, y, xwing.location.Z);
+                selBuilding.PlaceBuilding(worldMap, false);
 
+            }
 
 
             base.Update(gameTime);
         }
 
-        private void CopyToTerrainBuffers(VertexMultitextured[] vertices, Int16[] indices)
-        {
-
-            terrainVertexBuffer = new VertexBuffer(device, typeof(VertexMultitextured), vertices.Length, BufferUsage.WriteOnly);
-
-            terrainVertexBuffer.SetData(vertices);
-
-            terrainIndexBuffer = new IndexBuffer(device, typeof(Int16), indices.Length, BufferUsage.WriteOnly);
-            terrainIndexBuffer.SetData(indices);
+   
 
 
-        }
-
-        SpriteBatch spriteBatch;
-
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        private int fps;
+        private SpriteBatch spriteBatch;
         protected override void Draw(GameTime gameTime)
         {
             fps = (int)(1000 / gameTime.ElapsedGameTime.Milliseconds);
 
 
-            spriteBatch = new SpriteBatch(this.device);
+            
             GraphicsDevice.Clear(Color.Black);
- 
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
+
 
             worldMap.Draw(viewMatrix, cameraPosition);
 
-            xwing.Draw(viewMatrix);
 
-            
-
+            // Draws stats
+            spriteBatch = new SpriteBatch(this.device);
             spriteBatch.Begin();
             Vector2 pos = new Vector2(20, 20);
             Rectangle rect = new Rectangle(20, 50, 32, 32);
             spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + worldMap.GetStats(), pos,Color.White);
             spriteBatch.Draw(worldMap.groundTexture, rect, Color.White);
-            
             spriteBatch.End();
             
 
@@ -293,15 +315,14 @@ namespace Simgame2
 
 
 
-
-
+        bool isPlacingBuilding = false;
+        bool mouseButtonDown = false;
+        bool ButtonSpaceDown = false;
 
         private void SetUpCamera()
         {
             viewMatrix = Matrix.CreateLookAt(new Vector3(0, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 0, -1));
             projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 300.0f);
-
-            
         }
 
         private void ProcessInput(float amount)
@@ -332,37 +353,35 @@ namespace Simgame2
             if (keyState.IsKeyDown(Keys.Escape))
                     this.Exit();
 
-            if (keyState.IsKeyDown(Keys.T))
-            {
-                worldMap.useTree = true;
-            }
 
-            if (keyState.IsKeyDown(Keys.Y))
-            {
-                worldMap.useTree = false ;
-            }
-
-            if (keyState.IsKeyDown(Keys.P))
-            {
-                worldMap.debugPrintTree();
-            }
 
 
             if (keyState.IsKeyDown(Keys.Space))
-               // yDifference = yDifference;
+                ButtonSpaceDown = true;
 
-
-         //   if (keyState.IsKeyDown(Keys.Z))
-         //       moveVector += new Vector3(0, -1, 0);
-
-            if (yDifference != 0)
+            if (keyState.IsKeyUp(Keys.Space) && ButtonSpaceDown == true)
             {
-                moveVector += new Vector3(0, 0, yDifference);
+                isPlacingBuilding = !isPlacingBuilding;
+                ButtonSpaceDown = false;
             }
-          //  if (yDifference > 0)
-           // {
-            //    moveVector += new Vector3(0, 0, yDifference);
-            //}
+
+            if (currentMouseState.LeftButton == ButtonState.Pressed)
+            {
+                mouseButtonDown = true;
+            }
+
+            if (currentMouseState.LeftButton == ButtonState.Released && mouseButtonDown == true)
+            {
+                mouseButtonDown = false;
+                if (isPlacingBuilding)
+                {
+                    isPlacingBuilding = false;
+                    selBuilding.RemoveBuilding(worldMap);
+                    selBuilding.PlaceBuilding(worldMap, true);
+
+                    selBuilding = new EntityBuilding(selBuilding);
+                }
+            }
 
          
 
@@ -396,9 +415,14 @@ namespace Simgame2
 
             viewMatrix = Matrix.CreateLookAt(cameraPosition, cameraFinalTarget, cameraRotatedUpVector);
 
-
+            worldMap.updateCameraRay(new Ray(cameraPosition, cameraRotatedTarget));
 
         }
+
+
+
+
+
 
     }
 }

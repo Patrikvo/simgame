@@ -78,6 +78,7 @@ namespace Simgame2
 
 
             Texture2D noiseImage = new Texture2D(device, size, size, false, SurfaceFormat.Color);
+           
             noiseImage.SetData(noisyColors);
             return noiseImage;
         }
@@ -85,6 +86,25 @@ namespace Simgame2
 
 
 
+        public Texture2D SelectionImage(Color color, int size)
+        {
+            Color[] colors = new Color[size * size];
+
+            for (int x = 0; x < size; x++)
+            {
+                for (int y = 0; y < size; y++)
+                {
+                    colors[x + y * size] = color;
+
+                }
+            }
+
+
+            Texture2D selectionImage = new Texture2D(device, size, size, false, SurfaceFormat.Color);
+
+            selectionImage.SetData(colors);
+            return selectionImage;
+        }
 
         
 
