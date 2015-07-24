@@ -183,13 +183,7 @@ namespace Simgame2
             building.texture = Content.Load<Texture2D>("testbuildingtex");
             building.PlaceBuilding(this.worldMap, 50, -50, true);
 
-          //  EntityBuilding minebuilding = new EntityBuilding(this);
-           // minebuilding.LoadModel("BasicMine", modelEffect);
-          //  minebuilding.scale = new Vector3(5f, 5f, 5f);
-         //   minebuilding.rotation = new Vector3(0, MathHelper.Pi, 0);
-         //   minebuilding.projectionMatrix = projectionMatrix;
-         //   minebuilding.texture = Content.Load<Texture2D>("BasicMineTex");
-         //   minebuilding.PlaceBuilding(this.worldMap, 100, -100, true);
+
 
 
             EntityBuilding melterbuilding = new EntityBuilding(this);

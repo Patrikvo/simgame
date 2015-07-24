@@ -150,7 +150,7 @@ namespace Simgame2
                 }
             }
 
-            return altitude;
+            return altitude*mapHeightScale;
         }
 
 
