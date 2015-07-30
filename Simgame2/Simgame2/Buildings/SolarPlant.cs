@@ -11,12 +11,11 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
-
 namespace Simgame2.Buildings
 {
-    public class WindTower : EntityBuilding
+    public class SolarPlant : EntityBuilding
     {
-        public WindTower(Game game)
+        public SolarPlant(Game game)
             : base(game)
         {
             this.projectionMatrix = ((Game1)game).projectionMatrix;
@@ -24,23 +23,23 @@ namespace Simgame2.Buildings
 
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
-            this.LoadModel("WindTower", effect);
+            this.LoadModel("SolarPlant", effect);
 
-            this.AddTexture(this.Game.Content.Load<Texture2D>("WindTower_bTex"));  // base texture
-            this.AddTexture(this.Game.Content.Load<Texture2D>("WindTower_rTex"));  // rotor texture
-          
+            this.AddTexture(this.Game.Content.Load<Texture2D>("SolarPlantTex"));  // base texture
+            
+
 
             this.scale = scale;
             this.rotation = rotation;
             this.location = location;
 
-            rotorTransform = this.model.Bones["Rotor"].Transform;  // Rotor start position
+           // rotorTransform = this.model.Bones["Rotor"].Transform;  // Rotor start position
         }
 
         public override void Update(GameTime gameTime)
         {
-            rotorRotation += (float)((rotationSpeed * gameTime.ElapsedGameTime.TotalSeconds) % 2*Math.PI);
-            
+          //  rotorRotation += (float)((rotationSpeed * gameTime.ElapsedGameTime.TotalSeconds) % 2 * Math.PI);
+
             base.Update(gameTime);
         }
 
@@ -54,11 +53,11 @@ namespace Simgame2.Buildings
 
         public override void Draw(Matrix currentViewMatrix)
         {
-            Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateRotationX(rotation.X) * Matrix.CreateRotationY(rotation.Y) * 
+            Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateRotationX(rotation.X) * Matrix.CreateRotationY(rotation.Y) *
                 Matrix.CreateRotationZ(rotation.Z) * Matrix.CreateTranslation(location);
 
-            this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
-                
+        //    this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform;
+
 
             Matrix[] transforms = new Matrix[model.Bones.Count];
             model.CopyAbsoluteBoneTransformsTo(transforms);
@@ -67,10 +66,10 @@ namespace Simgame2.Buildings
             int meshNum = 0;
             foreach (ModelMesh mesh in model.Meshes)
             {
-                
+
                 foreach (Effect currentEffect in mesh.Effects)
                 {
-                    
+
                     currentEffect.Parameters["xView"].SetValue(currentViewMatrix);
                     currentEffect.Parameters["xProjection"].SetValue(projectionMatrix);
                     currentEffect.CurrentTechnique = currentEffect.Techniques["Textured"];
@@ -95,8 +94,8 @@ namespace Simgame2.Buildings
         public static Vector3 StandardScale = new Vector3(5, 5, 5);
         public static Vector3 StandardRotation = new Vector3(0, MathHelper.Pi, 0);
 
-        private float rotorRotation = 0;
-        private float rotationSpeed = 1;
-        private Matrix rotorTransform;
+       // private float rotorRotation = 0;
+      //  private float rotationSpeed = 1;
+     //   private Matrix rotorTransform;
     }
 }

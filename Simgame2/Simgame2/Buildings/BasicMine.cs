@@ -24,7 +24,7 @@ namespace Simgame2.Buildings
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
             this.LoadModel("BasicMine", effect);
-            this.texture = this.Game.Content.Load<Texture2D>("BasicMineTex");
+            this.AddTexture(this.Game.Content.Load<Texture2D>("BasicMineTex"));
             this.scale = scale;
             this.rotation = rotation;
             this.location = location;
