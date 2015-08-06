@@ -97,7 +97,8 @@ namespace Simgame2
             reflectionRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, pp.DepthStencilFormat);
 
             cloudsRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, pp.DepthStencilFormat);
-            cloudStaticMap = CreateStaticMap(32);
+
+            cloudStaticMap = CreateStaticMap(256);
 
             fullScreenVertices = SetUpFullscreenVertices();
             fullScreenVertexDeclaration = new VertexDeclaration(VertexPositionTexture.VertexDeclaration.GetVertexElements());
@@ -423,6 +424,7 @@ namespace Simgame2
             
 
             SetUpWaterVertices(1000,1000);
+          //  SetUpSimpleWaterVertices(1000, 1000);
             waterVertexDeclaration = new VertexDeclaration(VertexPositionTexture.VertexDeclaration.GetVertexElements());
 
             vertices = CalculateNormals(vertices, indices);
@@ -582,19 +584,21 @@ namespace Simgame2
             
 
             // water
-       //     DrawRefractionMap(ref currentViewMatrix, ref cameraPosition);
-        //    DrawReflectionMap(ref currentViewMatrix, ref cameraPosition);
+            DrawRefractionMap(ref currentViewMatrix, ref cameraPosition);
+            DrawReflectionMap(ref currentViewMatrix, ref cameraPosition);
 
 
             // skybox
-            
+            GeneratePerlinNoise(time);
 
             device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
-            GeneratePerlinNoise(time);
+
+            
             DrawSkyDome(currentViewMatrix, cameraPosition);
 
             DrawTerrain(ref currentViewMatrix, ref cameraPosition);
-        //    DrawWater(ref currentViewMatrix, ref cameraPosition, time);
+           // DrawSimpleWater(ref currentViewMatrix, ref cameraPosition, time);
+            DrawWater(ref currentViewMatrix, ref cameraPosition, time);
 
             enitiesDrawn = 0;
             foreach (Entity e in entities)
@@ -635,10 +639,10 @@ namespace Simgame2
 
             //FOG
 
-            effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
-            effect.Parameters["FogNear"].SetValue(FOGNEAR);
-            effect.Parameters["FogFar"].SetValue(FOGFAR);
-            effect.Parameters["cameraPos"].SetValue(cameraPosition);
+    //        effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
+   //         effect.Parameters["FogNear"].SetValue(FOGNEAR);
+    //        effect.Parameters["FogFar"].SetValue(FOGFAR);
+    //        effect.Parameters["cameraPos"].SetValue(cameraPosition);
 
 
 
@@ -672,7 +676,7 @@ namespace Simgame2
             Matrix[] modelTransforms = new Matrix[skyDome.Bones.Count];
             skyDome.CopyAbsoluteBoneTransformsTo(modelTransforms);
 
-            Matrix wMatrix = Matrix.CreateTranslation(0, -0.3f, 0) * Matrix.CreateScale(100) * Matrix.CreateTranslation(cameraPosition);
+            Matrix wMatrix = Matrix.CreateTranslation(0, -0.3f, 0) * Matrix.CreateScale(50) * Matrix.CreateTranslation(cameraPosition);
             foreach (ModelMesh mesh in skyDome.Meshes)
             {
                 foreach (Effect currentEffect in mesh.Effects)
@@ -682,7 +686,7 @@ namespace Simgame2
                     currentEffect.Parameters["xWorld"].SetValue(worldMatrix);
                     currentEffect.Parameters["xView"].SetValue(currentViewMatrix);
                     currentEffect.Parameters["xProjection"].SetValue(projectionMatrix);
-                    currentEffect.Parameters["xTexture0"].SetValue(cloudMap);
+                    currentEffect.Parameters["xTexture"].SetValue(cloudMap);
                     currentEffect.Parameters["xEnableLighting"].SetValue(false);
 
                     // FOG
@@ -695,7 +699,7 @@ namespace Simgame2
                 }
                 mesh.Draw();
             }
-
+            device.BlendState = BlendState.Opaque;
             device.DepthStencilState = DepthStencilState.Default;
         }
 
@@ -705,7 +709,10 @@ namespace Simgame2
             Color[] noisyColors = new Color[resolution * resolution];
             for (int x = 0; x < resolution; x++)
                 for (int y = 0; y < resolution; y++)
+                {
                     noisyColors[x + y * resolution] = new Color(new Vector3((float)rand.Next(1000) / 1000.0f, 0, 0));
+                    
+                }
 
             Texture2D noiseImage = new Texture2D(device, resolution, resolution, true, SurfaceFormat.Color);
             noiseImage.SetData(noisyColors);
@@ -732,7 +739,7 @@ namespace Simgame2
 
             effect.CurrentTechnique = effect.Techniques["PerlinNoise"];
             effect.Parameters["xTexture"].SetValue(cloudStaticMap);
-            effect.Parameters["xOvercast"].SetValue(1.1f);
+            effect.Parameters["xOvercast"].SetValue(0.7f);
             effect.Parameters["xTime"].SetValue(time / 1000.0f);
             effect.CurrentTechnique.Passes[0].Apply();
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
@@ -743,6 +750,8 @@ namespace Simgame2
 
             device.SetRenderTarget(null);
             cloudMap = cloudsRenderTarget;
+
+            
         }
 
 
@@ -773,12 +782,11 @@ namespace Simgame2
             planeNormalDirection.Normalize();
             Vector4 planeCoeffs = new Vector4(planeNormalDirection, height);
             if (clipSide)
+            {
                 planeCoeffs *= -1;
+            }
 
-
-		// TRY    Vector4 planeCoefficients = new Vector4(planeNormalDirection, - GetWaterHeight() + 0.3f);
-
-            Plane finalPlane = new Plane(planeCoeffs);
+	        Plane finalPlane = new Plane(planeCoeffs);
 
             return finalPlane;
         }
@@ -829,7 +837,7 @@ namespace Simgame2
 
             reflectionMap = reflectionRenderTarget;
 
-            this.game.debugImg = reflectionMap;
+            
         }
 
        
@@ -848,13 +856,13 @@ namespace Simgame2
             effect.Parameters["xReflectionMap"].SetValue(reflectionMap);
             effect.Parameters["xRefractionMap"].SetValue(refractionMap);
             effect.Parameters["xWaterBumpMap"].SetValue(waterBumpMap);
-            effect.Parameters["xWaveLength"].SetValue(0.1f*mapHeightScale);
-            effect.Parameters["xWaveHeight"].SetValue(0.3f*mapHeightScale);
+            effect.Parameters["xWaveLength"].SetValue(0.01f);
+            effect.Parameters["xWaveHeight"].SetValue(0.03f);
 
             effect.Parameters["xCamPos"].SetValue(cameraPosition);
 
             effect.Parameters["xTime"].SetValue(time);
-            effect.Parameters["xWindForce"].SetValue(0.02f);
+            effect.Parameters["xWindForce"].SetValue(0.0002f);
             effect.Parameters["xWindDirection"].SetValue(windDirection);
 
             effect.CurrentTechnique.Passes[0].Apply();
@@ -895,7 +903,84 @@ namespace Simgame2
         }
 
 
+        private void SetUpSimpleWaterVertices(int width, int height)
+        {
+            width = width * mapCellScale;
+            height = height * mapCellScale;
 
+            VertexPositionNormalColored[] waterVertices = new VertexPositionNormalColored[6];
+
+            waterVertices[0] = new VertexPositionNormalColored(new Vector3(-width, waterHeight, height),Color.Green, Color.Blue);
+            waterVertices[2] = new VertexPositionNormalColored(new Vector3(width, waterHeight, -height), Color.Green, Color.Blue);
+            waterVertices[1] = new VertexPositionNormalColored(new Vector3(-width, waterHeight, -height), Color.Green, Color.Blue);
+
+            waterVertices[3] = new VertexPositionNormalColored(new Vector3(-width, waterHeight, height), Color.Green, Color.Blue);
+            waterVertices[5] = new VertexPositionNormalColored(new Vector3(width, waterHeight, height), Color.Green, Color.Blue);
+            waterVertices[4] = new VertexPositionNormalColored(new Vector3(width, waterHeight, -height), Color.Green, Color.Blue);
+
+            waterVertexBuffer = new VertexBuffer(device, typeof(VertexPositionNormalColored), waterVertices.Length, BufferUsage.WriteOnly);
+            waterVertexBuffer.SetData(waterVertices);
+
+            int[] waterIndices = new int[6];
+            waterIndices[0] = 0;  // topleft
+            waterIndices[1] = 1;   // lower right
+            waterIndices[2] = 2;  // lowerLeft;
+
+            waterIndices[3] = 3; // topLeft;
+            waterIndices[4] = 4;  //topRight;
+            waterIndices[5] = 5; //lowerRight;
+
+            // calc. normals
+            for (long i = 0; i < waterVertices.Length; i++)
+                waterVertices[i].Normal = new Vector3(0, 0, 0);
+
+            for (long i = 0; i < waterIndices.Length / 3; i++)
+            {
+                long index1 = waterIndices[i * 3];
+                long index2 = waterIndices[i * 3 + 1];
+                long index3 = waterIndices[i * 3 + 2];
+
+                Vector3 side1 = waterVertices[index1].Position - waterVertices[index3].Position;
+                Vector3 side2 = waterVertices[index1].Position - waterVertices[index2].Position;
+                Vector3 normal = Vector3.Cross(side1, side2);
+
+                waterVertices[index1].Normal += normal;
+                waterVertices[index2].Normal += normal;
+                waterVertices[index3].Normal += normal;
+            }
+
+            for (long i = 0; i < waterVertices.Length; i++)
+                waterVertices[i].Normal.Normalize();
+        }
+
+        private void DrawSimpleWater(ref Matrix currentViewMatrix, ref Vector3 cameraPosition, float time)
+        {
+            effect.CurrentTechnique = effect.Techniques["SimpleWater"];
+            Matrix worldMatrix = Matrix.Identity;
+            effect.Parameters["xWorld"].SetValue(worldMatrix);
+            effect.Parameters["xView"].SetValue(currentViewMatrix);
+            effect.Parameters["xProjection"].SetValue(projectionMatrix);
+            effect.Parameters["xWaterBumpMap"].SetValue(waterBumpMap);
+            effect.Parameters["xWaveLength"].SetValue(0.1f * mapHeightScale);
+            effect.Parameters["xWaveHeight"].SetValue(0.3f * mapHeightScale);
+
+            effect.Parameters["xCamPos"].SetValue(cameraPosition);
+
+            effect.Parameters["xTime"].SetValue(time);
+            effect.Parameters["xWindForce"].SetValue(0.02f);
+            effect.Parameters["xWindDirection"].SetValue(windDirection);
+
+            effect.CurrentTechnique.Passes[0].Apply();
+
+            device.SetVertexBuffer(waterVertexBuffer);
+
+            int noVertices = waterVertexBuffer.VertexCount;
+            device.DrawPrimitives(PrimitiveType.TriangleList, 0, noVertices / 3);
+
+
+            
+
+        }
 
 
 

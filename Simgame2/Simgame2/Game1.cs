@@ -11,14 +11,29 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    /*
+    
     public struct VertexPositionNormalColored : IVertexType
     {
         public Vector3 Position;
-        public Color Color;
+        public Color Color1;
+        public Color Color2;
         public Vector3 Normal;
 
-        
+        public VertexPositionNormalColored(Vector3 position, Color color1, Color color2, Vector3 normal)
+        {
+            this.Position = position;
+            this.Color1 = color1;
+            this.Color2 = color2;
+            this.Normal = normal;
+        }
+
+        public VertexPositionNormalColored(Vector3 position, Color color1, Color color2)
+        {
+            this.Position = position;
+            this.Color1 = color1;
+            this.Color2 = color2;
+            this.Normal = new Vector3(0f, 0f, 0f);
+        }
 
         public static int SizeInBytes = 7 * 4;
 
@@ -26,13 +41,14 @@ namespace Simgame2
         (
             new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
             new VertexElement(sizeof(float) * 3, VertexElementFormat.Color, VertexElementUsage.Color, 0),
-            new VertexElement(sizeof(float) * 4, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0)
+            new VertexElement(sizeof(float) * 4, VertexElementFormat.Color, VertexElementUsage.Color, 1),
+            new VertexElement(sizeof(float) * 5, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0)
         );
 
 
         VertexDeclaration IVertexType.VertexDeclaration { get { return VertexDeclaration; } }
 
-    }*/
+    }
 
     public struct VertexMultitextured : IVertexType
     {
@@ -125,6 +141,8 @@ namespace Simgame2
             device = graphics.GraphicsDevice;
             effect = Content.Load<Effect>("Series4Effects");
             
+
+
             SetUpCamera();
 
             // Place mouse position to the center of the screen.
@@ -285,7 +303,7 @@ namespace Simgame2
             spriteBatch = new SpriteBatch(this.device);
             spriteBatch.Begin();
             Vector2 pos = new Vector2(20, 20);
-            Rectangle rect = new Rectangle(20, 50, 200, 200);
+            Rectangle rect = new Rectangle(20, 50, 100, 100);
             spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + worldMap.GetStats(), pos,Color.White);
             if (debugImg != null)
             {
