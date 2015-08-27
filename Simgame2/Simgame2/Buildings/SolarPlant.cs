@@ -18,7 +18,7 @@ namespace Simgame2.Buildings
         public SolarPlant(Game game)
             : base(game)
         {
-            this.projectionMatrix = ((Game1)game).projectionMatrix;
+         
         }
 
         public void Initialize(Vector3 scale, Vector3 rotation)
@@ -51,7 +51,7 @@ namespace Simgame2.Buildings
 
 
 
-        public override void Draw(Matrix currentViewMatrix)
+        public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
             Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateRotationX(rotation.X) * Matrix.CreateRotationY(rotation.Y) *
                 Matrix.CreateRotationZ(rotation.Z) * Matrix.CreateTranslation(location);
@@ -81,6 +81,12 @@ namespace Simgame2.Buildings
                     currentEffect.Parameters["xEnableLighting"].SetValue(true);
                     currentEffect.Parameters["xAmbient"].SetValue(0.4f);
                     currentEffect.Parameters["xLightDirection"].SetValue(new Vector3(-0.5f, -1, -0.5f));
+
+                    currentEffect.Parameters["cameraPos"].SetValue(cameraPosition);
+                    currentEffect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
+                    currentEffect.Parameters["FogNear"].SetValue(FOGNEAR);
+                    currentEffect.Parameters["FogFar"].SetValue(FOGFAR);
+
 
                 }
                 mesh.Draw();

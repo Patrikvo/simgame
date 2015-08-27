@@ -106,7 +106,93 @@ namespace Simgame2
             return selectionImage;
         }
 
-        
+
+
+
+
+
+        public Vector2[] GenerateBumpMap(Texture2D inputImage)
+        {
+            int size = inputImage.Width * inputImage.Height;
+            Color[] colors = new Color[size]; 
+            inputImage.GetData<Color>(colors);
+
+
+            // obtain brightness of the colors (HSV, but only the V-component)
+            int[] V = new int[size];
+            for (int i = 0; i < size; i++)
+            {
+                V[i] = Max(colors[i].R, colors[i].G, colors[i].B);
+            }
+
+            // first derivative
+            int[] dVx = new int[inputImage.Width * inputImage.Height];
+            int adress;
+            for (int y = 0; y < inputImage.Height; y++)
+            {
+                dVx[inputImage.Width * y] = 0;
+                for (int x = 1; x < inputImage.Width-1; x++)
+                {
+                    adress = x + inputImage.Width * y;
+                    dVx[adress] = V[adress+1] - V[adress];
+                }
+            }
+
+            int[] dVy = new int[inputImage.Width * inputImage.Height];
+            for (int x = 0; x < inputImage.Width; x++)
+            {
+                dVy[x] = 0;
+                for (int y = 1; y < inputImage.Height - 1; y++)
+                {
+                    adress = x + inputImage.Width * y;
+                    dVy[adress] = V[adress + inputImage.Width * y] - V[adress];
+                }
+            }
+
+
+
+            Vector2[] bumps = new Vector2[size];
+            for (int x = 0; x < inputImage.Width; x++)
+            {
+                for (int y = 0; y < inputImage.Height; y++)
+                {
+                    adress = x + inputImage.Width * y;
+                    bumps[adress] = new Vector2(dVx[adress], dVy[adress]);
+                }
+            }
+
+
+            return bumps;
+
+        }
+
+
+        private int Max(int a, int b, int c)
+        {
+            if (a > b)
+            {
+                if (a > c)
+                {
+                    return a;
+                }
+                else
+                {
+                    return c;
+                }
+            }
+            else
+            {
+                if (b > c)
+                {
+                    return b;
+                }
+                else
+                {
+                    return c;
+                }
+            }
+        }
+
 
         float scale = 0.006f;
         double[,] noise;

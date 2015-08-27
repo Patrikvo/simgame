@@ -72,23 +72,16 @@ namespace Simgame2
 
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        private const int mapSize = 80;   // 20 40 80 160 320 640 1280
-        private const float rotationSpeed = 0.3f;
-        private const float moveSpeed = 60.0f;
-        private const float riseSpeed = 60.0f;
-        private const float dropSpeed = 30.0f;
+        private const int mapNumCellsPerSide = 320;   // 20 40 80 160 320 640 1280
 
         // Rendering objects
         private GraphicsDeviceManager graphics;
         private GraphicsDevice device;
-        private Matrix viewMatrix;
-        public Matrix projectionMatrix;
         private Effect effect;
 
         // Camera objects
-        private Vector3 cameraPosition = new Vector3(50, 25, -50);
-        private float leftrightRot = 2 * MathHelper.Pi;
-        private float updownRot = -MathHelper.Pi / 10.0f;
+        private Camera PlayerCamera;
+
 
         // Input/output objects
         private MouseState originalMouseState;
@@ -97,8 +90,6 @@ namespace Simgame2
 
         // Game Objects
         private WorldMap worldMap;
-       // private Entity xwing;
-        private EntityBuilding building;
         public TextureGenerator textureGenerator;
 
         
@@ -121,12 +112,10 @@ namespace Simgame2
 
         protected override void Initialize()
         {
-
-            graphics.PreferredBackBufferWidth = 750;
-            graphics.PreferredBackBufferHeight = 750;
+            graphics.PreferredBackBufferWidth = 900;
+            graphics.PreferredBackBufferHeight = 900;
             graphics.IsFullScreen = false;
             graphics.ApplyChanges();
-
             base.Initialize();
         }
 
@@ -134,16 +123,19 @@ namespace Simgame2
 
         private EntityFactory entityFactory;
 
+        private bool doneLoading = false;
 
         protected override void LoadContent()
         {
             font = Content.Load<SpriteFont>("Courier New");
             device = graphics.GraphicsDevice;
             effect = Content.Load<Effect>("Series4Effects");
+
+
             
-
-
-            SetUpCamera();
+            worldMap = new WorldMap(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
+            PlayerCamera = new Camera(device.Viewport.AspectRatio);
+            PlayerCamera.worldMap = worldMap;
 
             // Place mouse position to the center of the screen.
             Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
@@ -156,41 +148,29 @@ namespace Simgame2
             Texture2D texture = textureGenerator.GenerateGroundTexture(new Color(120, 62, 62, 1), new Vector3(20, 20, 20), 512);
 
 
-
-            worldMap = new WorldMap(this, mapSize, mapSize);
-            worldMap.effect = effect;
-            worldMap.projectionMatrix = projectionMatrix;
-            worldMap.device = device;
-
-            worldMap.Initialize();
             worldMap.waterBumpMap = Content.Load<Texture2D>("waterbump");
 
 
-            worldMap.groundTexture = texture;
-            worldMap.textureSize = 64;
+            worldMap.groundTexture = Content.Load<Texture2D>("Textures\\tex1");
+            worldMap.sandTexture = Content.Load<Texture2D>("Textures\\tex0");
+            worldMap.rockTexture = Content.Load<Texture2D>("Textures\\tex2");
+            worldMap.snowTexture = Content.Load<Texture2D>("Textures\\tex3");
 
-            worldMap.sandTexture = Content.Load<Texture2D>("sand");
-            worldMap.rockTexture = Content.Load<Texture2D>("rock");
-            worldMap.snowTexture = Content.Load<Texture2D>("snow");
+
+
+            worldMap.textureSize = 512;
 
             worldMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, WorldMap.mapCellScale);
 
             // skydome
-            worldMap.skyDome = Content.Load<Model>("dome");
-            worldMap.skyDome.Meshes[0].MeshParts[0].Effect = effect.Clone();
-            worldMap.cloudMap = Content.Load<Texture2D>("cloudMap");
+            worldMap.LoadSkyDome(Content.Load<Model>("dome"));
+
+
+            PlayerCamera.UpdateViewMatrix();
 
 
 
-            UpdateViewMatrix();
-
-
-
-
-
-            Effect modelEffect = Content.Load<Effect>("Effects");
-
-            entityFactory = EntityFactory.CreateFactory(this, this.worldMap);
+            entityFactory = EntityFactory.CreateFactory(this, this.worldMap, PlayerCamera.projectionMatrix);
 
             EntityBuilding minebuilding = entityFactory.CreateBasicMine(new Vector3(100, 0, -100), true);
 
@@ -203,16 +183,16 @@ namespace Simgame2
 
 
             selBuilding = new EntityBuilding(this);
-            selBuilding.LoadModel("testbuilding", modelEffect);
+            selBuilding.LoadModel("testbuilding", effect);
             selBuilding.location = new Vector3(50, 12, -50);
             selBuilding.scale = new Vector3(1f, 1f, 1f);
             selBuilding.rotation = new Vector3(0, MathHelper.Pi, 0);
-            selBuilding.projectionMatrix = projectionMatrix;
+            selBuilding.projectionMatrix = PlayerCamera.projectionMatrix;
             selBuilding.AddTexture(Content.Load<Texture2D>("testbuildingtex"));
 
 
 
-
+            doneLoading = true;
         }
 
 
@@ -234,25 +214,7 @@ namespace Simgame2
 
             float timeDifference = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000.0f;
 
-            // keeps camera at a set height above the terrain.
-            int intendedCameraHeight = (worldMap.getCellFromWorldCoor(cameraPosition.X, -cameraPosition.Z)) + CameraHeightOffset;
-
-            if (cameraHeight < intendedCameraHeight)
-            {
-                cameraHeight += riseSpeed * gameTime.ElapsedGameTime.TotalSeconds;
-                if (cameraHeight > intendedCameraHeight)
-                {
-                    cameraHeight = intendedCameraHeight;
-                }
-            }
-            else if (cameraHeight > intendedCameraHeight)
-            {
-                cameraHeight -= dropSpeed * gameTime.ElapsedGameTime.TotalSeconds;
-                if (cameraHeight < intendedCameraHeight)
-                {
-                    cameraHeight = intendedCameraHeight;
-                }
-            }
+            PlayerCamera.AdjustCameraAltitude(gameTime);
 
 
 
@@ -268,8 +230,8 @@ namespace Simgame2
             {
                 
 
-                Vector3 offset = Vector3.Transform(new Vector3(0, 0, -50), Matrix.CreateRotationY(leftrightRot));
-                selBuilding.location = cameraPosition + offset;
+                Vector3 offset = Vector3.Transform(new Vector3(0, 0, -50), Matrix.CreateRotationY(PlayerCamera.leftrightRot));
+                selBuilding.location = PlayerCamera.GetCameraPostion() + offset;
 
                 selBuilding.PlaceBuilding(worldMap, false);
 
@@ -280,15 +242,33 @@ namespace Simgame2
         }
 
 
-        public Texture2D debugImg = null;
 
+
+
+        public Texture2D debugImg = null;
+        bool showDebugImg = false;
         private int fps = 0;
+        private float fps_avg = 0;
+        private int fps_sampleSize = 10;
+        private int fps_SampleNum = 10;
         private SpriteBatch spriteBatch;
+
         protected override void Draw(GameTime gameTime)
         {
+            if (!doneLoading) { return; }
+
             if (gameTime.ElapsedGameTime.Milliseconds != 0)
             {
-                fps = (int)(1000 / gameTime.ElapsedGameTime.Milliseconds);
+               // fps = (int)(1000 / gameTime.ElapsedGameTime.Milliseconds);
+                fps_avg += (1000 / gameTime.ElapsedGameTime.Milliseconds);
+                fps_SampleNum--;
+                if (fps_SampleNum <= 0)
+                {
+                    fps = (int)(fps_avg / fps_sampleSize);
+                    fps_SampleNum = fps_sampleSize;
+                    fps_avg = 0;
+                }
+
             }
 
             
@@ -296,16 +276,18 @@ namespace Simgame2
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
 
 
-            worldMap.Draw(viewMatrix, cameraPosition, gameTime);
+            worldMap.Draw(PlayerCamera, gameTime);
 
 
             // Draws stats
             spriteBatch = new SpriteBatch(this.device);
             spriteBatch.Begin();
             Vector2 pos = new Vector2(20, 20);
-            Rectangle rect = new Rectangle(20, 50, 100, 100);
+            Vector2 pos2 = new Vector2(20, 60);
+            Rectangle rect = new Rectangle(20, 50, 400, 400);
             spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + worldMap.GetStats(), pos,Color.White);
-            if (debugImg != null)
+            spriteBatch.DrawString(font, "(" + this.PlayerCamera.GetCameraPostion().X + ", " + this.PlayerCamera.GetCameraPostion().Y + ", " + this.PlayerCamera.GetCameraPostion().Z + ")", pos2, Color.White);
+            if (debugImg != null && showDebugImg == true)
             {
                 spriteBatch.Draw(debugImg, rect, Color.White);
             }
@@ -321,12 +303,9 @@ namespace Simgame2
         bool isPlacingBuilding = false;
         bool mouseButtonDown = false;
         bool ButtonSpaceDown = false;
+        bool ButtonXDown = false;
 
-        private void SetUpCamera()
-        {
-            viewMatrix = Matrix.CreateLookAt(new Vector3(0, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 0, -1));
-            projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, device.Viewport.AspectRatio, 1.0f, 300.0f);
-        }
+
 
         private void ProcessInput(float amount)
         {
@@ -337,10 +316,10 @@ namespace Simgame2
             {
                 float xDifference = currentMouseState.X - originalMouseState.X;
                  yDifference = currentMouseState.Y - originalMouseState.Y;
-                leftrightRot -= rotationSpeed * xDifference * amount;
-                updownRot -= rotationSpeed * yDifference * amount;
+                 PlayerCamera.leftrightRot -= Camera.rotationSpeed * xDifference * amount;
+                 PlayerCamera.updownRot -= Camera.rotationSpeed * yDifference * amount;
                 Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
-                UpdateViewMatrix();
+                PlayerCamera.UpdateViewMatrix();
             }
 
             Vector3 moveVector = new Vector3(0, 0, 0);
@@ -356,6 +335,10 @@ namespace Simgame2
             if (keyState.IsKeyDown(Keys.Escape))
                     this.Exit();
 
+            if (keyState.IsKeyDown(Keys.Pause))
+            {
+                int gg = 0;
+            }
 
 
 
@@ -367,6 +350,17 @@ namespace Simgame2
                 isPlacingBuilding = !isPlacingBuilding;
                 ButtonSpaceDown = false;
             }
+
+            if (keyState.IsKeyDown(Keys.X))
+                ButtonXDown = true;
+
+            if (keyState.IsKeyUp(Keys.X) && ButtonXDown == true)
+            {
+                showDebugImg = !showDebugImg;
+                ButtonXDown = false;
+            }
+
+         
 
             if (currentMouseState.LeftButton == ButtonState.Pressed)
             {
@@ -387,69 +381,14 @@ namespace Simgame2
             }
 
          
-
-            AddToCameraPosition(moveVector * amount);
-
-
-
-        }
-        private const int CameraHeightOffset = 25;
-        private double cameraHeight;
-        private void AddToCameraPosition(Vector3 vectorToAdd)
-        {
-            Matrix cameraRotation = Matrix.CreateRotationX(0) * Matrix.CreateRotationY(leftrightRot);
-            Vector3 rotatedVector = Vector3.Transform(vectorToAdd, cameraRotation);
-            cameraPosition += moveSpeed * rotatedVector;
-
-            float camX = cameraPosition.X;
-            float camZ = cameraPosition.Z;
-
-            if (camX < 0) { camX = 0;  }
-            if (camX > (worldMap.getMapWidth() * WorldMap.mapCellScale)) { camX = (worldMap.getMapWidth() * WorldMap.mapCellScale); }
-
-            if (camZ > 0) { camZ = 0; }
-            if (camZ < -((worldMap.getMapHeight() * WorldMap.mapCellScale)-1)) { camZ = -((worldMap.getMapHeight() * WorldMap.mapCellScale) -1 ); }
-
-            cameraPosition = new Vector3(camX, (float)cameraHeight, camZ);
-            //cameraPosition = new Vector3(cameraPosition.X, (float)cameraHeight, cameraPosition.Z);
-            UpdateViewMatrix();
-        }
-
-        private void UpdateViewMatrix()
-        {
-            Matrix cameraRotation = Matrix.CreateRotationX(updownRot) * Matrix.CreateRotationY(leftrightRot);
-            //Matrix cameraRotation = Matrix.CreateRotationX(-MathHelper.Pi/6) * Matrix.CreateRotationY(leftrightRot);
-
-            Vector3 cameraOriginalTarget = new Vector3(0, 0, -1);
-            Vector3 cameraOriginalUpVector = new Vector3(0, 1, 0);
-
-            Vector3 cameraRotatedTarget = Vector3.Transform(cameraOriginalTarget, cameraRotation);
-            Vector3 cameraFinalTarget = cameraPosition + cameraRotatedTarget;
-
-            Vector3 cameraRotatedUpVector = Vector3.Transform(cameraOriginalUpVector, cameraRotation);
-
-            viewMatrix = Matrix.CreateLookAt(cameraPosition, cameraFinalTarget, cameraRotatedUpVector);
-
-            worldMap.updateCameraRay(new Ray(cameraPosition, cameraRotatedTarget));
-
-
-            Vector3 reflCameraPosition = cameraPosition;
-            reflCameraPosition.Y = -cameraPosition.Y + (WorldMap.waterHeight*2);
-            Vector3 reflTargetPos = cameraFinalTarget;
-            reflTargetPos.Y = -cameraFinalTarget.Y + (WorldMap.waterHeight*2);
-        //    reflTargetPos.Y = -cameraFinalTarget.Y - (WorldMap.waterHeight * 2);
-
-
- 
-            Vector3 forwardVector = reflTargetPos - reflCameraPosition;
-            Vector3 sideVector = Vector3.Transform(new Vector3(1, 0, 0), cameraRotation); 
-            Vector3 reflectionCamUp = Vector3.Cross(sideVector, forwardVector);
-            worldMap.reflectionViewMatrix = Matrix.CreateLookAt(reflCameraPosition, reflTargetPos, reflectionCamUp);
-
-           
+            PlayerCamera.AddToCameraPosition(moveVector * amount);
             
 
+
         }
+
+ 
+
 
 
 

@@ -76,6 +76,7 @@
     <Compile Include="Buildings\Melter.cs" />
     <Compile Include="Buildings\SolarPlant.cs" />
     <Compile Include="Buildings\WindTower.cs" />
+    <Compile Include="Camera.cs" />
     <Compile Include="Entity.cs" />
     <Compile Include="EntityBuilding.cs" />
     <Compile Include="EntityFactory.cs" />

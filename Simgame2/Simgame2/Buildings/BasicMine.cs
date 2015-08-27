@@ -18,7 +18,7 @@ namespace Simgame2.Buildings
         public BasicMine(Game game)
             : base(game)
         {
-            this.projectionMatrix = ((Game1)game).projectionMatrix;
+           
         }
 
         public void Initialize(Vector3 scale, Vector3 rotation)
