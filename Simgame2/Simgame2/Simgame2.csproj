@@ -80,6 +80,7 @@
     <Compile Include="Entity.cs" />
     <Compile Include="EntityBuilding.cs" />
     <Compile Include="EntityFactory.cs" />
+    <Compile Include="GUI.cs" />
     <Compile Include="Noise.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />

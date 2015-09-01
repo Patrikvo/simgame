@@ -87,6 +87,10 @@ namespace Simgame2
         private MouseState originalMouseState;
         private SpriteFont font;
 
+        // GUI
+
+        GUI HUD_overlay;
+
 
         // Game Objects
         private WorldMap worldMap;
@@ -107,6 +111,7 @@ namespace Simgame2
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+            
         }
 
 
@@ -116,6 +121,7 @@ namespace Simgame2
             graphics.PreferredBackBufferHeight = 900;
             graphics.IsFullScreen = false;
             graphics.ApplyChanges();
+            HUD_overlay = new GUI(this);
             base.Initialize();
         }
 
@@ -137,11 +143,15 @@ namespace Simgame2
             PlayerCamera = new Camera(device.Viewport.AspectRatio);
             PlayerCamera.worldMap = worldMap;
 
+
+
             // Place mouse position to the center of the screen.
             Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
             originalMouseState = Mouse.GetState();
 
-
+            HUD_overlay.AddButton(Content.Load<Texture2D>("GUI\\test"), Content.Load<Texture2D>("GUI\\test2"));
+            HUD_overlay.AddButton(Content.Load<Texture2D>("GUI\\test"), Content.Load<Texture2D>("GUI\\test2"));
+            HUD_overlay.AddButton(Content.Load<Texture2D>("GUI\\test"), Content.Load<Texture2D>("GUI\\test2"));
 
             textureGenerator = new TextureGenerator(this);
            // texture = textureGenerator.GenerateGroundTexture(new Color(124, 124, 124, 1), new Vector3(0,39,39), 512);
@@ -155,8 +165,6 @@ namespace Simgame2
             worldMap.sandTexture = Content.Load<Texture2D>("Textures\\tex0");
             worldMap.rockTexture = Content.Load<Texture2D>("Textures\\tex2");
             worldMap.snowTexture = Content.Load<Texture2D>("Textures\\tex3");
-
-
 
             worldMap.textureSize = 512;
 
@@ -292,8 +300,11 @@ namespace Simgame2
                 spriteBatch.Draw(debugImg, rect, Color.White);
             }
             spriteBatch.End();
-            
 
+            if (!CaptureMouse)
+            {
+                HUD_overlay.Draw(gameTime, this.device);
+            }
 
             base.Draw(gameTime);
         }
@@ -301,18 +312,19 @@ namespace Simgame2
 
 
         bool isPlacingBuilding = false;
-        bool mouseButtonDown = false;
+        bool mouseLeftButtonDown = false;
+        bool mouseRightButtonDown = false;
         bool ButtonSpaceDown = false;
         bool ButtonXDown = false;
 
-
+        bool CaptureMouse = true;
 
         private void ProcessInput(float amount)
         {
             MouseState currentMouseState = Mouse.GetState();
             float yDifference = 0;
 
-            if (currentMouseState != originalMouseState)
+            if (currentMouseState != originalMouseState && CaptureMouse)
             {
                 float xDifference = currentMouseState.X - originalMouseState.X;
                  yDifference = currentMouseState.Y - originalMouseState.Y;
@@ -364,12 +376,12 @@ namespace Simgame2
 
             if (currentMouseState.LeftButton == ButtonState.Pressed)
             {
-                mouseButtonDown = true;
+                mouseLeftButtonDown = true;
             }
 
-            if (currentMouseState.LeftButton == ButtonState.Released && mouseButtonDown == true)
+            if (currentMouseState.LeftButton == ButtonState.Released && mouseLeftButtonDown == true)
             {
-                mouseButtonDown = false;
+                mouseLeftButtonDown = false;
                 if (isPlacingBuilding)
                 {
                     isPlacingBuilding = false;
@@ -379,6 +391,40 @@ namespace Simgame2
                     selBuilding = new EntityBuilding(selBuilding);
                 }
             }
+
+            if (currentMouseState.RightButton == ButtonState.Pressed)
+            {
+                mouseRightButtonDown = true;
+            }
+
+            if (currentMouseState.RightButton == ButtonState.Released && mouseRightButtonDown == true)
+            {
+                mouseRightButtonDown = false;
+
+                CaptureMouse = !CaptureMouse;
+
+                if (CaptureMouse)
+                {
+                    Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
+                    originalMouseState = Mouse.GetState();
+                    this.IsMouseVisible = false;
+                }
+                else
+                {
+                    this.IsMouseVisible = true;
+                }
+            }
+
+            if (!CaptureMouse)
+            {
+
+                HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, currentMouseState.LeftButton == ButtonState.Pressed);
+            }
+            else
+            {
+                HUD_overlay.Update(0, 0, false);
+            }
+
 
          
             PlayerCamera.AddToCameraPosition(moveVector * amount);
