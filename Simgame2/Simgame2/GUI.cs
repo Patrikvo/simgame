@@ -14,7 +14,11 @@ namespace Simgame2
 {
     public class GUI
     {
-        public GUI(Game game)
+        // TODO allow mouse button clicking a button actually do something (now it is just a visible action)
+
+        private Game1 game;
+
+        public GUI(Game1 game)
         {
             this.buttonWidth = 100;
             this.buttonHeight = 100;
@@ -22,6 +26,8 @@ namespace Simgame2
 
             this.upper = game.GraphicsDevice.Viewport.Height - this.buttonHeight;
             this.left = 0;
+
+            this.game = game;
         }
 
         public void Initialize()
@@ -49,6 +55,14 @@ namespace Simgame2
             batch.End();
         }
 
+        public void doNothing()
+        {
+        }
+
+        public void PlaceBuilding()
+        {
+            this.game.ChangeGameState(Game1.GameInputState.PLACE_BUILDING);
+        }
 
         public void AddButton(Texture2D imageReleased, Texture2D imagePressed)
         {
@@ -56,6 +70,7 @@ namespace Simgame2
             {
                 buttons = new Button[1];
                 buttons[0] = new Button(imageReleased, imagePressed, this.upper, this.left, this.buttonWidth, this.buttonHeight);
+                buttons[0].MouseClick += PlaceBuilding;
             }
             else
             {
@@ -67,6 +82,7 @@ namespace Simgame2
                     newButtons[i] = buttons[i];
                 }
                 newButtons[buttons.Length] = new Button(imageReleased, imagePressed, this.upper, buttons.Length * this.buttonWidth, this.buttonWidth, this.buttonHeight);
+                newButtons[buttons.Length].MouseClick += doNothing;
                 buttons = newButtons;
             }
 
@@ -84,8 +100,8 @@ namespace Simgame2
 
         private class Button
         {
-            public bool Pressed;
-            public bool MouseOver;
+            public bool Pressed = false;
+            public bool MouseOver = false;
             public int Upper;
             public int Left;
             public int Width;
@@ -105,11 +121,13 @@ namespace Simgame2
                 this.Height = height;
             }
 
+            
+
             public void Update(int mouseX, int mouseY, bool LeftButtonDown)
             {
                 // is mouse cursor over this image?
                 this.MouseOver = false;
-                this.Pressed = false;
+                
                 if (mouseX > this.Left && mouseX < (this.Left + this.Width) && mouseY > this.Upper && mouseY < (this.Upper + this.Height))
                 {
                     this.MouseOver = true;
@@ -117,6 +135,14 @@ namespace Simgame2
                     if (LeftButtonDown == true)
                     {
                         this.Pressed = true;
+                    }
+                    else
+                    {
+                        if (this.Pressed == true)
+                        {
+                            MouseClick();
+                            this.Pressed = false;
+                        }
                     }
                 }
             }
@@ -142,6 +168,10 @@ namespace Simgame2
                     batch.Draw(Image_released, pos, color);
                 }
             }
+
+            public Click MouseClick;
+
+            public delegate void Click();
 
         }
 

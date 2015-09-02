@@ -80,6 +80,10 @@
     <Compile Include="Entity.cs" />
     <Compile Include="EntityBuilding.cs" />
     <Compile Include="EntityFactory.cs" />
+    <Compile Include="GameStates\FreeLook.cs" />
+    <Compile Include="GameStates\GameState.cs" />
+    <Compile Include="GameStates\MousePointerLook.cs" />
+    <Compile Include="GameStates\PlaceBuilding.cs" />
     <Compile Include="GUI.cs" />
     <Compile Include="Noise.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
