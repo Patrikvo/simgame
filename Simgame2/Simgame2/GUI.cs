@@ -61,7 +61,7 @@ namespace Simgame2
 
         public void PlaceBuilding()
         {
-            this.game.ChangeGameState(Game1.GameInputState.PLACE_BUILDING);
+            this.game.ChangeGameState(this.game.PlaceBuildingState);
         }
 
         public void AddButton(Texture2D imageReleased, Texture2D imagePressed)

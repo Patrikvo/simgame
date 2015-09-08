@@ -76,30 +76,34 @@ namespace Simgame2
 
         // Rendering objects
         private GraphicsDeviceManager graphics;
-        private GraphicsDevice device;
+        public GraphicsDevice device;
         private Effect effect;
 
         // Camera objects
-        private Camera PlayerCamera;
+        public Camera PlayerCamera;
 
 
         // Input/output objects
-        private MouseState originalMouseState;
         private SpriteFont font;
 
         // GUI
 
-        GUI HUD_overlay;
+        public GUI HUD_overlay;
 
 
         // Game Objects
-        private WorldMap worldMap;
+        public WorldMap worldMap;
         public TextureGenerator textureGenerator;
 
-        
+        public GameStates.GameState CurrentGameState;
+        public GameStates.FreeLook FreeLookState;
+        public GameStates.MousePointerLook MousePointerLookState;
+        public GameStates.PlaceBuilding PlaceBuildingState;
+
+
         // test objects
 
-        private EntityBuilding selBuilding;
+        public EntityBuilding selBuilding;
 
 
        
@@ -111,7 +115,11 @@ namespace Simgame2
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            gameInputState = GameInputState.FREE_LOOK;
+            
+            FreeLookState = new GameStates.FreeLook(this);
+            MousePointerLookState = new GameStates.MousePointerLook(this);
+            PlaceBuildingState = new GameStates.PlaceBuilding(this);
+
         }
 
 
@@ -127,7 +135,7 @@ namespace Simgame2
 
 
 
-        private EntityFactory entityFactory;
+        public EntityFactory entityFactory;
 
         private bool doneLoading = false;
 
@@ -142,12 +150,6 @@ namespace Simgame2
             worldMap = new WorldMap(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
             PlayerCamera = new Camera(device.Viewport.AspectRatio);
             PlayerCamera.worldMap = worldMap;
-
-
-
-            // Place mouse position to the center of the screen.
-            Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
-            originalMouseState = Mouse.GetState();
 
             HUD_overlay.AddButton(Content.Load<Texture2D>("GUI\\test"), Content.Load<Texture2D>("GUI\\test2"));
             HUD_overlay.AddButton(Content.Load<Texture2D>("GUI\\test"), Content.Load<Texture2D>("GUI\\test2"));
@@ -201,6 +203,7 @@ namespace Simgame2
 
 
             doneLoading = true;
+            ChangeGameState(FreeLookState);
         }
 
 
@@ -216,36 +219,7 @@ namespace Simgame2
 
         protected override void Update(GameTime gameTime)
         {
-            // Allows the game to exit
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
-                this.Exit();
-
-            float timeDifference = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000.0f;
-
-            PlayerCamera.AdjustCameraAltitude(gameTime);
-
-
-
-
-            ProcessInput(timeDifference);
-
-            entityFactory.Update(gameTime);
-
-
-            // place building code
-            selBuilding.RemoveBuilding(worldMap);
-
-            if (gameInputState == GameInputState.PLACE_BUILDING)
-            {
-                
-
-                Vector3 offset = Vector3.Transform(new Vector3(0, 0, -50), Matrix.CreateRotationY(PlayerCamera.leftrightRot));
-                selBuilding.location = PlayerCamera.GetCameraPostion() + offset;
-
-                selBuilding.PlaceBuilding(worldMap, false);
-
-            }
-
+            this.CurrentGameState.Update(gameTime);
 
             base.Update(gameTime);
         }
@@ -255,7 +229,7 @@ namespace Simgame2
 
 
         public Texture2D debugImg = null;
-        bool showDebugImg = false;
+        public bool showDebugImg = false;
         private int fps = 0;
         private float fps_avg = 0;
         private int fps_sampleSize = 10;
@@ -302,7 +276,7 @@ namespace Simgame2
             }
             spriteBatch.End();
 
-            if (gameInputState == GameInputState.MOUSE_POINTER || gameInputState == GameInputState.PLACE_BUILDING)
+            if (CurrentGameState is GameStates.MousePointerLook || CurrentGameState is GameStates.PlaceBuilding)
             {
                 HUD_overlay.Draw(gameTime, this.device);
             }
@@ -312,214 +286,32 @@ namespace Simgame2
 
 
 
-        bool mouseLeftButtonDown = false;
-        bool mouseRightButtonDown = false;
-        bool ButtonSpaceDown = false;
-        bool ButtonXDown = false;
 
 
-        private void ProcessInput(float amount)
+
+
+        public void ChangeGameState(GameStates.GameState newstate)
         {
-            MouseState currentMouseState = Mouse.GetState();
-            float yDifference = 0;
-
-            if (currentMouseState != originalMouseState && gameInputState == GameInputState.FREE_LOOK)
+            if (CurrentGameState != null)
             {
-                float xDifference = currentMouseState.X - originalMouseState.X;
-                 yDifference = currentMouseState.Y - originalMouseState.Y;
-                 PlayerCamera.leftrightRot -= Camera.rotationSpeed * xDifference * amount;
-                 PlayerCamera.updownRot -= Camera.rotationSpeed * yDifference * amount;
-                Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
-                PlayerCamera.UpdateViewMatrix();
+                CurrentGameState.ExitState();
             }
 
-            Vector3 moveVector = new Vector3(0, 0, 0);
-            KeyboardState keyState = Keyboard.GetState();
-            if (keyState.IsKeyDown(Keys.Up) || keyState.IsKeyDown(Keys.W))
-                moveVector += new Vector3(0, 0, -1);
-            if (keyState.IsKeyDown(Keys.Down) || keyState.IsKeyDown(Keys.S))
-                moveVector += new Vector3(0, 0, 1);
-            if (keyState.IsKeyDown(Keys.Right) || keyState.IsKeyDown(Keys.D))
-                moveVector += new Vector3(1, 0, 0);
-            if (keyState.IsKeyDown(Keys.Left) || keyState.IsKeyDown(Keys.A))
-                moveVector += new Vector3(-1, 0, 0);
-            if (keyState.IsKeyDown(Keys.Escape))
-                    this.Exit();
-
-            if (keyState.IsKeyDown(Keys.Pause))
+            if (newstate != null)
             {
-                int gg = 0;
+                CurrentGameState = newstate;
+                CurrentGameState.EnterState();
             }
-
-
-
-
-
-
-            if (keyState.IsKeyDown(Keys.Space))
-                ButtonSpaceDown = true;
-
-            if (keyState.IsKeyUp(Keys.Space) && ButtonSpaceDown == true)
-            {
-                if (gameInputState == GameInputState.MOUSE_POINTER)
-                {
-                    ChangeGameState(GameInputState.PLACE_BUILDING);
-                }
-                else if (gameInputState == GameInputState.PLACE_BUILDING)
-                {
-                    ChangeGameState(GameInputState.MOUSE_POINTER);
-                }
-                ButtonSpaceDown = false;
-            }
-
-            if (keyState.IsKeyDown(Keys.X))
-                ButtonXDown = true;
-
-            if (keyState.IsKeyUp(Keys.X) && ButtonXDown == true)
-            {
-                showDebugImg = !showDebugImg;
-                ButtonXDown = false;
-            }
-
-         
-
-            if (currentMouseState.LeftButton == ButtonState.Pressed)
-            {
-                mouseLeftButtonDown = true;
-            }
-
-            if (currentMouseState.LeftButton == ButtonState.Released && mouseLeftButtonDown == true)
-            {
-                mouseLeftButtonDown = false;
-                if (gameInputState == GameInputState.PLACE_BUILDING)
-                {
-                    ChangeGameState(GameInputState.MOUSE_POINTER);
-                    selBuilding.RemoveBuilding(worldMap);
-                    selBuilding.PlaceBuilding(worldMap, true);
-
-                    selBuilding = new EntityBuilding(selBuilding);
-                }
-            }
-
-            if (currentMouseState.RightButton == ButtonState.Pressed)
-            {
-                mouseRightButtonDown = true;
-            }
-
-            if (currentMouseState.RightButton == ButtonState.Released && mouseRightButtonDown == true)
-            {
-                mouseRightButtonDown = false;
-
-                if (gameInputState == GameInputState.FREE_LOOK)
-                {
-                    ChangeGameState(GameInputState.MOUSE_POINTER);
-                }
-                else if (gameInputState == GameInputState.MOUSE_POINTER || gameInputState == GameInputState.PLACE_BUILDING)
-                {
-                    ChangeGameState(GameInputState.FREE_LOOK);
-                }
-            }
-
-            if (gameInputState == GameInputState.MOUSE_POINTER || gameInputState == GameInputState.PLACE_BUILDING)
-            {
-
-                HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, currentMouseState.LeftButton == ButtonState.Pressed);
-            }
-            else
-            {
-                HUD_overlay.Update(0, 0, false);
-            }
-
-
-         
-            PlayerCamera.AddToCameraPosition(moveVector * amount);
-            
-
-
         }
 
 
-        private GameInputState gameInputState;
-
-        public void ChangeGameState(GameInputState newstate)
-        {
-            switch (gameInputState)
-            {
-                case GameInputState.FREE_LOOK:
-                    switch (newstate)
-                    {
-                        case GameInputState.FREE_LOOK: break;  // no change
-                        case GameInputState.MOUSE_POINTER:
-                            DoMousePointer();
-                            break;
-                        case GameInputState.PLACE_BUILDING:
-                            DoPlaceBuilding();
-                            break;
-
-                    }
-
-                    break;
-                case GameInputState.MOUSE_POINTER:
-                    switch (newstate)
-                    {
-                        case GameInputState.FREE_LOOK:
-                            DoFreeLook();
-                            break;
-                        case GameInputState.MOUSE_POINTER: break; // no change
-                        case GameInputState.PLACE_BUILDING:
-                            DoPlaceBuilding();
-                            break;
-
-                    }
-                    break;
-                case GameInputState.PLACE_BUILDING:
-                    switch (newstate)
-                    {
-                        case GameInputState.FREE_LOOK:
-                            DoFreeLook();
-                            break; 
-                        case GameInputState.MOUSE_POINTER:
-                            DoMousePointer();
-                            break;
-                        case GameInputState.PLACE_BUILDING: break; // no change
-
-                    }
-                    break;
-            }
 
 
-            gameInputState = newstate;
-        }
-
-
-        private void DoFreeLook()
-        {
-            Mouse.SetPosition(device.Viewport.Width / 2, device.Viewport.Height / 2);
-            originalMouseState = Mouse.GetState();
-            this.IsMouseVisible = false;
-        }
-
-        private void DoMousePointer()
-        {
-            this.IsMouseVisible = true;
-        }
-
-        private void DoPlaceBuilding()
-        {
-
-        }
 
         private string DebugState() 
         {  
-            if (gameInputState == GameInputState.FREE_LOOK)  return "F";
-            if (gameInputState == GameInputState.MOUSE_POINTER) return "M";
-            if (gameInputState == GameInputState.PLACE_BUILDING) return "P";
-            return "?";
+            return CurrentGameState.GetShortName();
         }
-
-        public enum GameInputState {  FREE_LOOK, MOUSE_POINTER, PLACE_BUILDING}
-
-
 
     }
 }
