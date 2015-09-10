@@ -38,7 +38,14 @@ namespace Simgame2
 
             this.heightMap = new int[mapNumCellsPerRow * mapNumCellPerColumn];
             this.textureMap = new Vector4[mapNumCellsPerRow * mapNumCellPerColumn];
+
+            this.textureSize = 512;
+
             generateMap();
+
+            PrecalculateVertices();
+
+
 
         //    lookingAt = new Vector3(float.MinValue);
 
@@ -174,6 +181,9 @@ namespace Simgame2
             return this.heightMap[getCellAdress(x, y)];
         }
 
+        
+
+
         public Vector4 getCellTexWeights(int x, int y)
         {
             if (x < 0 || y < 0 || x >= this.mapNumCellsPerRow || y >= this.mapNumCellPerColumn)
@@ -187,17 +197,21 @@ namespace Simgame2
         public void setCell(int x, int y, int value)
         {
             this.heightMap[getCellAdress(x, y)] = value;
+            if (globalVertices != null)
+            {
+                globalVertices[getCellAdress(x, y)].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
+            }
         }
 
         public void setCell(int x, int y, int value, Vector4 textureWeights)
         {
-            this.heightMap[getCellAdress(x, y)] = value;
+            setCell(x, y, value);
             this.textureMap[getCellAdress(x, y)] = new Vector4(textureWeights.X, textureWeights.Y, textureWeights.Z, textureWeights.W);
         }
 
         public void setCell(int x, int y, int value, float tex_x, float tex_y, float tex_z, float tex_w)
         {
-            this.heightMap[getCellAdress(x, y)] = value;
+            setCell(x, y, value);
             this.textureMap[getCellAdress(x, y)] = new Vector4(tex_x, tex_y, tex_z, tex_w);
         }
 
@@ -487,64 +501,113 @@ namespace Simgame2
 
 
             vertices = new VertexMultitextured[regionWidth * regionHeight];
+            float mapCellScaleDivTextureSize = mapCellScale / textureSize;
+
+
             for (int x = regionLeft; x < regionRight; x++)
             {
+
                 for (int y = regionUp; y < regionDown; y++)
                 {
                     int adress = (x - regionLeft) + (y - regionUp) * regionWidth;
-
-               
+                  
+/*
                     vertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
 
-                    vertices[adress].TextureCoordinate.X = ((float)(x * mapCellScale) ) / textureSize;
-                    vertices[adress].TextureCoordinate.Y = ((float)(y * mapCellScale) ) / textureSize;
+                  //  vertices[adress].TextureCoordinate.X = ((float)(x * mapCellScale) ) / textureSize;
+                   // vertices[adress].TextureCoordinate.Y = ((float)(y * mapCellScale) ) / textureSize;
 
+                    vertices[adress].TextureCoordinate.X = ((float)(x * mapCellScaleDivTextureSize));
+                    vertices[adress].TextureCoordinate.Y = ((float)(y * mapCellScaleDivTextureSize));
   
 
-                    vertices[adress].TexWeights = getCellTexWeights(x,y);
+                    vertices[adress].TexWeights = getCellTexWeights(x,y);*/
 
 
-
+                    vertices[adress] = globalVertices[getCellAdress(x, y)];
                 }
             }
 
 
+            updateIndices(regionWidth, regionHeight);
 
-            indices = new Int16[(regionWidth - 1) * (regionHeight - 1) * 6];
-            int counter = 0;
-            for (int y = 0; y < regionHeight - 1; y++)
-            {
-                for (int x = 0; x < regionWidth - 1; x++)
-                {
-                    Int16 lowerLeft = (Int16)(x + y * regionWidth);
-                    Int16 lowerRight = (Int16)((x + 1) + y * regionWidth);
-                    Int16 topLeft = (Int16)(x + (y + 1) * regionWidth);
-                    Int16 topRight = (Int16)((x + 1) + (y + 1) * regionWidth);
-
-                    // DEBUG
-                    if (topLeft < 0 || lowerRight < 0 || lowerLeft < 0 || topRight < 0)
-                    {
-                        int f = 0;
-                    }
-
-                    indices[counter++] = topLeft;
-                    indices[counter++] = lowerRight;
-                    indices[counter++] = lowerLeft;
-
-                    indices[counter++] = topLeft;
-                    indices[counter++] = topRight;
-                    indices[counter++] = lowerRight;
-                }
-            }
-
+            
             
 
        //     SetUpWaterVertices(1000,1000);
 
-            waterVertexDeclaration = new VertexDeclaration(VertexPositionTexture.VertexDeclaration.GetVertexElements());
+        //    waterVertexDeclaration = new VertexDeclaration(VertexPositionTexture.VertexDeclaration.GetVertexElements());
 
-            vertices = CalculateNormals(vertices, indices);
+            //  vertices = CalculateNormals(vertices, indices);
             CopyToTerrainBuffers();
+
+
+        }
+
+        VertexMultitextured[] globalVertices;
+        private void PrecalculateVertices() 
+        {
+            globalVertices = new VertexMultitextured[this.heightMap.Length];
+
+            float mapCellScaleDivTextureSize = mapCellScale / textureSize;
+            for (int x = 0; x < mapNumCellsPerRow; x++)
+            {
+
+                for (int y = 0; y < mapNumCellPerColumn; y++)
+                {
+                    int adress = getCellAdress(x, y); // x + y * mapNumCellsPerRow;
+
+
+                    globalVertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
+
+                    globalVertices[adress].TextureCoordinate.X = ((float)(x * mapCellScaleDivTextureSize));
+                    globalVertices[adress].TextureCoordinate.Y = ((float)(y * mapCellScaleDivTextureSize));
+
+
+                    globalVertices[adress].TexWeights = getCellTexWeights(x, y);
+
+                    globalVertices[adress].Normal = new Vector3(0, 0, 0);
+
+                }
+            }
+
+
+
+            for (int x = 0; x < mapNumCellsPerRow-1; x++)
+            {
+                for (int y = 0; y < mapNumCellPerColumn-1; y++)
+                {
+                    long index1 = getCellAdress(x, y);
+                    long index2 = getCellAdress(x+1, y+1);
+                    long index3 = getCellAdress(x, y + 1);
+
+                    Vector3 side1 = globalVertices[index1].Position - globalVertices[index3].Position;
+                    Vector3 side2 = globalVertices[index1].Position - globalVertices[index2].Position;
+                    Vector3 normal = Vector3.Cross(side1, side2);
+
+                    globalVertices[index1].Normal += normal;
+                    globalVertices[index2].Normal += normal;
+                    globalVertices[index3].Normal += normal;
+
+                    //index1 = getCellAdress(x, y);
+                    index2 = getCellAdress(x + 1, y);
+                    index3 = getCellAdress(x+1, y + 1);
+
+                    side1 = globalVertices[index1].Position - globalVertices[index3].Position;
+                    side2 = globalVertices[index1].Position - globalVertices[index2].Position;
+                    normal = Vector3.Cross(side1, side2);
+
+                    globalVertices[index1].Normal += normal;
+                    globalVertices[index2].Normal += normal;
+                    globalVertices[index3].Normal += normal;
+
+
+                }
+            }
+
+
+            for (long i = 0; i < globalVertices.Length; i++)
+                globalVertices[i].Normal.Normalize();
 
 
         }
@@ -552,14 +615,60 @@ namespace Simgame2
 
 
 
+        private int lastRegionWidth = -1;
+        private int lastRegionHeight = -1;
+        private void updateIndices(int regionWidth, int regionHeight) 
+        {
+            if (indices == null || regionWidth != lastRegionWidth || regionHeight != lastRegionHeight) 
+            {
+                indices = new Int16[(regionWidth - 1) * (regionHeight - 1) * 6];
+                int counter = 0;
+                int row = 0;
+                for (int y = 0; y < regionHeight - 1; y++)
+                {
+                    for (int x = 0; x < regionWidth - 1; x++)
+                    {
+                        /*  Int16 lowerLeft = (Int16)(x + y * regionWidth);
+                          Int16 lowerRight = (Int16)((x + 1) + y * regionWidth);
+                          Int16 topLeft = (Int16)(x + (y + 1) * regionWidth);
+                          Int16 topRight = (Int16)((x + 1) + (y + 1) * regionWidth);*/
+
+
+                        Int16 lowerLeft = (Int16)(x + row);
+                        Int16 lowerRight = (Int16)(lowerLeft + 1);
+                        Int16 topLeft = (Int16)(lowerLeft + regionWidth);
+                        Int16 topRight = (Int16)(lowerLeft + 1 + regionWidth);
+
+
+                        indices[counter++] = topLeft;
+                        indices[counter++] = lowerRight;
+                        indices[counter++] = lowerLeft;
+
+                        indices[counter++] = topLeft;
+                        indices[counter++] = topRight;
+                        indices[counter++] = lowerRight;
+                    }
+                    row += regionWidth;
+                }
+            }
+        }
+
+
+
         private void CopyToTerrainBuffers()
         {
 
-            terrainVertexBuffer = new VertexBuffer(device, typeof(VertexMultitextured), vertices.Length, BufferUsage.WriteOnly);
-
+            if (terrainVertexBuffer == null || terrainVertexBuffer.VertexCount != vertices.Length)
+            {
+                terrainVertexBuffer = new VertexBuffer(device, typeof(VertexMultitextured), vertices.Length, BufferUsage.WriteOnly);
+            }
+            
             terrainVertexBuffer.SetData(vertices);
 
-            terrainIndexBuffer = new IndexBuffer(device, typeof(Int16), indices.Length, BufferUsage.WriteOnly);
+            if (terrainIndexBuffer == null || terrainIndexBuffer.IndexCount != indices.Length)
+            {
+                terrainIndexBuffer = new IndexBuffer(device, typeof(Int16), indices.Length, BufferUsage.WriteOnly);
+            }
             terrainIndexBuffer.SetData(indices);
 
 
@@ -678,7 +787,7 @@ namespace Simgame2
             return vertices;
         }
 
-        float FOGNEAR = 280.0f;
+        float FOGNEAR = 250.0f;
         float FOGFAR = 300.0f;
         Color FOGCOLOR = new Color(100,100, 100);
 
@@ -747,7 +856,7 @@ namespace Simgame2
             Matrix[] modelTransforms = new Matrix[skyDome.Bones.Count];
             skyDome.CopyAbsoluteBoneTransformsTo(modelTransforms);
 
-            Matrix wMatrix = Matrix.CreateTranslation(0, -0.3f, 0) * Matrix.CreateScale(50) * Matrix.CreateTranslation(cameraPosition);
+            Matrix wMatrix = Matrix.CreateTranslation(0, -0.3f, 0) * Matrix.CreateScale(300) * Matrix.CreateTranslation(cameraPosition);
             foreach (ModelMesh mesh in skyDome.Meshes)
             {
                 foreach (Effect currentEffect in mesh.Effects)
@@ -810,8 +919,8 @@ namespace Simgame2
 
             effect.CurrentTechnique = effect.Techniques["PerlinNoise"];
             effect.Parameters["xTexture0"].SetValue(cloudStaticMap);
-            effect.Parameters["xOvercast"].SetValue(0.7f);
-            effect.Parameters["xTime"].SetValue(time / 1000.0f);
+            effect.Parameters["xOvercast"].SetValue(0.9f);
+            effect.Parameters["xTime"].SetValue(time / 8000.0f);
             effect.CurrentTechnique.Passes[0].Apply();
             foreach (EffectPass pass in effect.CurrentTechnique.Passes)
             {

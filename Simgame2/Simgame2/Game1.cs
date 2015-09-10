@@ -95,6 +95,7 @@ namespace Simgame2
         public WorldMap worldMap;
         public TextureGenerator textureGenerator;
 
+
         public GameStates.GameState CurrentGameState;
         public GameStates.FreeLook FreeLookState;
         public GameStates.MousePointerLook MousePointerLookState;
@@ -168,7 +169,7 @@ namespace Simgame2
             worldMap.rockTexture = Content.Load<Texture2D>("Textures\\tex2");
             worldMap.snowTexture = Content.Load<Texture2D>("Textures\\tex3");
 
-            worldMap.textureSize = 512;
+            //worldMap.textureSize = 512;
 
             worldMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, WorldMap.mapCellScale);
 
@@ -234,8 +235,18 @@ namespace Simgame2
         private float fps_avg = 0;
         private int fps_sampleSize = 10;
         private int fps_SampleNum = 10;
+
+        private float drawTime_avg = 0;
+        private int drawTime_sampleSize = 10;
+        private int drawTime_SampleNum = 10;
+        private int drawtime = 0;
         private SpriteBatch spriteBatch;
 
+        Vector2 pos = new Vector2(20, 20);
+        Vector2 pos2 = new Vector2(20, 60);
+        Rectangle rect = new Rectangle(20, 50, 400, 400);
+
+        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         protected override void Draw(GameTime gameTime)
         {
             if (!doneLoading) { return; }
@@ -257,19 +268,31 @@ namespace Simgame2
             
             GraphicsDevice.Clear(Color.Black);
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
-
-
+            
+            stopwatch.Reset();
+            stopwatch.Start();
             worldMap.Draw(PlayerCamera, gameTime);
+            stopwatch.Stop();
 
+            if (stopwatch.ElapsedMilliseconds != 0)
+            {
+                drawTime_avg += stopwatch.ElapsedMilliseconds;
+                drawTime_SampleNum--;
+                if (drawTime_SampleNum <= 0)
+                {
+                    drawtime = (int)(drawTime_avg / drawTime_sampleSize);
+                    drawTime_SampleNum = drawTime_sampleSize;
+                    drawTime_avg = 0;
+                }
+            }
 
             // Draws stats
             spriteBatch = new SpriteBatch(this.device);
             spriteBatch.Begin();
-            Vector2 pos = new Vector2(20, 20);
-            Vector2 pos2 = new Vector2(20, 60);
-            Rectangle rect = new Rectangle(20, 50, 400, 400);
+            
             spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + worldMap.GetStats(), pos,Color.White);
-            spriteBatch.DrawString(font, "(" + this.PlayerCamera.GetCameraPostion().X + ", " + this.PlayerCamera.GetCameraPostion().Y + ", " + this.PlayerCamera.GetCameraPostion().Z + ")" + " - state " + DebugState(), pos2, Color.White);
+            spriteBatch.DrawString(font, "(" + this.PlayerCamera.GetCameraPostion().X + ", " + this.PlayerCamera.GetCameraPostion().Y + ", " + this.PlayerCamera.GetCameraPostion().Z + ")" + " - state " + DebugState() + 
+            " drawtime: " + drawtime.ToString() + " ms", pos2, Color.White);
             if (debugImg != null && showDebugImg == true)
             {
                 spriteBatch.Draw(debugImg, rect, Color.White);
