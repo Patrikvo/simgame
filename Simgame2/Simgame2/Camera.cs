@@ -113,6 +113,39 @@ namespace Simgame2
         }
 
 
+        public Vector3 UnProjectScreenPoint(float mouseX, float mouseY, Viewport vp) 
+        {
+            Vector3 markerLocation = Vector3.Zero; 
+
+            //  mouse location in 3D landscape
+            //  Unproject the screen space mouse coordinate into model space 
+            //  coordinates. Because the world space matrix is identity, this 
+            //  gives the coordinates in world space.
+            
+            //  Note the order of the parameters! Projection first.
+            Vector3 pos1 = vp.Unproject(new Vector3(mouseX, mouseY, 0), this.projectionMatrix, this.viewMatrix, Matrix.Identity);
+            Vector3 pos2 = vp.Unproject(new Vector3(mouseX, mouseY, 1), this.projectionMatrix, this.viewMatrix, Matrix.Identity);
+            Vector3 dir = Vector3.Normalize(pos2 - pos1);
+
+            // pos1 mouse cursor location at near clip plane
+            // pos2 mouse cursor location at far clip plane
+            // dir direction of line from pos1 to pos 2 
+
+            
+            //  If the mouse ray is aimed parallel with the world plane, then don't 
+            //  intersect, because that would divide by zero.
+            if (dir.Y != 0)
+            {
+                Vector3 x = pos1 - dir * (pos1.Y / dir.Y);
+
+                markerLocation = x;
+
+            }
+
+            return markerLocation;
+        }
+
+
         public Matrix viewMatrix { get; set; }
 
 

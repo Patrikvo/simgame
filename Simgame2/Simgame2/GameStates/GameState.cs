@@ -43,8 +43,10 @@ namespace Simgame2.GameStates
             game.entityFactory.Update(gameTime);
 
             // place building code
-            game.selBuilding.RemoveBuilding(game.worldMap);
-
+            if (game.selBuilding != null)
+            {
+                game.selBuilding.RemoveBuilding(game.worldMap);
+            }
 
             float timeDifference = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000.0f;
             Vector3 moveVector = new Vector3(0, 0, 0);

@@ -27,6 +27,7 @@ namespace Simgame2.GameStates
 
         }
 
+        
         public override void Update(GameTime gameTime) 
         {
             base.Update(gameTime);
@@ -36,6 +37,9 @@ namespace Simgame2.GameStates
                 game.ChangeGameState(game.PlaceBuildingState);
                 ButtonSpaceDown = false;
             }
+
+            
+
 
 
 
@@ -72,5 +76,7 @@ namespace Simgame2.GameStates
         }
 
         public override string GetShortName() { return "M"; }
+
+        
     }
 }

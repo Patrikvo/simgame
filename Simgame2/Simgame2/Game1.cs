@@ -77,7 +77,7 @@ namespace Simgame2
         // Rendering objects
         private GraphicsDeviceManager graphics;
         public GraphicsDevice device;
-        private Effect effect;
+        public Effect effect;
 
         // Camera objects
         public Camera PlayerCamera;
@@ -140,6 +140,14 @@ namespace Simgame2
 
         private bool doneLoading = false;
 
+
+
+        public void PlaceBuilding()
+        {
+            ChangeGameState(PlaceBuildingState);
+        }
+
+
         protected override void LoadContent()
         {
             font = Content.Load<SpriteFont>("Courier New");
@@ -152,9 +160,12 @@ namespace Simgame2
             PlayerCamera = new Camera(device.Viewport.AspectRatio);
             PlayerCamera.worldMap = worldMap;
 
-            HUD_overlay.AddButton(Content.Load<Texture2D>("GUI\\test"), Content.Load<Texture2D>("GUI\\test2"));
-            HUD_overlay.AddButton(Content.Load<Texture2D>("GUI\\test"), Content.Load<Texture2D>("GUI\\test2"));
-            HUD_overlay.AddButton(Content.Load<Texture2D>("GUI\\test"), Content.Load<Texture2D>("GUI\\test2"));
+            HUD_overlay.PreloadImages(this.Content);
+
+            HUD_overlay.ConstructButtons();
+            
+
+
 
             textureGenerator = new TextureGenerator(this);
            // texture = textureGenerator.GenerateGroundTexture(new Color(124, 124, 124, 1), new Vector3(0,39,39), 512);
@@ -183,16 +194,16 @@ namespace Simgame2
 
             entityFactory = EntityFactory.CreateFactory(this, this.worldMap, PlayerCamera.projectionMatrix);
 
-            EntityBuilding minebuilding = entityFactory.CreateBasicMine(new Vector3(100, 0, -100), true);
+       //     EntityBuilding minebuilding = entityFactory.CreateBasicMine(new Vector3(100, 0, -100), true);
 
-            EntityBuilding tower = entityFactory.CreateWindTower(new Vector3(100, 0, -150), true);
+     //       EntityBuilding tower = entityFactory.CreateWindTower(new Vector3(100, 0, -150), true);
 
-            EntityBuilding melter = entityFactory.CreateBasicMelter(new Vector3(150, 0, -150), true);
+      //      EntityBuilding melter = entityFactory.CreateBasicMelter(new Vector3(150, 0, -150), true);
 
-            EntityBuilding solar = entityFactory.CreateBasicSolarPlant(new Vector3(200, 0, -200), true);
+      //      EntityBuilding solar = entityFactory.CreateBasicSolarPlant(new Vector3(200, 0, -200), true);
 
 
-
+/*
             selBuilding = new EntityBuilding(this);
             selBuilding.LoadModel("testbuilding", effect);
             selBuilding.location = new Vector3(50, 12, -50);
@@ -200,7 +211,7 @@ namespace Simgame2
             selBuilding.rotation = new Vector3(0, MathHelper.Pi, 0);
             selBuilding.projectionMatrix = PlayerCamera.projectionMatrix;
             selBuilding.AddTexture(Content.Load<Texture2D>("testbuildingtex"));
-
+            */
 
 
             doneLoading = true;

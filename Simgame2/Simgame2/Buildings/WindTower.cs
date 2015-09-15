@@ -24,7 +24,7 @@ namespace Simgame2.Buildings
 
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
-            this.LoadModel("WindTower", effect);
+            
 
             this.AddTexture(this.Game.Content.Load<Texture2D>("WindTower_bTex"));  // base texture
             this.AddTexture(this.Game.Content.Load<Texture2D>("WindTower_rTex"));  // rotor texture
@@ -33,6 +33,8 @@ namespace Simgame2.Buildings
             this.scale = scale;
             this.rotation = rotation;
             this.location = location;
+
+            this.LoadModel("WindTower", effect);
 
             rotorTransform = this.model.Bones["Rotor"].Transform;  // Rotor start position
         }
@@ -47,7 +49,7 @@ namespace Simgame2.Buildings
         public void Place(WorldMap map, Vector3 location, bool flatten)
         {
             this.location = location;
-            this.PlaceBuilding(map, true);
+            this.PlaceBuilding(map, flatten);
         }
 
 
@@ -78,6 +80,15 @@ namespace Simgame2.Buildings
                     currentEffect.Parameters["xTexture"].SetValue(this.texture[meshNum]);
                     currentEffect.Parameters["xWorld"].SetValue(transforms[mesh.ParentBone.Index] * worldMatrix);
 
+                    currentEffect.Parameters["xIsTransparant"].SetValue(this.IsTransparant);
+                    if (CanPlace)
+                    {
+                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(0.0f, 1.0f, 0.0f, 0.5f));
+                    }
+                    else
+                    {
+                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 0.0f, 0.0f, 0.5f));
+                    }
 
                     currentEffect.Parameters["xEnableLighting"].SetValue(true);
                     currentEffect.Parameters["xAmbient"].SetValue(0.4f);
@@ -92,6 +103,11 @@ namespace Simgame2.Buildings
                 }
                 mesh.Draw();
                 meshNum++;
+            }
+
+            if (ShowBoundingBox)
+            {
+                DrawBoundingBox(currentViewMatrix, cameraPosition);
             }
         }
 

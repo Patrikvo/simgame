@@ -23,18 +23,19 @@ namespace Simgame2.Buildings
 
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
-            this.LoadModel("BasicMine", effect);
+            
             this.AddTexture(this.Game.Content.Load<Texture2D>("BasicMineTex"));
             this.scale = scale;
             this.rotation = rotation;
             this.location = location;
+            this.LoadModel("BasicMine", effect);
         }
 
 
         public void Place(WorldMap map, Vector3 location, bool flatten)
         {
             this.location = location;
-            this.PlaceBuilding(map, true); 
+            this.PlaceBuilding(map, flatten); 
         }
 
         

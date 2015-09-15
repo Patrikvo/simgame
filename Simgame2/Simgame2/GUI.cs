@@ -14,7 +14,20 @@ namespace Simgame2
 {
     public class GUI
     {
-        // TODO allow mouse button clicking a button actually do something (now it is just a visible action)
+        const string ARROWL = "GUI\\Button_arrowL";
+        const string ARROWL_P = "GUI\\Button_arrowL_P";
+        const string SOLAR = "GUI\\Button_Solar";
+        const string SOLOR_P = "GUI\\Button_Solar_P";
+        const string MELTER = "GUI\\Button_melter";
+        const string MELLTER_P = "GUI\\Button_melter_P";
+        const string MINE = "GUI\\Button_mine";
+        const string MINE_P = "GUI\\Button_mine_P";
+        const string ARROWR = "GUI\\Button_arrowR";
+        const string ARROWR_P = "GUI\\Button_arrowR_P";
+
+
+
+        List<Texture2D> images;
 
         private Game1 game;
 
@@ -28,11 +41,39 @@ namespace Simgame2
             this.left = 0;
 
             this.game = game;
+
+            images = new List<Texture2D>();
+
         }
 
         public void Initialize()
         {
         }
+
+        public void PreloadImages(ContentManager Content)
+        {
+            this.images.Add(Content.Load<Texture2D>(ARROWL));
+            this.images.Add(Content.Load<Texture2D>(ARROWL_P));
+            this.images.Add(Content.Load<Texture2D>(SOLAR));
+            this.images.Add(Content.Load<Texture2D>(SOLOR_P));
+            this.images.Add(Content.Load<Texture2D>(MELTER));
+            this.images.Add(Content.Load<Texture2D>(MELLTER_P));
+            this.images.Add(Content.Load<Texture2D>(MINE));
+            this.images.Add(Content.Load<Texture2D>(MINE_P));
+            this.images.Add(Content.Load<Texture2D>(ARROWR));
+            this.images.Add(Content.Load<Texture2D>(ARROWR_P));
+        }
+
+        public void ConstructButtons()
+        {
+            AddButton(0, 1, doNothing);  // Arrow L
+            AddButton(2, 3, PlaceBuildingSolar);  // SOLAR
+            AddButton(4, 5, PlaceBuildingMelter); // MELTER
+            AddButton(6, 7, PlaceBuildingMine); // MINE
+            AddButton(8, 9, PlaceBuildingWind); // ARROW R
+        }
+
+
 
         public void Update(int mouseX, int mouseY, bool leftMouseButtonPressed)
         {
@@ -59,18 +100,48 @@ namespace Simgame2
         {
         }
 
+        public void PlaceBuildingSolar() 
+        {
+            this.game.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.SOLAR;
+            this.game.ChangeGameState(this.game.PlaceBuildingState);
+        }
+
+        public void PlaceBuildingMelter()
+        {
+            this.game.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.MELTER;
+            this.game.ChangeGameState(this.game.PlaceBuildingState);
+        }
+
+        public void PlaceBuildingMine()
+        {
+            this.game.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.BASIC_MINE;
+            this.game.ChangeGameState(this.game.PlaceBuildingState);
+        }
+
+        public void PlaceBuildingWind()
+        {
+            this.game.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.WIND_TOWER;
+            this.game.ChangeGameState(this.game.PlaceBuildingState);
+        }
+
         public void PlaceBuilding()
         {
             this.game.ChangeGameState(this.game.PlaceBuildingState);
         }
 
-        public void AddButton(Texture2D imageReleased, Texture2D imagePressed)
+        public void AddButton(int imageReleaseID, int imagePressedID, Click clickDelegate)
+        {
+            this.AddButton(images[imageReleaseID], images[imagePressedID], clickDelegate);
+        }
+
+        public void AddButton(Texture2D imageReleased, Texture2D imagePressed, Click clickDelegate)
         {
             if (buttons == null)
             {
                 buttons = new Button[1];
                 buttons[0] = new Button(imageReleased, imagePressed, this.upper, this.left, this.buttonWidth, this.buttonHeight);
-                buttons[0].MouseClick += PlaceBuilding;
+                //buttons[0].MouseClick += PlaceBuilding;
+                buttons[0].MouseClick += clickDelegate;
             }
             else
             {
@@ -82,7 +153,10 @@ namespace Simgame2
                     newButtons[i] = buttons[i];
                 }
                 newButtons[buttons.Length] = new Button(imageReleased, imagePressed, this.upper, buttons.Length * this.buttonWidth, this.buttonWidth, this.buttonHeight);
-                newButtons[buttons.Length].MouseClick += doNothing;
+
+                //newButtons[buttons.Length].MouseClick += doNothing;
+                newButtons[buttons.Length].MouseClick += clickDelegate;
+
                 buttons = newButtons;
             }
 
@@ -97,6 +171,7 @@ namespace Simgame2
         private int buttonHeight;
 
 
+        public delegate void Click();
 
         private class Button
         {
@@ -171,7 +246,7 @@ namespace Simgame2
 
             public Click MouseClick;
 
-            public delegate void Click();
+            
 
         }
 

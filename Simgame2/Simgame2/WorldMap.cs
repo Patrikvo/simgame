@@ -105,7 +105,21 @@ namespace Simgame2
 
 
 
-
+        public bool Collides(BoundingBox box)
+        {
+            foreach (Entity e in this.entities)
+            {
+                if (!e.boundingBox.Equals(box))
+                {
+                    if (e.boundingBox.Intersects(box) || e.boundingBox.Contains(box) == ContainmentType.Contains || box.Contains(e.boundingBox) == ContainmentType.Contains)
+                    {
+                        return true;
+                    }
+                }
+            }
+            
+            return false;
+        }
 
 
 
@@ -248,6 +262,7 @@ namespace Simgame2
                 if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
                 {
                     enitiesDrawn++;
+                  //  e.ShowBoundingBox = true;
                     e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
                 }
             }
