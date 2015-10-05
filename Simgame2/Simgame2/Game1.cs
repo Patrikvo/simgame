@@ -70,6 +70,8 @@ namespace Simgame2
     }
 
 
+    
+
     public class Game1 : Microsoft.Xna.Framework.Game
     {
         private const int mapNumCellsPerSide = 320;   // 20 40 80 160 320 640 1280
@@ -84,7 +86,7 @@ namespace Simgame2
 
 
         // Input/output objects
-        private SpriteFont font;
+        public SpriteFont font;
 
         // GUI
 
@@ -102,11 +104,13 @@ namespace Simgame2
         public GameStates.PlaceBuilding PlaceBuildingState;
 
 
+        public Simulation.Simulator simulator = new Simulation.Simulator();
+
         // test objects
 
         public EntityBuilding selBuilding;
 
-
+        
        
 
         
@@ -121,6 +125,7 @@ namespace Simgame2
             MousePointerLookState = new GameStates.MousePointerLook(this);
             PlaceBuildingState = new GameStates.PlaceBuilding(this);
 
+            
         }
 
 
@@ -131,6 +136,7 @@ namespace Simgame2
             graphics.IsFullScreen = false;
             graphics.ApplyChanges();
             HUD_overlay = new GUI(this);
+            
             base.Initialize();
         }
 
@@ -154,7 +160,7 @@ namespace Simgame2
             device = graphics.GraphicsDevice;
             effect = Content.Load<Effect>("Series4Effects");
 
-
+            
             
             worldMap = new WorldMap(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
             PlayerCamera = new Camera(device.Viewport.AspectRatio);
@@ -163,8 +169,8 @@ namespace Simgame2
             HUD_overlay.PreloadImages(this.Content);
 
             HUD_overlay.ConstructButtons();
-            
 
+            
 
 
             textureGenerator = new TextureGenerator(this);
@@ -227,13 +233,17 @@ namespace Simgame2
         }
 
 
-
+        public Vector3 markerLocation;
 
         protected override void Update(GameTime gameTime)
         {
+            stopwatch.Reset();
+            stopwatch.Start();
+            simulator.Update(gameTime);
             this.CurrentGameState.Update(gameTime);
 
             base.Update(gameTime);
+            stopwatch.Stop();
         }
 
 
@@ -255,6 +265,7 @@ namespace Simgame2
 
         Vector2 pos = new Vector2(20, 20);
         Vector2 pos2 = new Vector2(20, 60);
+        Vector2 pos3 = new Vector2(20, 100);
         Rectangle rect = new Rectangle(20, 50, 400, 400);
 
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
@@ -275,15 +286,14 @@ namespace Simgame2
                 }
 
             }
-
+            
             
             GraphicsDevice.Clear(Color.Black);
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
             
-            stopwatch.Reset();
-            stopwatch.Start();
+            
             worldMap.Draw(PlayerCamera, gameTime);
-            stopwatch.Stop();
+            
 
             if (stopwatch.ElapsedMilliseconds != 0)
             {
@@ -297,6 +307,7 @@ namespace Simgame2
                 }
             }
 
+           
             // Draws stats
             spriteBatch = new SpriteBatch(this.device);
             spriteBatch.Begin();
@@ -304,6 +315,8 @@ namespace Simgame2
             spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + worldMap.GetStats(), pos,Color.White);
             spriteBatch.DrawString(font, "(" + this.PlayerCamera.GetCameraPostion().X + ", " + this.PlayerCamera.GetCameraPostion().Y + ", " + this.PlayerCamera.GetCameraPostion().Z + ")" + " - state " + DebugState() + 
             " drawtime: " + drawtime.ToString() + " ms", pos2, Color.White);
+
+
             if (debugImg != null && showDebugImg == true)
             {
                 spriteBatch.Draw(debugImg, rect, Color.White);

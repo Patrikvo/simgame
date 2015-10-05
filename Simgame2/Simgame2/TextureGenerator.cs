@@ -194,7 +194,7 @@ namespace Simgame2
         }
 
 
-        float scale = 0.006f;
+    //    float scale = 0.006f;
         double[,] noise;
         void generateNoise(int resolution)
         {

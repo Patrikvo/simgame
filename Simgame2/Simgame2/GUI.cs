@@ -75,11 +75,14 @@ namespace Simgame2
 
 
 
-        public void Update(int mouseX, int mouseY, bool leftMouseButtonPressed)
+        public void Update(int mouseX, int mouseY, bool leftMouseButtonPressed, bool hide)
         {
-            for (int i = 0; i < this.buttons.Length; i++)
+            if (!hide)
             {
-                buttons[i].Update(mouseX, mouseY, leftMouseButtonPressed);
+                for (int i = 0; i < this.buttons.Length; i++)
+                {
+                    buttons[i].Update(mouseX, mouseY, leftMouseButtonPressed);
+                }
             }
         }
 

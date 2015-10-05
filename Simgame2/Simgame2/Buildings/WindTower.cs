@@ -42,7 +42,11 @@ namespace Simgame2.Buildings
         public override void Update(GameTime gameTime)
         {
             rotorRotation += (float)((rotationSpeed * gameTime.ElapsedGameTime.TotalSeconds) % 2*Math.PI);
-            
+
+            if (HasMouseFocus)
+            {
+                UpdateStatusScreen();
+            }
             base.Update(gameTime);
         }
 
@@ -56,14 +60,18 @@ namespace Simgame2.Buildings
 
         public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
-            Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateRotationX(rotation.X) * Matrix.CreateRotationY(rotation.Y) * 
-                Matrix.CreateRotationZ(rotation.Z) * Matrix.CreateTranslation(location);
+            //Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateRotationX(rotation.X) * Matrix.CreateRotationY(rotation.Y) * 
+           //     Matrix.CreateRotationZ(rotation.Z) * Matrix.CreateTranslation(location);
 
             this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
                 
 
-            Matrix[] transforms = new Matrix[model.Bones.Count];
-            model.CopyAbsoluteBoneTransformsTo(transforms);
+       //     Matrix[] transforms = new Matrix[model.Bones.Count];
+        //    model.CopyAbsoluteBoneTransformsTo(transforms);
+
+
+            Matrix worldMatrix = GetWorldMatrix();
+            Matrix[] transforms = GetBoneTransforms();
 
 
             int meshNum = 0;
@@ -109,6 +117,61 @@ namespace Simgame2.Buildings
             {
                 DrawBoundingBox(currentViewMatrix, cameraPosition);
             }
+
+            if (HasMouseFocus)
+            {
+                statusBillboard.Draw(this.game.PlayerCamera);
+            }
+        }
+
+
+        SpriteBatch spriteBatch;
+        public void UpdateStatusScreen()
+        {
+            // TODO modifyvto allow custom string and images.
+            if (statusBillboard.BillboardBackGroundTexture != null)
+            {
+                float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.SimulationEnity.Resource.ELECTRICITY);
+                float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.SimulationEnity.Resource.ELECTRICITY);
+
+                spriteBatch = new SpriteBatch(this.game.device);
+
+
+                RenderTarget2D target = new RenderTarget2D(this.game.device, 400, 400);
+                this.game.device.SetRenderTarget(target);// Now the spriteBatch will render to the RenderTarget2D
+
+                this.game.device.Clear(Color.Transparent);
+
+                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+                spriteBatch.Draw(statusBillboard.BillboardBackGroundTexture, new Rectangle(0, 0, 400, 400), Color.White);
+
+                StringBuilder sb = new StringBuilder();
+                sb.Append("Power: ");
+                sb.Append(electicAvail.ToString("0.0"));
+                sb.Append("/");
+                sb.Append(electricMax);
+
+                spriteBatch.DrawString(this.game.font, sb.ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
+
+                spriteBatch.End();
+
+                this.game.device.SetRenderTarget(null);//This will set the spriteBatch to render to the screen again.
+
+                this.statusBillboard.SetTexture((Texture2D)target);
+
+            }
+
+        }
+
+
+        public override Simulation.SimulationEnity GetSimEntity()
+        {
+            if (windTowerSim == null)
+            {
+                windTowerSim = new WindTowerSim();
+            }
+
+            return windTowerSim;
         }
 
 
@@ -120,5 +183,46 @@ namespace Simgame2.Buildings
         private float rotorRotation = 0;
         private float rotationSpeed = 1;
         private Matrix rotorTransform;
+
+        private WindTowerSim windTowerSim;
+
+        private class WindTowerSim : Simulation.SimulationEnity
+        {
+            public WindTowerSim()
+            {
+                ProduceRate[(int)Resource.ELECTRICITY] = 0.01f;
+                ResourceMaxAmount[(int)Resource.ELECTRICITY] = 1000;
+            }
+
+
+            public override void Update(GameTime gameTime)
+            {
+                float timeDelta = gameTime.ElapsedGameTime.Milliseconds;
+                for (int i = 0; i < ResourceCount; i++)
+                {
+                    ResourceOutput[(int)Resource.ELECTRICITY] = clamp(ResourceOutput[(int)Resource.ELECTRICITY] +
+                        (ProduceRate[(int)Resource.ELECTRICITY] * timeDelta), ResourceMaxAmount[(int)Resource.ELECTRICITY]);
+                }
+            }
+
+
+
+
+            //  protected float[] ResouceAmount;
+            //   protected float[] ResourceConsumptionPerSecond;
+            //  protected float[] ResourceMaxAmount;
+
+            //           protected Resource[] ConvertsTo;
+            //          protected float[] ProduceRate;
+
+            //        protected bool[] ConsumingResource;
+
+            //        protected float[] ResourceOutput;
+
+            //      public const int ResourceCount = 3;
+            //    public enum Resource { NOTHING, ELECTRICITY, ORE, METAL };
+
+        }
+
     }
 }

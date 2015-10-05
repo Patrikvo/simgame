@@ -38,6 +38,7 @@ namespace Simgame2
 
             this.heightMap = new int[mapNumCellsPerRow * mapNumCellPerColumn];
             this.textureMap = new Vector4[mapNumCellsPerRow * mapNumCellPerColumn];
+            this.sector = new int[mapNumCellsPerRow * mapNumCellPerColumn];
 
             this.textureSize = 512;
 
@@ -96,7 +97,7 @@ namespace Simgame2
             float widthOffset = this.mapNumCellsPerRow / 2;
             float heightOffset = this.mapNumCellPerColumn / 2;
 
-            return getCellFromWorldCoor(x + widthOffset, -(z+heightOffset));
+            return getCellHeightFromWorldCoor(x + widthOffset, -(z+heightOffset));
         }
 
 
@@ -122,8 +123,18 @@ namespace Simgame2
         }
 
 
+        public Vector2 getCellAdressFromWorldCoor(float wx, float wz)
+        {
+            float wy = wz;  // transform z in worldcoor (3D) to y in mapcoor (2D)
 
-        public int getCellFromWorldCoor(float wx, float wz)
+            int x = (int)Math.Floor(wx / mapCellScale);
+            int y = (int)Math.Floor(wy / mapCellScale);
+
+            return new Vector2(x,y);
+        }
+
+
+        public int getCellHeightFromWorldCoor(float wx, float wz)
         {
             float wy = wz;  // transform z in worldcoor (3D) to y in mapcoor (2D)
 
@@ -229,6 +240,30 @@ namespace Simgame2
             this.textureMap[getCellAdress(x, y)] = new Vector4(tex_x, tex_y, tex_z, tex_w);
         }
 
+        public void setCell(int x, int y, int value, float tex_x, float tex_y, float tex_z, float tex_w, int sector)
+        {
+            setCell(x, y, value);
+            this.textureMap[getCellAdress(x, y)] = new Vector4(tex_x, tex_y, tex_z, tex_w);
+            this.sector[getCellAdress(x, y)] = sector;
+        }
+
+        public void SetResources(ResourceCell[] resources)
+        {
+            this.resources = resources;
+        }
+
+        public ResourceCell GetResource(float x, float y)
+        {
+            return this.resources[this.sector[getCellAdress((int)x, (int)y)]];
+        }
+
+        public ResourceCell GetResourceFromWorldCoor(float wx, float wy)
+        {
+            Vector2 add =  getCellAdressFromWorldCoor(wx, wy);
+            return GetResource(add.X, add.Y);
+        }
+
+
         public void Draw(Camera PlayerCamera, GameTime gameTime)
         {
             float time = (float)gameTime.TotalGameTime.TotalMilliseconds / 100.0f;
@@ -272,6 +307,112 @@ namespace Simgame2
             game.debugImg = MiniMap(PlayerCamera.GetCameraPostion());
 
         }
+
+
+        public Entity FindEntityAt(Ray ray)
+        {
+            
+            Entity e = null;
+            for (int i = 0; i < this.entities.Count; i++)
+            {
+                if (frustum.Contains(entities[i].boundingBox) != ContainmentType.Disjoint) 
+                { 
+                    if (RayIntersectsModel(ray, entities[i].model,entities[i].GetWorldMatrix(),entities[i].GetBoneTransforms()))
+                    {
+                        e =  entities[i];
+                        break;
+                    }
+                }
+            }
+
+            return e;
+        }
+
+
+        private static bool RayIntersectsModel(Ray ray, Model model,
+            Matrix worldTransform, Matrix[] absoluteBoneTransforms)
+        {
+            // Each ModelMesh in a Model has a bounding sphere, so to check for an
+            // intersection in the Model, we have to check every mesh.
+            foreach (ModelMesh mesh in model.Meshes)
+            {
+                // the mesh's BoundingSphere is stored relative to the mesh itself.
+                // (Mesh space). We want to get this BoundingSphere in terms of world
+                // coordinates. To do this, we calculate a matrix that will transform
+                // from coordinates from mesh space into world space....
+                Matrix world = absoluteBoneTransforms[mesh.ParentBone.Index] * worldTransform;
+
+                // ... and then transform the BoundingSphere using that matrix.
+                BoundingSphere sphere = TransformBoundingSphere(mesh.BoundingSphere, world);
+
+                // now that the we have a sphere in world coordinates, we can just use
+                // the BoundingSphere class's Intersects function. Intersects returns a
+                // nullable float (float?). This value is the distance at which the ray
+                // intersects the BoundingSphere, or null if there is no intersection.
+                // so, if the value is not null, we have a collision.
+                if (sphere.Intersects(ray) != null)
+                {
+                    return true;
+                }
+            }
+
+            // if we've gotten this far, we've made it through every BoundingSphere, and
+            // none of them intersected the ray. This means that there was no collision,
+            // and we should return false.
+            return false;
+        }
+
+
+        private static BoundingSphere TransformBoundingSphere(BoundingSphere sphere, Matrix transform)
+        {
+            BoundingSphere transformedSphere;
+
+            // the transform can contain different scales on the x, y, and z components.
+            // this has the effect of stretching and squishing our bounding sphere along
+            // different axes. Obviously, this is no good: a bounding sphere has to be a
+            // SPHERE. so, the transformed sphere's radius must be the maximum of the 
+            // scaled x, y, and z radii.
+
+            // to calculate how the transform matrix will affect the x, y, and z
+            // components of the sphere, we'll create a vector3 with x y and z equal
+            // to the sphere's radius...
+            Vector3 scale3 = new Vector3(sphere.Radius, sphere.Radius, sphere.Radius);
+
+            // then transform that vector using the transform matrix. we use
+            // TransformNormal because we don't want to take translation into account.
+            scale3 = Vector3.TransformNormal(scale3, transform);
+
+            // scale3 contains the x, y, and z radii of a squished and stretched sphere.
+            // we'll set the finished sphere's radius to the maximum of the x y and z
+            // radii, creating a sphere that is large enough to contain the original 
+            // squished sphere.
+            transformedSphere.Radius = Math.Max(scale3.X, Math.Max(scale3.Y, scale3.Z));
+
+            // transforming the center of the sphere is much easier. we can just use 
+            // Vector3.Transform to transform the center vector. notice that we're using
+            // Transform instead of TransformNormal because in this case we DO want to 
+            // take translation into account.
+            transformedSphere.Center = Vector3.Transform(sphere.Center, transform);
+
+            return transformedSphere;
+        }
+
+
+        private bool IsMousePointerInBox(Vector3 vec, Vector3 min, Vector3 max)
+        {
+            float minx = Math.Min(min.X, max.X);
+            float maxx = Math.Max(min.X, max.X);
+
+            float minz = Math.Min(min.Z, max.Z);
+            float maxz = Math.Max(min.Z, max.Z);
+
+            if (vec.X >= minx && vec.X <= maxx && vec.Z >= minz && vec.Z <= maxz) { return true;  }
+            return false;
+
+
+        }
+
+
 
 
         public void AddEntity(Entity entity)
@@ -1126,6 +1267,9 @@ namespace Simgame2
         private int[] heightMap;
         private Vector4[] textureMap;
 
+        // todo provide access to the resources each cell had a sector, and each sector has a resourcesCell
+        private int[] sector;
+        private ResourceCell[] resources;
 
         //public VertexPositionNormalColored[] vertices;
         private VertexMultitextured[] vertices;
@@ -1168,13 +1312,13 @@ namespace Simgame2
 
         // selection
 
-        private Vector3 lookingAt;
+    //    private Vector3 lookingAt;
         public Texture2D selectionTexture;
 
 
 
         private VertexBuffer waterVertexBuffer;
-        private VertexDeclaration waterVertexDeclaration;
+      //  private VertexDeclaration waterVertexDeclaration;
         private RenderTarget2D BackDropRenderTarget;
 
 
@@ -1220,6 +1364,101 @@ namespace Simgame2
             public Node A;
             public Node B;
         }
+
+
+
+        public class ResourceCell
+        {
+            public float Iron;
+            public float Copper;
+            public float Aluminium;
+            public float Lithium;
+            public float Titanium;
+            public float Nickel;
+            public float Silver;
+            public float Tungsten;
+            public float Platinum;
+            public float Gold;
+            public float Lead;
+            public float Uranium;
+
+            public void Randomize(Random rnd)
+            {
+                //Random rnd = new Random();
+                Iron = rnd.Next(100);
+                Copper = rnd.Next(100);
+                Aluminium = rnd.Next(100);
+                Lithium = rnd.Next(100);
+                Titanium = rnd.Next(100);
+                Nickel = rnd.Next(100);
+                Silver = rnd.Next(100);
+                Tungsten = rnd.Next(100);
+                Platinum = rnd.Next(100);
+                Gold = rnd.Next(100);
+                Lead = rnd.Next(100);
+                Uranium = rnd.Next(100);
+                //Normalize();
+            }
+
+            public void Normalize()
+            {
+                float val = Iron + Copper + Aluminium + Lithium + Titanium + Nickel + Silver + Tungsten + Platinum + Gold + Lead + Uranium;
+
+                Iron = Iron / val;
+                Copper = Copper / val;
+                Aluminium = Aluminium / val;
+                Lithium = Lithium / val;
+                Titanium = Titanium / val;
+                Nickel = Nickel / val;
+                Silver = Silver / val;
+                Tungsten = Tungsten / val;
+                Platinum = Platinum / val;
+                Gold = Gold / val;
+                Lead = Lead / val;
+                Uranium = Uranium / val;
+            }
+
+
+
+            public override string ToString()
+            {
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+
+                sb.Append("Iron: "); sb.Append((int)(Iron * 1)); sb.AppendLine();
+                sb.Append("Copper: "); sb.Append((int)(Copper * 1)); sb.AppendLine();
+                sb.Append("Aluminium: "); sb.Append((int)(Aluminium * 1)); sb.AppendLine();
+                sb.Append("Lithium: "); sb.Append((int)(Lithium * 1)); sb.AppendLine();
+                sb.Append("Titanium: "); sb.Append((int)(Titanium * 1)); sb.AppendLine();
+                sb.Append("Nickel: "); sb.Append((int)(Nickel * 1)); sb.AppendLine();
+                sb.Append("Silver: "); sb.Append((int)(Silver * 1)); sb.AppendLine();
+                sb.Append("Tungsten: "); sb.Append((int)(Tungsten * 1)); sb.AppendLine();
+                sb.Append("Platinum: "); sb.Append((int)(Platinum * 1)); sb.AppendLine();
+                sb.Append("Gold: "); sb.Append((int)(Gold * 1)); sb.AppendLine();
+                sb.Append("Lead: "); sb.Append((int)(Lead * 1)); sb.AppendLine();
+                sb.Append("Uranium: "); sb.Append((int)(Uranium * 1)); sb.AppendLine();
+
+                return sb.ToString();
+            }
+
+        }
+
+
+        /*
+         
+Iron
+Copper
+Aluminium
+Lithium
+Titanium
+Nickel
+Silver
+Tungsten
+Platinum
+Gold
+Lead
+Uranium
+          
+         * */
 
         #endregion PrivateMembers
 

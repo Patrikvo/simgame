@@ -62,7 +62,7 @@ namespace Simgame2.GameStates
             }
 
 
-            game.HUD_overlay.Update(0, 0, false);
+            game.HUD_overlay.Update(0, 0, false, true);
 
 
         }

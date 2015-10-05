@@ -41,9 +41,9 @@ namespace Simgame2.GameStates
             }
 
 
-            
 
-            markerLocation = game.PlayerCamera.UnProjectScreenPoint(currentMouseState.X, currentMouseState.Y, this.game.GraphicsDevice.Viewport);
+
+            markerLocation = game.PlayerCamera.UnProjectScreenPointLoc(currentMouseState.X, currentMouseState.Y, this.game.GraphicsDevice.Viewport);
 
 
            // Vector3 offset = Vector3.Transform(new Vector3(0, 0, -50), Matrix.CreateRotationY(game.PlayerCamera.leftrightRot));
@@ -66,10 +66,18 @@ namespace Simgame2.GameStates
 
             game.selBuilding.IsTransparant = true;
             
-            // TODO check collision with other buildings here (and not on water)
-
-            game.selBuilding.CanPlace = !game.worldMap.Collides(game.selBuilding.boundingBox); 
             
+            // does the building collide with other buildings?
+            game.selBuilding.CanPlace = !game.worldMap.Collides(game.selBuilding.boundingBox);
+            
+            // are we placing in on water?
+            if (game.selBuilding.getAltitude() < 1)
+            
+         //   if (game.worldMap.getAltitude(game.selBuilding.location.X, game.selBuilding.location.Z) < WorldMap.waterHeight) 
+            {
+                game.selBuilding.CanPlace = false;
+            }
+
             
             
             game.selBuilding.PlaceBuilding(game.worldMap, false);
@@ -84,6 +92,8 @@ namespace Simgame2.GameStates
                     game.selBuilding.RemoveBuilding(game.worldMap);
                     game.selBuilding.IsTransparant = false;
                     game.selBuilding.PlaceBuilding(game.worldMap, true);
+                    game.simulator.AddEntity(game.selBuilding.GetSimEntity());
+
 
                  //   game.selBuilding = new EntityBuilding(game.selBuilding);
                     game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
@@ -98,20 +108,27 @@ namespace Simgame2.GameStates
 
             }
 
-            game.HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, currentMouseState.LeftButton == ButtonState.Pressed);
+            //game.HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, currentMouseState.LeftButton == ButtonState.Pressed);
+            game.HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, false, true);
 
 
         }
 
         public override void EnterState()
         {
+            game.IsMouseVisible = true;
             base.EnterState();
-            
-            game.selBuilding = null;
+            if (game.selBuilding != null)
+            {
+                game.selBuilding.RemoveBuilding(game.worldMap);
+            }
+         //   game.selBuilding = null;
+            game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
         }
 
         public override void ExitState()
         {
+            game.IsMouseVisible = false;
             base.ExitState();
             if (game.selBuilding != null)
             {

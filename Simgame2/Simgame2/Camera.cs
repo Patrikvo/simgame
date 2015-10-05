@@ -64,6 +64,7 @@ namespace Simgame2
 
             Vector3 cameraRotatedTarget = Vector3.Transform(cameraOriginalTarget, cameraRotation);
             Vector3 cameraFinalTarget = this.GetCameraPostion() + cameraRotatedTarget;
+            LookAt = cameraRotatedTarget; // cameraFinalTarget;
 
             Vector3 cameraRotatedUpVector = Vector3.Transform(cameraOriginalUpVector, cameraRotation);
 
@@ -77,7 +78,7 @@ namespace Simgame2
 
 
             Vector3 forwardVector = reflTargetPos - reflCameraPosition;
-            Vector3 sideVector = Vector3.Transform(new Vector3(1, 0, 0), cameraRotation);
+            sideVector = Vector3.Transform(new Vector3(1, 0, 0), cameraRotation);
             Vector3 reflectionCamUp = Vector3.Cross(sideVector, forwardVector);
             worldMap.reflectionViewMatrix = Matrix.CreateLookAt(reflCameraPosition, reflTargetPos, reflectionCamUp);
 
@@ -86,12 +87,14 @@ namespace Simgame2
 
         }
 
+        public Vector3 LookAt;
+        public Vector3 sideVector;
 
 
         public void AdjustCameraAltitude(GameTime gameTime)
         {
             // keeps camera at a set height above the terrain.
-            int intendedCameraHeight = (worldMap.getCellFromWorldCoor(this.GetCameraPostion().X, -this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
+            int intendedCameraHeight = (worldMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, -this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
             // int intendedCameraHeight = worldMap.getAltitude(cameraPosition.X, cameraPosition.Z) + CameraHeightOffset;
 
             if (this.cameraHeight < intendedCameraHeight)
@@ -113,24 +116,89 @@ namespace Simgame2
         }
 
 
-        public Vector3 UnProjectScreenPoint(float mouseX, float mouseY, Viewport vp) 
+        public Ray UnProjectScreenPoint(float mouseX, float mouseY, Viewport vp) 
         {
-            Vector3 markerLocation = Vector3.Zero; 
+         //   Vector3 markerLocation = Vector3.Zero;
 
+         //   Vector2 bias = new Vector2(0, 0);
+
+
+            Vector3 nearSource = new Vector3(mouseX, mouseY, 0f);
+            Vector3 farSource = new Vector3(mouseX, mouseY, 1f);
+
+            Vector3 nearPoint = vp.Unproject(nearSource,
+                projectionMatrix, viewMatrix, Matrix.Identity);
+
+            Vector3 farPoint = vp.Unproject(farSource,
+                projectionMatrix, viewMatrix, Matrix.Identity);
+
+            Vector3 direction = farPoint - nearPoint;
+            direction.Normalize();
+
+            return new Ray(nearPoint, direction);
+            /*
             //  mouse location in 3D landscape
             //  Unproject the screen space mouse coordinate into model space 
             //  coordinates. Because the world space matrix is identity, this 
             //  gives the coordinates in world space.
             
             //  Note the order of the parameters! Projection first.
-            Vector3 pos1 = vp.Unproject(new Vector3(mouseX, mouseY, 0), this.projectionMatrix, this.viewMatrix, Matrix.Identity);
-            Vector3 pos2 = vp.Unproject(new Vector3(mouseX, mouseY, 1), this.projectionMatrix, this.viewMatrix, Matrix.Identity);
+            Vector3 pos1 = vp.Unproject(new Vector3(mouseX + bias.X, mouseY + bias.Y, 0), this.projectionMatrix, this.viewMatrix, Matrix.Identity);
+            Vector3 pos2 = vp.Unproject(new Vector3(mouseX + bias.X, mouseY + bias.Y, 1), this.projectionMatrix, this.viewMatrix, Matrix.Identity);
             Vector3 dir = Vector3.Normalize(pos2 - pos1);
 
             // pos1 mouse cursor location at near clip plane
             // pos2 mouse cursor location at far clip plane
             // dir direction of line from pos1 to pos 2 
+            
+            //  If the mouse ray is aimed parallel with the world plane, then don't 
+            //  intersect, because that would divide by zero.
+            if (dir.Y != 0)
+            {
+                Vector3 x = pos1 - dir * (pos1.Y / dir.Y);
 
+                markerLocation = x;
+
+            }
+
+            return markerLocation;*/
+        }
+
+
+        public Vector3 UnProjectScreenPointLoc(float mouseX, float mouseY, Viewport vp)
+        {
+               Vector3 markerLocation = Vector3.Zero;
+
+               Vector2 bias = new Vector2(0, 0);
+
+
+         //   Vector3 nearSource = new Vector3(mouseX, mouseY, 0f);
+         //   Vector3 farSource = new Vector3(mouseX, mouseY, 1f);
+
+        //    Vector3 nearPoint = vp.Unproject(nearSource,
+        //        projectionMatrix, viewMatrix, Matrix.Identity);
+
+        //    Vector3 farPoint = vp.Unproject(farSource,
+        //        projectionMatrix, viewMatrix, Matrix.Identity);
+
+        //    Vector3 direction = farPoint - nearPoint;
+        //    direction.Normalize();
+
+        //    return new Ray(nearPoint, direction);
+            
+            //  mouse location in 3D landscape
+            //  Unproject the screen space mouse coordinate into model space 
+            //  coordinates. Because the world space matrix is identity, this 
+            //  gives the coordinates in world space.
+            
+            //  Note the order of the parameters! Projection first.
+            Vector3 pos1 = vp.Unproject(new Vector3(mouseX + bias.X, mouseY + bias.Y, 0), this.projectionMatrix, this.viewMatrix, Matrix.Identity);
+            Vector3 pos2 = vp.Unproject(new Vector3(mouseX + bias.X, mouseY + bias.Y, 1), this.projectionMatrix, this.viewMatrix, Matrix.Identity);
+            Vector3 dir = Vector3.Normalize(pos2 - pos1);
+
+            // pos1 mouse cursor location at near clip plane
+            // pos2 mouse cursor location at far clip plane
+            // dir direction of line from pos1 to pos 2 
             
             //  If the mouse ray is aimed parallel with the world plane, then don't 
             //  intersect, because that would divide by zero.
