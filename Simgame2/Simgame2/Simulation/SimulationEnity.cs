@@ -100,7 +100,31 @@ namespace Simgame2.Simulation
 
         protected float[] ResourceOutput;
 
-        public const int ResourceCount = 4;
-        public enum Resource { NOTHING, ELECTRICITY, ORE, METAL };
+        public const int ResourceCount = 26;
+        public enum Resource { NOTHING, ELECTRICITY, 
+            OreIron,   OreCopper,   OreAluminium,   OreLithium,   OreTitanium,   OreNickel,   OreSilver,   OreTungsten,   OrePlatinum,   OreGold,   OreLead,   OreUranium,
+            MetalIron, MetalCopper, MetalAluminium, MetalLithium, MetalTitanium, MetalNickel, MetalSilver, MetalTungsten, MetalPlatinum, MetalGold, MetalLead, MetalUranium
+        };
+
+        //Iron, Copper, Aluminium, Lithium, Titanium, Nickel, Silver, Tungsten, Platinum, Gold, Lead, Uranium
+
+
+        public override string ToString()
+        {
+            System.Text.StringBuilder sb = new System.Text.StringBuilder();
+
+            for (int i = 0; i < ResourceCount; i++)
+            {
+                sb.Append((Resource)(i)); sb.Append(": "); sb.Append((int)ResourceOutput[i]);
+                sb.Append("/"); sb.Append(ResourceMaxAmount[i]); sb.Append(" @ ");
+                sb.Append(ProduceRate[i]);
+                sb.AppendLine();
+            }
+
+
+            return sb.ToString();
+        }
+
+
     }
 }

@@ -70,27 +70,27 @@ namespace Simgame2.Buildings
             // TODO modifyvto allow custom string and images.
             if (statusBillboard.BillboardBackGroundTexture != null)
             {
-                float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.SimulationEnity.Resource.ORE);
-                float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.SimulationEnity.Resource.ORE);
+               // float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.SimulationEnity.Resource.ORE);
+               // float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.SimulationEnity.Resource.ORE);
 
                 spriteBatch = new SpriteBatch(this.game.device);
 
 
-                RenderTarget2D target = new RenderTarget2D(this.game.device, 400, 400);
+                RenderTarget2D target = new RenderTarget2D(this.game.device, 400, 600);
                 this.game.device.SetRenderTarget(target);// Now the spriteBatch will render to the RenderTarget2D
 
                 this.game.device.Clear(Color.Transparent);
 
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
-                spriteBatch.Draw(statusBillboard.BillboardBackGroundTexture, new Rectangle(0, 0, 400, 400), Color.White);
+                spriteBatch.Draw(statusBillboard.BillboardBackGroundTexture, new Rectangle(0, 0, 400, 600), Color.White);
 
-                StringBuilder sb = new StringBuilder();
-                sb.Append("Ore: ");
-                sb.Append(electicAvail.ToString("0.0"));
-                sb.Append("/");
-                sb.Append(electricMax);
+            //    StringBuilder sb = new StringBuilder();
+             //   sb.Append("Ore: ");
+              //  sb.Append(electicAvail.ToString("0.0"));
+               // sb.Append("/");
+                //sb.Append(electricMax);
 
-                spriteBatch.DrawString(this.game.font, resourceCell.ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
+                spriteBatch.DrawString(this.game.font, GetSimEntity().ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
 
                 spriteBatch.End();
 
@@ -106,7 +106,12 @@ namespace Simgame2.Buildings
         {
             if (basicMineSim == null)
             {
-                basicMineSim = new BasicMineSim();
+                if (this.resourceCell == null)
+                {
+                    resourceCell = this.game.worldMap.GetResourceFromWorldCoor(location.X, -location.Z);
+                }
+                basicMineSim = new BasicMineSim(this);
+                
             }
 
             return basicMineSim;
@@ -122,10 +127,46 @@ namespace Simgame2.Buildings
 
         private class BasicMineSim : Simulation.SimulationEnity
         {
-            public BasicMineSim()
+            private BasicMine mineParent;
+
+            public BasicMineSim(BasicMine mineParent)
             {
-                ProduceRate[(int)Resource.ORE] = 0.01f;
-                ResourceMaxAmount[(int)Resource.ORE] = 1000;
+                this.mineParent = mineParent;
+                ProduceRate[(int)Resource.OreAluminium] = this.mineParent.resourceCell.Aluminium;
+                ResourceMaxAmount[(int)Resource.OreAluminium] = 1000;
+
+                ProduceRate[(int)Resource.OreCopper] = this.mineParent.resourceCell.Copper;
+                ResourceMaxAmount[(int)Resource.OreCopper] = 1000;
+
+                ProduceRate[(int)Resource.OreGold] = this.mineParent.resourceCell.Gold;
+                ResourceMaxAmount[(int)Resource.OreGold] = 1000;
+
+                ProduceRate[(int)Resource.OreIron] = this.mineParent.resourceCell.Iron;
+                ResourceMaxAmount[(int)Resource.OreIron] = 1000;
+
+                ProduceRate[(int)Resource.OreLead] = this.mineParent.resourceCell.Lead;
+                ResourceMaxAmount[(int)Resource.OreLead] = 1000;
+
+                ProduceRate[(int)Resource.OreLithium] = this.mineParent.resourceCell.Lithium;
+                ResourceMaxAmount[(int)Resource.OreLithium] = 1000;
+
+                ProduceRate[(int)Resource.OreNickel] = this.mineParent.resourceCell.Nickel;
+                ResourceMaxAmount[(int)Resource.OreNickel] = 1000;
+
+                ProduceRate[(int)Resource.OrePlatinum] = this.mineParent.resourceCell.Platinum;
+                ResourceMaxAmount[(int)Resource.OrePlatinum] = 1000;
+
+                ProduceRate[(int)Resource.OreSilver] = this.mineParent.resourceCell.Silver;
+                ResourceMaxAmount[(int)Resource.OreSilver] = 1000;
+
+                ProduceRate[(int)Resource.OreTitanium] = this.mineParent.resourceCell.Titanium;
+                ResourceMaxAmount[(int)Resource.OreTitanium] = 1000;
+
+                ProduceRate[(int)Resource.OreTungsten] = this.mineParent.resourceCell.Tungsten;
+                ResourceMaxAmount[(int)Resource.OreTungsten] = 1000;
+
+                ProduceRate[(int)Resource.OreUranium] = this.mineParent.resourceCell.Uranium;
+                ResourceMaxAmount[(int)Resource.OreUranium] = 1000;
             }
 
 
@@ -134,12 +175,27 @@ namespace Simgame2.Buildings
                 float timeDelta = gameTime.ElapsedGameTime.Milliseconds;
                 for (int i = 0; i < ResourceCount; i++)
                 {
-                    ResourceOutput[(int)Resource.ORE] = clamp(ResourceOutput[(int)Resource.ORE] +
-                        (ProduceRate[(int)Resource.ORE] * timeDelta), ResourceMaxAmount[(int)Resource.ORE]);
+                    ResourceOutput[i] = clamp(ResourceOutput[i] +
+                        (ProduceRate[i]/100 * timeDelta), ResourceMaxAmount[i]);
                 }
             }
 
 
+            public override string ToString()
+            {
+                System.Text.StringBuilder sb = new System.Text.StringBuilder();
+
+                for (int i = 2; i < 14; i++)
+                {
+                    sb.Append((Resource)(i)); sb.Append(": "); sb.Append((int)ResourceOutput[i]);
+                    sb.Append("/"); sb.Append(ResourceMaxAmount[i]); sb.Append(" @ ");
+                    sb.Append(ProduceRate[i]);
+                    sb.AppendLine();
+                }
+
+
+                return sb.ToString();
+            }
 
 
             //  protected float[] ResouceAmount;

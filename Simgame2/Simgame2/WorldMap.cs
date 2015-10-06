@@ -1369,6 +1369,7 @@ namespace Simgame2
 
         public class ResourceCell
         {
+            // amount in percent
             public float Iron;
             public float Copper;
             public float Aluminium;
@@ -1397,25 +1398,25 @@ namespace Simgame2
                 Gold = rnd.Next(100);
                 Lead = rnd.Next(100);
                 Uranium = rnd.Next(100);
-                //Normalize();
+                Normalize();
             }
 
             public void Normalize()
             {
                 float val = Iron + Copper + Aluminium + Lithium + Titanium + Nickel + Silver + Tungsten + Platinum + Gold + Lead + Uranium;
 
-                Iron = Iron / val;
-                Copper = Copper / val;
-                Aluminium = Aluminium / val;
-                Lithium = Lithium / val;
-                Titanium = Titanium / val;
-                Nickel = Nickel / val;
-                Silver = Silver / val;
-                Tungsten = Tungsten / val;
-                Platinum = Platinum / val;
-                Gold = Gold / val;
-                Lead = Lead / val;
-                Uranium = Uranium / val;
+                Iron = Iron / val * 100;
+                Copper = Copper / val * 100;
+                Aluminium = Aluminium / val * 100;
+                Lithium = Lithium / val * 100;
+                Titanium = Titanium / val * 100;
+                Nickel = Nickel / val * 100;
+                Silver = Silver / val * 100;
+                Tungsten = Tungsten / val * 100;
+                Platinum = Platinum / val * 100;
+                Gold = Gold / val * 100;
+                Lead = Lead / val * 100;
+                Uranium = Uranium / val * 100;
             }
 
 
