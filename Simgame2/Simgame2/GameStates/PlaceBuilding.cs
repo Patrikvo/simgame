@@ -57,12 +57,18 @@ namespace Simgame2.GameStates
             if (game.selBuilding == null)
             {
                 game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
+                game.selBuilding.IsGhost = true;
             }
 
             game.selBuilding.location = markerLocation;
 
             // convert rotation to radials, add to current rotation then limit to 0 - 2*PI
             game.selBuilding.rotation.Y = (float)(game.selBuilding.rotation.Y + (rotAmout * Math.PI / 180) % 2* Math.PI);
+
+
+            game.selBuilding.PlaceBuilding(game.worldMap, false);
+
+            game.selBuilding.UpdateBoundingBox();
 
             game.selBuilding.IsTransparant = true;
             
@@ -80,7 +86,7 @@ namespace Simgame2.GameStates
 
             
             
-            game.selBuilding.PlaceBuilding(game.worldMap, false);
+          //  game.selBuilding.PlaceBuilding(game.worldMap, false);
 
 
 
@@ -91,12 +97,14 @@ namespace Simgame2.GameStates
                 {
                     game.selBuilding.RemoveBuilding(game.worldMap);
                     game.selBuilding.IsTransparant = false;
+                    game.selBuilding.IsGhost = false;
                     game.selBuilding.PlaceBuilding(game.worldMap, true);
                     game.simulator.AddEntity(game.selBuilding.GetSimEntity());
 
 
                  //   game.selBuilding = new EntityBuilding(game.selBuilding);
                     game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
+                    game.selBuilding.IsGhost = true;
                     game.ChangeGameState(game.MousePointerLookState);
                 }
             }
@@ -124,6 +132,7 @@ namespace Simgame2.GameStates
             }
          //   game.selBuilding = null;
             game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
+            game.selBuilding.IsGhost = true;
         }
 
         public override void ExitState()

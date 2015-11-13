@@ -19,23 +19,21 @@ namespace Simgame2
 
     public class WorldMap : Microsoft.Xna.Framework.GameComponent
     {
-        public const int mapCellScale = 5;
-        public const int mapHeightScale = 2;
+        private Renderer renderer;
 
-        
+        private const int mapCellScale = 5;
+        private const int mapHeightScale = 2;
 
-        
-
+   
         public WorldMap(Game1 game, int mapNumCellsPerRow, int mapNumCellPerColumn, Effect effect, GraphicsDevice device)
             : base(game)
         {
+            renderer = new Renderer(game, effect, device);
             entities = new List<Entity>();
 
             this.mapNumCellsPerRow = mapNumCellsPerRow;
             this.mapNumCellPerColumn = mapNumCellPerColumn;
-            this.effect = effect;
-            this.device = device;
-
+            
             this.heightMap = new int[mapNumCellsPerRow * mapNumCellPerColumn];
             this.textureMap = new Vector4[mapNumCellsPerRow * mapNumCellPerColumn];
             this.sector = new int[mapNumCellsPerRow * mapNumCellPerColumn];
@@ -43,39 +41,24 @@ namespace Simgame2
             this.textureSize = 512;
 
             generateMap();
-
+            
             PrecalculateVertices();
-
-
-
-        //    lookingAt = new Vector3(float.MinValue);
-
-            this.game = game;
+            GenerateMovementMap();
 
             this.Initialize();
         }
 
 
+        public Renderer GetRenderer() { return renderer; }
+        
+        
 
         public override void Initialize()
         {
             base.Initialize();
+            renderer.Initialize();
 
-
-            PresentationParameters pp = device.PresentationParameters;
-            refractionRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, pp.DepthStencilFormat);
-            reflectionRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, pp.DepthStencilFormat);
-
-            cloudsRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, pp.DepthStencilFormat);
-
-            cloudStaticMap = CreateStaticMap(256);
-
-            BackDropRenderTarget = new RenderTarget2D(device, pp.BackBufferWidth, pp.BackBufferHeight, false, device.DisplayMode.Format, pp.DepthStencilFormat);
-
-            SetUpWaterVertices(1000, 1000);
-
-            fullScreenVertices = SetUpFullscreenVertices();
-            fullScreenVertexDeclaration = new VertexDeclaration(VertexPositionTexture.VertexDeclaration.GetVertexElements());
+            renderer.SetUpWaterVertices(1000, 1000, mapCellScale, waterHeight);
         }
 
 
@@ -85,20 +68,7 @@ namespace Simgame2
 
         }
 
-
-        public void LoadSkyDome(Model dome){
-            this.skyDome = dome;
-            this.skyDome.Meshes[0].MeshParts[0].Effect = this.effect.Clone();
-        }
-
-
-        public int getAltitude(float x, float z)
-        {
-            float widthOffset = this.mapNumCellsPerRow / 2;
-            float heightOffset = this.mapNumCellPerColumn / 2;
-
-            return getCellHeightFromWorldCoor(x + widthOffset, -(z+heightOffset));
-        }
+ 
 
 
         public int getMapWidth() { return this.mapNumCellsPerRow * WorldMap.mapCellScale; }
@@ -143,6 +113,31 @@ namespace Simgame2
 
             return getCell(x, y) * mapHeightScale;
         }
+
+        public int getExactHeightFromWorldCoor(float wx, float wz)
+        {
+            float wy = wz;  // transform z in worldcoor (3D) to y in mapcoor (2D)
+
+            int x = (int)Math.Floor(wx / mapCellScale);
+            int y = (int)Math.Floor(wy / mapCellScale);
+
+            int h1 = getCell(x, y) * mapHeightScale;
+            int h2 = getCell(x, y+1) * mapHeightScale;
+            int h3 = getCell(x+1, y+1) * mapHeightScale;
+
+            float dx = (wx / mapCellScale) - x;
+            float dy = (wy / mapCellScale) - y;
+
+            float dh1 = (h2 - h1) * dy;
+            float dh2 = (h3 - h2) * dx;
+
+            float dh = dh1 + dh2 / 2;
+
+            return (int)(h1 + dh);
+        }
+
+        
+
 
 
         public int levelTerrainWorldCoor(float wx_min, float wz_min, float wx_max, float wz_max)
@@ -196,6 +191,113 @@ namespace Simgame2
 
 
 
+
+
+        public ResourceCell GetResourceFromWorldCoor(float wx, float wy)
+        {
+            Vector2 add =  getCellAdressFromWorldCoor(wx, wy);
+            return this.resources[this.sector[getCellAdress((int)add.X, (int)add.Y)]];
+        }
+
+
+
+        
+
+
+        
+
+
+        public void Draw(Camera PlayerCamera, GameTime gameTime)
+        {
+            float time = (float)gameTime.TotalGameTime.TotalMilliseconds / 100.0f;
+
+            BoundingFrustum frustum = new BoundingFrustum(PlayerCamera.viewMatrix * PlayerCamera.projectionMatrix);
+            this.frustum = frustum;
+
+            GenerateView(PlayerCamera.GetCameraPostion());
+
+
+            // water
+            renderer.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
+            renderer.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale);
+
+
+            // skybox
+            renderer.GeneratePerlinNoise(time);
+
+            renderer.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
+
+
+            renderer.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+
+
+            renderer.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+            renderer.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
+
+            enitiesDrawn = 0;
+            foreach (Entity e in entities)
+            {
+                if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
+                {
+                    enitiesDrawn++;
+                  //  e.ShowBoundingBox = true;
+                    e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
+                }
+            }
+
+
+            ((Game1)base.Game).debugImg = MiniMap(PlayerCamera.GetCameraPostion());
+        }
+
+
+        public Entity FindEntityAt(Ray ray)
+        {
+            Entity e = null;
+            for (int i = 0; i < this.entities.Count; i++)
+            {
+                if (frustum.Contains(entities[i].boundingBox) != ContainmentType.Disjoint) 
+                { 
+                    if (RayIntersectsModel(ray, entities[i].model,entities[i].GetWorldMatrix(),entities[i].GetBoneTransforms()))
+                    {
+                        e =  entities[i];
+                        break;
+                    }
+                }
+            }
+
+            return e;
+        }
+
+
+
+
+        public void AddEntity(Entity entity)
+        {
+            entity.FOGNEAR = Renderer.FOGNEAR;
+            entity.FOGFAR = Renderer.FOGFAR;
+            entity.FOGCOLOR = renderer.FOGCOLOR;
+            this.entities.Add(entity);
+        }
+
+        public void RemoveEntity(Entity entity)
+        {
+            this.entities.Remove(entity);
+        }
+
+
+        public string GetStats()
+        {
+            int maxVertices = mapNumCellsPerRow * mapNumCellPerColumn * 2;
+            int maxIndices = maxVertices * 3;
+            return "vertices: " + renderer.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + renderer.terrainIndexBuffer.IndexCount + "/" + maxVertices +
+               Environment.NewLine + " - entities: " + enitiesDrawn + "/" + entities.Count;
+        }
+
+
+
+
+        // worldgenerator interface
+
         public int getCell(int x, int y)
         {
             if (x < 0 || y < 0 || x >= this.mapNumCellsPerRow || y >= this.mapNumCellPerColumn)
@@ -204,19 +306,6 @@ namespace Simgame2
             }
 
             return this.heightMap[getCellAdress(x, y)];
-        }
-
-        
-
-
-        public Vector4 getCellTexWeights(int x, int y)
-        {
-            if (x < 0 || y < 0 || x >= this.mapNumCellsPerRow || y >= this.mapNumCellPerColumn)
-            {
-                return new Vector4(0);
-            }
-
-            return this.textureMap[getCellAdress(x, y)];
         }
 
         public void setCell(int x, int y, int value)
@@ -228,11 +317,6 @@ namespace Simgame2
             }
         }
 
-        public void setCell(int x, int y, int value, Vector4 textureWeights)
-        {
-            setCell(x, y, value);
-            this.textureMap[getCellAdress(x, y)] = new Vector4(textureWeights.X, textureWeights.Y, textureWeights.Z, textureWeights.W);
-        }
 
         public void setCell(int x, int y, int value, float tex_x, float tex_y, float tex_z, float tex_w)
         {
@@ -252,199 +336,26 @@ namespace Simgame2
             this.resources = resources;
         }
 
-        public ResourceCell GetResource(float x, float y)
-        {
-            return this.resources[this.sector[getCellAdress((int)x, (int)y)]];
-        }
-
-        public ResourceCell GetResourceFromWorldCoor(float wx, float wy)
-        {
-            Vector2 add =  getCellAdressFromWorldCoor(wx, wy);
-            return GetResource(add.X, add.Y);
-        }
-
-
-        public void Draw(Camera PlayerCamera, GameTime gameTime)
-        {
-            float time = (float)gameTime.TotalGameTime.TotalMilliseconds / 100.0f;
-
-            BoundingFrustum frustum = new BoundingFrustum(PlayerCamera.viewMatrix * PlayerCamera.projectionMatrix);
-            this.frustum = frustum;
-
-            GenerateView(PlayerCamera.GetCameraPostion());
-
-
-            // water
-            DrawRefractionMap(PlayerCamera);
-            DrawReflectionMap(PlayerCamera);
-
-
-            // skybox
-            GeneratePerlinNoise(time);
-
-            device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
-
-
-            DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-            
-
-            DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-            DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
-
-            enitiesDrawn = 0;
-            foreach (Entity e in entities)
-            {
-                if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
-                {
-                    enitiesDrawn++;
-                  //  e.ShowBoundingBox = true;
-                    e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
-                }
-            }
-
-
-
-            game.debugImg = MiniMap(PlayerCamera.GetCameraPostion());
-
-        }
-
-
-        public Entity FindEntityAt(Ray ray)
-        {
-            
-            Entity e = null;
-            for (int i = 0; i < this.entities.Count; i++)
-            {
-                if (frustum.Contains(entities[i].boundingBox) != ContainmentType.Disjoint) 
-                { 
-                    if (RayIntersectsModel(ray, entities[i].model,entities[i].GetWorldMatrix(),entities[i].GetBoneTransforms()))
-                    {
-                        e =  entities[i];
-                        break;
-                    }
-                }
-            }
-
-            return e;
-        }
-
-
-        private static bool RayIntersectsModel(Ray ray, Model model,
-            Matrix worldTransform, Matrix[] absoluteBoneTransforms)
-        {
-            // Each ModelMesh in a Model has a bounding sphere, so to check for an
-            // intersection in the Model, we have to check every mesh.
-            foreach (ModelMesh mesh in model.Meshes)
-            {
-                // the mesh's BoundingSphere is stored relative to the mesh itself.
-                // (Mesh space). We want to get this BoundingSphere in terms of world
-                // coordinates. To do this, we calculate a matrix that will transform
-                // from coordinates from mesh space into world space....
-                Matrix world = absoluteBoneTransforms[mesh.ParentBone.Index] * worldTransform;
-
-                // ... and then transform the BoundingSphere using that matrix.
-                BoundingSphere sphere = TransformBoundingSphere(mesh.BoundingSphere, world);
-
-                // now that the we have a sphere in world coordinates, we can just use
-                // the BoundingSphere class's Intersects function. Intersects returns a
-                // nullable float (float?). This value is the distance at which the ray
-                // intersects the BoundingSphere, or null if there is no intersection.
-                // so, if the value is not null, we have a collision.
-                if (sphere.Intersects(ray) != null)
-                {
-                    return true;
-                }
-            }
-
-            // if we've gotten this far, we've made it through every BoundingSphere, and
-            // none of them intersected the ray. This means that there was no collision,
-            // and we should return false.
-            return false;
-        }
-
-
-        private static BoundingSphere TransformBoundingSphere(BoundingSphere sphere, Matrix transform)
-        {
-            BoundingSphere transformedSphere;
-
-            // the transform can contain different scales on the x, y, and z components.
-            // this has the effect of stretching and squishing our bounding sphere along
-            // different axes. Obviously, this is no good: a bounding sphere has to be a
-            // SPHERE. so, the transformed sphere's radius must be the maximum of the 
-            // scaled x, y, and z radii.
-
-            // to calculate how the transform matrix will affect the x, y, and z
-            // components of the sphere, we'll create a vector3 with x y and z equal
-            // to the sphere's radius...
-            Vector3 scale3 = new Vector3(sphere.Radius, sphere.Radius, sphere.Radius);
-
-            // then transform that vector using the transform matrix. we use
-            // TransformNormal because we don't want to take translation into account.
-            scale3 = Vector3.TransformNormal(scale3, transform);
-
-            // scale3 contains the x, y, and z radii of a squished and stretched sphere.
-            // we'll set the finished sphere's radius to the maximum of the x y and z
-            // radii, creating a sphere that is large enough to contain the original 
-            // squished sphere.
-            transformedSphere.Radius = Math.Max(scale3.X, Math.Max(scale3.Y, scale3.Z));
-
-            // transforming the center of the sphere is much easier. we can just use 
-            // Vector3.Transform to transform the center vector. notice that we're using
-            // Transform instead of TransformNormal because in this case we DO want to 
-            // take translation into account.
-            transformedSphere.Center = Vector3.Transform(sphere.Center, transform);
-
-            return transformedSphere;
-        }
-
-
-        private bool IsMousePointerInBox(Vector3 vec, Vector3 min, Vector3 max)
-        {
-            float minx = Math.Min(min.X, max.X);
-            float maxx = Math.Max(min.X, max.X);
-
-            float minz = Math.Min(min.Z, max.Z);
-            float maxz = Math.Max(min.Z, max.Z);
-
-            if (vec.X >= minx && vec.X <= maxx && vec.Z >= minz && vec.Z <= maxz) { return true;  }
-            return false;
-
-
-        }
-
-
-
-
-        public void AddEntity(Entity entity)
-        {
-            entity.FOGNEAR = this.FOGNEAR;
-            entity.FOGFAR = this.FOGFAR;
-            entity.FOGCOLOR = this.FOGCOLOR;
-            this.entities.Add(entity);
-        }
-
-        public void RemoveEntity(Entity entity)
-        {
-            this.entities.Remove(entity);
-        }
-
-
-        public string GetStats()
-        {
-            int maxVertices = mapNumCellsPerRow * mapNumCellPerColumn * 2;
-            int maxIndices = maxVertices * 3;
-            return "vertices: " + terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + terrainIndexBuffer.IndexCount + "/" + maxVertices +
-               Environment.NewLine + " - entities: " + enitiesDrawn + "/" + entities.Count;
-        }
-
-
-       public  int[] pointX;
+          public  int[] pointX;
           public  int[] pointY;
           public int[] pointAltitude;
 
-          public Texture2D MiniMap(Vector3 cameraPosition)
+
+
+
+
+
+
+
+          #region PrivateMembers
+
+          // Private 
+          //==============================
+
+
+          private Texture2D MiniMap(Vector3 cameraPosition)
         {
-            Texture2D Minimap = new Texture2D(device, this.mapNumCellsPerRow , this.mapNumCellPerColumn, false, SurfaceFormat.Color);
+            Texture2D Minimap = new Texture2D(renderer.device, this.mapNumCellsPerRow, this.mapNumCellPerColumn, false, SurfaceFormat.Color);
 
             Color[] noisyColors = new Color[this.mapNumCellsPerRow * this.mapNumCellPerColumn];
             int r, g, b;
@@ -488,10 +399,121 @@ namespace Simgame2
 
 
 
-        #region PrivateMembers
 
-        // Private 
-        //==============================
+
+
+
+
+          private Vector4 getCellTexWeights(int x, int y)
+          {
+              if (x < 0 || y < 0 || x >= this.mapNumCellsPerRow || y >= this.mapNumCellPerColumn)
+              {
+                  return new Vector4(0);
+              }
+
+              return this.textureMap[getCellAdress(x, y)];
+          }
+
+
+          private Vector3 getPlaneNormalFromWorldCoor(float wx, float wz)
+          {
+              float wy = wz;  // transform z in worldcoor (3D) to y in mapcoor (2D)
+
+              int x = (int)Math.Floor(wx / mapCellScale);
+              int y = (int)Math.Floor(wy / mapCellScale);
+
+              return PlaneNormals[getCellAdress(x, y)];
+          }
+
+
+          private bool IsMousePointerInBox(Vector3 vec, Vector3 min, Vector3 max)
+          {
+              float minx = Math.Min(min.X, max.X);
+              float maxx = Math.Max(min.X, max.X);
+
+              float minz = Math.Min(min.Z, max.Z);
+              float maxz = Math.Max(min.Z, max.Z);
+
+              if (vec.X >= minx && vec.X <= maxx && vec.Z >= minz && vec.Z <= maxz) { return true; }
+              return false;
+
+
+          }
+
+
+          private static bool RayIntersectsModel(Ray ray, Model model,
+              Matrix worldTransform, Matrix[] absoluteBoneTransforms)
+          {
+              // Each ModelMesh in a Model has a bounding sphere, so to check for an
+              // intersection in the Model, we have to check every mesh.
+              foreach (ModelMesh mesh in model.Meshes)
+              {
+                  // the mesh's BoundingSphere is stored relative to the mesh itself.
+                  // (Mesh space). We want to get this BoundingSphere in terms of world
+                  // coordinates. To do this, we calculate a matrix that will transform
+                  // from coordinates from mesh space into world space....
+                  Matrix world = absoluteBoneTransforms[mesh.ParentBone.Index] * worldTransform;
+
+                  // ... and then transform the BoundingSphere using that matrix.
+                  BoundingSphere sphere = TransformBoundingSphere(mesh.BoundingSphere, world);
+
+                  // now that the we have a sphere in world coordinates, we can just use
+                  // the BoundingSphere class's Intersects function. Intersects returns a
+                  // nullable float (float?). This value is the distance at which the ray
+                  // intersects the BoundingSphere, or null if there is no intersection.
+                  // so, if the value is not null, we have a collision.
+                  if (sphere.Intersects(ray) != null)
+                  {
+                      return true;
+                  }
+              }
+
+              // if we've gotten this far, we've made it through every BoundingSphere, and
+              // none of them intersected the ray. This means that there was no collision,
+              // and we should return false.
+              return false;
+          }
+
+
+          private static BoundingSphere TransformBoundingSphere(BoundingSphere sphere, Matrix transform)
+          {
+              BoundingSphere transformedSphere;
+
+              // the transform can contain different scales on the x, y, and z components.
+              // this has the effect of stretching and squishing our bounding sphere along
+              // different axes. Obviously, this is no good: a bounding sphere has to be a
+              // SPHERE. so, the transformed sphere's radius must be the maximum of the 
+              // scaled x, y, and z radii.
+
+              // to calculate how the transform matrix will affect the x, y, and z
+              // components of the sphere, we'll create a vector3 with x y and z equal
+              // to the sphere's radius...
+              Vector3 scale3 = new Vector3(sphere.Radius, sphere.Radius, sphere.Radius);
+
+              // then transform that vector using the transform matrix. we use
+              // TransformNormal because we don't want to take translation into account.
+              scale3 = Vector3.TransformNormal(scale3, transform);
+
+              // scale3 contains the x, y, and z radii of a squished and stretched sphere.
+              // we'll set the finished sphere's radius to the maximum of the x y and z
+              // radii, creating a sphere that is large enough to contain the original 
+              // squished sphere.
+              transformedSphere.Radius = Math.Max(scale3.X, Math.Max(scale3.Y, scale3.Z));
+
+              // transforming the center of the sphere is much easier. we can just use 
+              // Vector3.Transform to transform the center vector. notice that we're using
+              // Transform instead of TransformNormal because in this case we DO want to 
+              // take translation into account.
+              transformedSphere.Center = Vector3.Transform(sphere.Center, transform);
+
+              return transformedSphere;
+          }
+
+
+
+
+
+
 
         private int getCellAdress(int x, int y)
         {
@@ -514,6 +536,74 @@ namespace Simgame2
             GenerateSearchTree();
         }
 
+
+        private void GenerateMovementMap()
+        {
+            cellTravelResistance = new double[this.mapNumCellsPerRow * this.mapNumCellPerColumn];
+            int adress;
+            for (int y = 0; y < this.mapNumCellPerColumn; y++)
+            {
+                for (int x = 0; x < this.mapNumCellsPerRow; x++)
+                {
+                    adress = getCellAdress(x, y);
+
+                    // create an inpassable border around the map.
+                    if (x == 0 || y == 0 || x == this.mapNumCellsPerRow-1 || y == this.mapNumCellPerColumn-1)
+                    {
+                        cellTravelResistance[adress] = double.MaxValue;
+                        continue;
+                    }
+
+                    // traveling through water?
+                    if (this.heightMap[adress] <= waterHeight)
+                    {
+                        cellTravelResistance[adress] = TravelResistance_Water;
+                        cellTravelResistance[adress] = double.MaxValue;
+                        continue;
+                    }
+
+                    // angle between 1 (flat) and 0 straight edge
+                    float angle = -Vector3.Dot(getPlaneNormalFromWorldCoor(x, y), Vector3.Up);
+
+                    // can't pass if angle is more than 90°
+                    if (angle < 0.5f)
+                    {
+                        cellTravelResistance[adress] =  double.MaxValue;
+                        continue;
+                    }
+
+
+                  
+
+                    // otherwise resistance is relative to angle
+
+                    cellTravelResistance[adress] = 1.0d;
+                    if (angle < 1) { cellTravelResistance[adress] = 1.0d; }
+                    if (angle < 0.9) { cellTravelResistance[adress] = 5.0d; }
+                    if (angle < 0.8) { cellTravelResistance[adress] = 10.0d; }
+                    if (angle < 0.7) { cellTravelResistance[adress] = 50.0d; }
+                    if (angle < 0.6) { cellTravelResistance[adress] = 100.0d; }
+
+                 //   cellTravelResistance[adress] = 100 - (int)Math.Floor((angle-0.5) * 2*100);
+               //     cellTravelResistance[adress] = 1;
+
+
+
+
+                }
+            }
+        }
+
+        public double GetCellTravelResistance(int x, int y)
+        {
+            int adress = getCellAdress(x, y);
+            return cellTravelResistance[adress];
+        }
+
+
+
+
+        private const int TravelResistance_Water = 5000;
 
         private void GenerateSearchTree()
         {
@@ -548,56 +638,8 @@ namespace Simgame2
         }
 
 
-        private void debugout(string text)
-        {
-            System.Diagnostics.Debug.Write(text);
-        }
-
-        private void debugOutLn(string text)
-        {
-           // System.Diagnostics.Debug.WriteLine(text);
-        }
-
-        private void debugPrintTree()
-        {
-            System.Diagnostics.Debug.WriteLine("--------------------------------------------------------------------------");
-            System.Diagnostics.Debug.WriteLine("Printing tree");
-
-            Queue<Node> nodes = new Queue<Node>();
-            nodes.Enqueue(root);
-            int depth = 0;
-
-            while (nodes.Count > 0)
-            {
-                Node n = nodes.Dequeue();
-
-                if (n.A != null)
-                {
-                    nodes.Enqueue(n.A);
-                }
-
-                if (n.B != null)
-                {
-                    nodes.Enqueue(n.B);
-                }
-
-                if (depth != n.depth)
-                {
-                    System.Diagnostics.Debug.WriteLine("");
-                    depth = n.depth;
-                }
-
-                System.Diagnostics.Debug.Write(n.ToString());
-
-            }
-
-            System.Diagnostics.Debug.WriteLine("--------------------------------------------------------------------------");
-
-        }
-
-
-
-
+        
+ 
 
         private void GenerateView(Vector3 cameraPosition)
         {
@@ -656,8 +698,8 @@ namespace Simgame2
             regionHeight = regionDown - regionUp;
 
 
-            vertices = new VertexMultitextured[regionWidth * regionHeight];
-            float mapCellScaleDivTextureSize = mapCellScale / textureSize;
+            renderer.vertices = new VertexMultitextured[regionWidth * regionHeight];
+           // float mapCellScaleDivTextureSize = mapCellScale / textureSize;
 
 
             for (int x = regionLeft; x < regionRight; x++)
@@ -666,39 +708,22 @@ namespace Simgame2
                 for (int y = regionUp; y < regionDown; y++)
                 {
                     int adress = (x - regionLeft) + (y - regionUp) * regionWidth;
-                  
-/*
-                    vertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
 
-                  //  vertices[adress].TextureCoordinate.X = ((float)(x * mapCellScale) ) / textureSize;
-                   // vertices[adress].TextureCoordinate.Y = ((float)(y * mapCellScale) ) / textureSize;
-
-                    vertices[adress].TextureCoordinate.X = ((float)(x * mapCellScaleDivTextureSize));
-                    vertices[adress].TextureCoordinate.Y = ((float)(y * mapCellScaleDivTextureSize));
-  
-
-                    vertices[adress].TexWeights = getCellTexWeights(x,y);*/
-
-
-                    vertices[adress] = globalVertices[getCellAdress(x, y)];
+                    renderer.vertices[adress] = globalVertices[getCellAdress(x, y)];
                 }
             }
 
 
-            updateIndices(regionWidth, regionHeight);
-
-            
-            
-
-       //     SetUpWaterVertices(1000,1000);
-
-        //    waterVertexDeclaration = new VertexDeclaration(VertexPositionTexture.VertexDeclaration.GetVertexElements());
-
-            //  vertices = CalculateNormals(vertices, indices);
-            CopyToTerrainBuffers();
+            renderer.updateIndices(regionWidth, regionHeight);
+ 
+            renderer.CopyToTerrainBuffers();
 
 
         }
+
+
+
+
 
         VertexMultitextured[] globalVertices;
         private void PrecalculateVertices() 
@@ -714,7 +739,7 @@ namespace Simgame2
                     int adress = getCellAdress(x, y); // x + y * mapNumCellsPerRow;
 
 
-                    globalVertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
+                    globalVertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);   ////////////// here
 
                     globalVertices[adress].TextureCoordinate.X = ((float)(x * mapCellScaleDivTextureSize));
                     globalVertices[adress].TextureCoordinate.Y = ((float)(y * mapCellScaleDivTextureSize));
@@ -728,7 +753,7 @@ namespace Simgame2
             }
 
 
-
+            PlaneNormals = new Vector3[this.heightMap.Length];
             for (int x = 0; x < mapNumCellsPerRow-1; x++)
             {
                 for (int y = 0; y < mapNumCellPerColumn-1; y++)
@@ -740,6 +765,9 @@ namespace Simgame2
                     Vector3 side1 = globalVertices[index1].Position - globalVertices[index3].Position;
                     Vector3 side2 = globalVertices[index1].Position - globalVertices[index2].Position;
                     Vector3 normal = Vector3.Cross(side1, side2);
+
+                    PlaneNormals[getCellAdress(x, y)] = normal;
+                    PlaneNormals[getCellAdress(x, y)].Normalize();
 
                     globalVertices[index1].Normal += normal;
                     globalVertices[index2].Normal += normal;
@@ -769,68 +797,8 @@ namespace Simgame2
         }
 
 
-
-
-        private int lastRegionWidth = -1;
-        private int lastRegionHeight = -1;
-        private void updateIndices(int regionWidth, int regionHeight) 
-        {
-            if (indices == null || regionWidth != lastRegionWidth || regionHeight != lastRegionHeight) 
-            {
-                indices = new Int16[(regionWidth - 1) * (regionHeight - 1) * 6];
-                int counter = 0;
-                int row = 0;
-                for (int y = 0; y < regionHeight - 1; y++)
-                {
-                    for (int x = 0; x < regionWidth - 1; x++)
-                    {
-                        /*  Int16 lowerLeft = (Int16)(x + y * regionWidth);
-                          Int16 lowerRight = (Int16)((x + 1) + y * regionWidth);
-                          Int16 topLeft = (Int16)(x + (y + 1) * regionWidth);
-                          Int16 topRight = (Int16)((x + 1) + (y + 1) * regionWidth);*/
-
-
-                        Int16 lowerLeft = (Int16)(x + row);
-                        Int16 lowerRight = (Int16)(lowerLeft + 1);
-                        Int16 topLeft = (Int16)(lowerLeft + regionWidth);
-                        Int16 topRight = (Int16)(lowerLeft + 1 + regionWidth);
-
-
-                        indices[counter++] = topLeft;
-                        indices[counter++] = lowerRight;
-                        indices[counter++] = lowerLeft;
-
-                        indices[counter++] = topLeft;
-                        indices[counter++] = topRight;
-                        indices[counter++] = lowerRight;
-                    }
-                    row += regionWidth;
-                }
-            }
-        }
-
-
-
-        private void CopyToTerrainBuffers()
-        {
-
-            if (terrainVertexBuffer == null || terrainVertexBuffer.VertexCount != vertices.Length)
-            {
-                terrainVertexBuffer = new VertexBuffer(device, typeof(VertexMultitextured), vertices.Length, BufferUsage.WriteOnly);
-            }
-            
-            terrainVertexBuffer.SetData(vertices);
-
-            if (terrainIndexBuffer == null || terrainIndexBuffer.IndexCount != indices.Length)
-            {
-                terrainIndexBuffer = new IndexBuffer(device, typeof(Int16), indices.Length, BufferUsage.WriteOnly);
-            }
-            terrainIndexBuffer.SetData(indices);
-
-
-        }
-
-
+        private Vector3[] PlaneNormals;
+       
 
         private bool IsBoxInFrustum(Vector3 bMin, Vector3 bMax, BoundingFrustum Frustum)
         {
@@ -913,413 +881,47 @@ namespace Simgame2
 
 
 
-        
 
-
-
-        private VertexMultitextured[] CalculateNormals(VertexMultitextured[] vertices, Int16[] indices)
-        {
-            for (long i = 0; i < vertices.Length; i++)
-                vertices[i].Normal = new Vector3(0, 0, 0);
-
-            for (long i = 0; i < indices.Length / 3; i++)
-            {
-                long index1 = indices[i * 3];
-                long index2 = indices[i * 3 + 1];
-                long index3 = indices[i * 3 + 2];
-
-                Vector3 side1 = vertices[index1].Position - vertices[index3].Position;
-                Vector3 side2 = vertices[index1].Position - vertices[index2].Position;
-                Vector3 normal = Vector3.Cross(side1, side2);
-
-                vertices[index1].Normal += normal;
-                vertices[index2].Normal += normal;
-                vertices[index3].Normal += normal;
-            }
-
-            for (long i = 0; i < vertices.Length; i++)
-                vertices[i].Normal.Normalize();
-
-            return vertices;
-        }
-
-        float FOGNEAR = 250.0f;
-        float FOGFAR = 300.0f;
-        Color FOGCOLOR = new Color(100,100, 100);
-
-        
-       // Color FOGCOLOR = new Color(0.3f, 0.3f, 0.8f, 1.0f);
-
-        private void DrawTerrain(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
-        {
-            Matrix worldMatrix = Matrix.Identity;
-            effect.Parameters["xWorld"].SetValue(worldMatrix);
-            effect.Parameters["xView"].SetValue(currentViewMatrix);
-            effect.Parameters["xProjection"].SetValue(projectionMatrix);
-
-            effect.Parameters["xTexture"].SetValue(this.groundTexture);
-
-
-            effect.CurrentTechnique = effect.Techniques["MultiTextured"];
-            effect.Parameters["xTexture0"].SetValue(this.sandTexture);
-            effect.Parameters["xTexture1"].SetValue(this.groundTexture);
-            effect.Parameters["xTexture2"].SetValue(this.rockTexture);
-            effect.Parameters["xTexture3"].SetValue(this.snowTexture);
-
-
-
-            effect.Parameters["xEnableLighting"].SetValue(true);
-            effect.Parameters["xAmbient"].SetValue(0.8f);
-            effect.Parameters["xLightDirection"].SetValue(new Vector3(-0.5f, -1, -0.5f));
-
-
-            //FOG
-
-            effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
-            effect.Parameters["FogNear"].SetValue(FOGNEAR);
-            effect.Parameters["FogFar"].SetValue(FOGFAR);
-            effect.Parameters["cameraPos"].SetValue(cameraPosition);
-
-
-
-            effect.CurrentTechnique.Passes[0].Apply();
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                device.SetVertexBuffer(terrainVertexBuffer);
-                device.Indices = terrainIndexBuffer;
-
-
-
-                int noVertices = terrainVertexBuffer.VertexCount;
-                int noTriangles = terrainIndexBuffer.IndexCount / 3;
-                device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, noVertices, 0, noTriangles);
-            }
-        }
-
-
-        
-        
-        // Skydome
-        RenderTarget2D cloudsRenderTarget;
-        Texture2D cloudStaticMap;
-        VertexPositionTexture[] fullScreenVertices;
-        VertexDeclaration fullScreenVertexDeclaration;
-
-        private void DrawSkyDome(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
-        {
-            device.DepthStencilState = DepthStencilState.None;
-
-            Matrix[] modelTransforms = new Matrix[skyDome.Bones.Count];
-            skyDome.CopyAbsoluteBoneTransformsTo(modelTransforms);
-
-            Matrix wMatrix = Matrix.CreateTranslation(0, -0.3f, 0) * Matrix.CreateScale(300) * Matrix.CreateTranslation(cameraPosition);
-            foreach (ModelMesh mesh in skyDome.Meshes)
-            {
-                foreach (Effect currentEffect in mesh.Effects)
-                {
-                    Matrix worldMatrix = modelTransforms[mesh.ParentBone.Index] * wMatrix;
-                    currentEffect.CurrentTechnique = currentEffect.Techniques["SkyDome"];
-                    currentEffect.Parameters["xWorld"].SetValue(worldMatrix);
-                    currentEffect.Parameters["xView"].SetValue(currentViewMatrix);
-                    currentEffect.Parameters["xProjection"].SetValue(projectionMatrix);
-                    currentEffect.Parameters["xTexture"].SetValue(cloudMap);
-                    currentEffect.Parameters["xEnableLighting"].SetValue(false);
-
-                    // FOG
-
-                    effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
-                    effect.Parameters["FogNear"].SetValue(FOGNEAR);
-                    effect.Parameters["FogFar"].SetValue(FOGFAR);
-                    effect.Parameters["cameraPos"].SetValue(cameraPosition);
-
-                }
-                mesh.Draw();
-            }
-            device.BlendState = BlendState.Opaque;
-            device.DepthStencilState = DepthStencilState.Default;
-        }
-
-        private Texture2D CreateStaticMap(int resolution)
-        {
-            Random rand = new Random();
-            Color[] noisyColors = new Color[resolution * resolution];
-            for (int x = 0; x < resolution; x++)
-                for (int y = 0; y < resolution; y++)
-                {
-                    noisyColors[x + y * resolution] = new Color(new Vector3((float)rand.Next(1000) / 1000.0f, 0, 0));
-                    
-                }
-
-            Texture2D noiseImage = new Texture2D(device, resolution, resolution, true, SurfaceFormat.Color);
-            noiseImage.SetData(noisyColors);
-            return noiseImage;
-        }
-
-        private VertexPositionTexture[] SetUpFullscreenVertices()
-        {
-            VertexPositionTexture[] vertices = new VertexPositionTexture[4];
-
-            vertices[0] = new VertexPositionTexture(new Vector3(-1, 1, 0f), new Vector2(0, 1));
-            vertices[1] = new VertexPositionTexture(new Vector3(1, 1, 0f), new Vector2(1, 1));
-            vertices[2] = new VertexPositionTexture(new Vector3(-1, -1, 0f), new Vector2(0, 0));
-            vertices[3] = new VertexPositionTexture(new Vector3(1, -1, 0f), new Vector2(1, 0));
-
-            return vertices;
-        }
-
-
-        private void GeneratePerlinNoise(float time)
-        {
-            device.SetRenderTarget(cloudsRenderTarget);
-            device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1.0f, 0);
-
-            effect.CurrentTechnique = effect.Techniques["PerlinNoise"];
-            effect.Parameters["xTexture0"].SetValue(cloudStaticMap);
-            effect.Parameters["xOvercast"].SetValue(0.9f);
-            effect.Parameters["xTime"].SetValue(time / 8000.0f);
-            effect.CurrentTechnique.Passes[0].Apply();
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                device.DrawUserPrimitives(PrimitiveType.TriangleStrip, fullScreenVertices, 0, 2);
-            }
-
-
-            device.SetRenderTarget(null);
-            cloudMap = cloudsRenderTarget;
-
-            
-        }
-
-
-
-
-
-
-
-
-
+       
 
         // Water
 
         public const float waterHeight = 2.75f * (float)mapHeightScale;
-        private RenderTarget2D refractionRenderTarget;
-        private Texture2D refractionMap;
-        private RenderTarget2D reflectionRenderTarget;
-        private Texture2D reflectionMap;
-        public Matrix reflectionViewMatrix;
-        private Vector3 windDirection = new Vector3(1, 0, 0);
-
-
-        public Texture2D waterBumpMap;
-
-
-        private Plane CreatePlane(float height, Vector3 planeNormalDirection, Matrix currentViewMatrix, bool clipSide)
-        {
-            planeNormalDirection.Normalize();
-            Vector4 planeCoeffs = new Vector4(planeNormalDirection, height);
-            if (clipSide)
-            {
-                planeCoeffs *= -1;
-            }
-
-	        Plane finalPlane = new Plane(planeCoeffs);
-
-            return finalPlane;
-        }
-
-
-        private void DrawRefractionMap(Camera PlayerCamera)
-        {
-            Plane refractionPlane = CreatePlane(waterHeight + (1.5f * mapHeightScale), new Vector3(0, -1, 0), PlayerCamera.viewMatrix, false);
-
-            effect.Parameters["ClipPlane0"].SetValue(new Vector4(refractionPlane.Normal, refractionPlane.D));
-            effect.Parameters["Clipping"].SetValue(true);    // Allows the geometry to be clipped for the purpose of creating a refraction map
-            device.SetRenderTarget(refractionRenderTarget);
-            device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1.0f, 0);
-            DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-            device.SetRenderTarget(null);
-            effect.Parameters["Clipping"].SetValue(false);   // Make sure you turn it back off so the whole scene doesnt keep rendering as clipped
-            refractionMap = refractionRenderTarget;
-        }
-
-
-
-
-
-        private void DrawReflectionMap(Camera PlayerCamera)
-        {
-            Plane reflectionPlane = CreatePlane(waterHeight - (0.5f * mapHeightScale), new Vector3(0, -1, 0), reflectionViewMatrix, true);
-            
-            effect.Parameters["ClipPlane0"].SetValue(new Vector4(reflectionPlane.Normal, reflectionPlane.D));
-
-            effect.Parameters["Clipping"].SetValue(true);    // Allows the geometry to be clipped for the purpose of creating a refraction map
-            device.SetRenderTarget(reflectionRenderTarget);
-
-
-            device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1.0f, 0);
-
-
-            DrawSkyDome(reflectionViewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-            DrawTerrain(reflectionViewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-
-            effect.Parameters["Clipping"].SetValue(false);
-
-            device.SetRenderTarget(null);
-
-            reflectionMap = reflectionRenderTarget;
-
-            
-        }
-
-
-
-
-
-
-        private void DrawWater(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition, float time)
-        {
-            effect.CurrentTechnique = effect.Techniques["Water"];
-            Matrix worldMatrix = Matrix.Identity;
-            effect.Parameters["xWorld"].SetValue(worldMatrix);
-            effect.Parameters["xView"].SetValue(currentViewMatrix);
-            effect.Parameters["xReflectionView"].SetValue(reflectionViewMatrix);
-            effect.Parameters["xProjection"].SetValue(projectionMatrix);
-            effect.Parameters["xReflectionMap"].SetValue(reflectionMap);
-            effect.Parameters["xRefractionMap"].SetValue(refractionMap);
-            effect.Parameters["xWaterBumpMap"].SetValue(waterBumpMap);
-            effect.Parameters["xWaveLength"].SetValue(0.01f);
-            effect.Parameters["xWaveHeight"].SetValue(0.03f);
-
-            effect.Parameters["xCamPos"].SetValue(cameraPosition);
-
-            effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
-            effect.Parameters["FogNear"].SetValue(FOGNEAR);
-            effect.Parameters["FogFar"].SetValue(FOGFAR);
-            
-
-
-            effect.Parameters["xTime"].SetValue(time);
-            effect.Parameters["xWindForce"].SetValue(0.0002f);
-            effect.Parameters["xWindDirection"].SetValue(windDirection);
-
-
-
-
-            effect.CurrentTechnique.Passes[0].Apply();
-
-
-            device.SetVertexBuffer(waterVertexBuffer);
-
-            int noVertices = waterVertexBuffer.VertexCount;
-            device.DrawPrimitives(PrimitiveType.TriangleList, 0, noVertices / 3);
-
-
-
-
-        }
-
-
-        
-
-
-
-
-
-
-
-
-        private void SetUpWaterVertices(int width, int height)
-        {
-            width = width * mapCellScale;
-            height = height * mapCellScale;
-
-            VertexPositionTexture[] waterVertices = new VertexPositionTexture[6];
-
-            waterVertices[0] = new VertexPositionTexture(new Vector3(-width, waterHeight, height), new Vector2(0, 1));
-            waterVertices[2] = new VertexPositionTexture(new Vector3(width, waterHeight, -height), new Vector2(1, 0));
-            waterVertices[1] = new VertexPositionTexture(new Vector3(-width, waterHeight, -height), new Vector2(0, 0));
-
-            waterVertices[3] = new VertexPositionTexture(new Vector3(-width, waterHeight, height), new Vector2(0, 1));
-            waterVertices[5] = new VertexPositionTexture(new Vector3(width, waterHeight, height), new Vector2(1, 1));
-            waterVertices[4] = new VertexPositionTexture(new Vector3(width, waterHeight, -height), new Vector2(1, 0));
-
-            waterVertexBuffer = new VertexBuffer(device, typeof(VertexPositionTexture), waterVertices.Length, BufferUsage.WriteOnly);
-            waterVertexBuffer.SetData(waterVertices);
-        }
-
-       
-
 
 
 
 
         private int enitiesDrawn;
         
-        
 
 
-
-        private Game1 game;
-
-        private int mapNumCellsPerRow { get; set; }
-        private int mapNumCellPerColumn { get; set; }
+        public int mapNumCellsPerRow { get; set; }
+        public int mapNumCellPerColumn { get; set; }
 
         private int[] heightMap;
         private Vector4[] textureMap;
 
-        // todo provide access to the resources each cell had a sector, and each sector has a resourcesCell
+        private double[] cellTravelResistance;
+
         private int[] sector;
         private ResourceCell[] resources;
 
-        //public VertexPositionNormalColored[] vertices;
-        private VertexMultitextured[] vertices;
 
-        public Texture2D groundTexture { get; set; }
         public float textureSize { get; set; }
 
-        public Texture2D sandTexture { get; set; }
-        public Texture2D rockTexture { get; set; }
-        public Texture2D snowTexture { get; set; }
-
-
-
-        private GraphicsDevice device { get; set; }
-
-        private Int16[] indices;
-        private VertexBuffer terrainVertexBuffer;
-        private IndexBuffer terrainIndexBuffer;
-
-        public const int WaterLevel = 0;
-
         private BoundingFrustum frustum;
-
-        private Effect effect { get; set; }
-    //    private Matrix projectionMatrix { get; set; }
 
         // search tree
         private Node root;
 
 
-        // sky dome
 
-        private Texture2D cloudMap;
-        private Model skyDome;
-
-
-        private List<Entity> entities;
+        public List<Entity> entities;
 
         
 
         // selection
-
-    //    private Vector3 lookingAt;
         public Texture2D selectionTexture;
-
-
-
-        private VertexBuffer waterVertexBuffer;
-      //  private VertexDeclaration waterVertexDeclaration;
-        private RenderTarget2D BackDropRenderTarget;
 
 
 

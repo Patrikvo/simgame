@@ -16,7 +16,7 @@ namespace Simgame2.GameStates
     {
         public FreeLook(Game1 game): base(game)
         {
-
+            
         }
 
 
@@ -62,10 +62,40 @@ namespace Simgame2.GameStates
             }
 
 
+            if (keyState.IsKeyUp(Keys.PageUp) && button_PageUp_pressed == true)
+            { 
+                button_PageUp_pressed = false;
+                game.worldMap.GetRenderer().IncreaseAmbientLightLevel();
+            }
+            if (keyState.IsKeyDown(Keys.PageUp))
+            {
+                button_PageUp_pressed = true;
+            }
+
+
+            if (keyState.IsKeyUp(Keys.PageDown) && button_PageDown_pressed == true)
+            {
+                button_PageDown_pressed = false;
+                game.worldMap.GetRenderer().DecreaseAmbientLightLevel();
+            }
+            if (keyState.IsKeyDown(Keys.PageDown))
+            {
+                button_PageDown_pressed = true;
+            }
+
+
+
+
+
             game.HUD_overlay.Update(0, 0, false, true);
 
 
         }
+
+        private bool button_PageUp_pressed;
+        private bool button_PageDown_pressed;
+
+
 
         public override void EnterState()
         {
@@ -73,6 +103,8 @@ namespace Simgame2.GameStates
             Mouse.SetPosition(game.device.Viewport.Width / 2, game.device.Viewport.Height / 2);
             originalMouseState = Mouse.GetState();
             game.IsMouseVisible = false;
+            button_PageUp_pressed = false;
+            button_PageDown_pressed = false;
         }
 
         public override void ExitState()

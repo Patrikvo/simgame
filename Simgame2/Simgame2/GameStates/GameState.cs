@@ -92,6 +92,20 @@ namespace Simgame2.GameStates
                 mouseRightButtonDown = true;
             }
 
+
+            if (keyState.IsKeyDown(Keys.Insert))
+            {
+                ButtonInsertDown = true;
+            }
+
+            if (keyState.IsKeyUp(Keys.Insert) && ButtonInsertDown == true)
+            {
+                Entities.MoverEntity mover = this.game.entityFactory.CreateMover(game.PlayerCamera.GetCameraPostion());
+                this.game.worldMap.AddEntity(mover);
+                this.game.simulator.AddEntity(mover.GetSimEntity());
+                ButtonInsertDown = false;
+            }
+
         }
 
 
@@ -114,6 +128,7 @@ namespace Simgame2.GameStates
         protected bool mouseLeftButtonDown = false;
         protected bool mouseRightButtonDown = false;
         protected bool ButtonSpaceDown = false;
+        protected bool ButtonInsertDown = false;
 
         protected Game1 game;
     }

@@ -15,17 +15,42 @@ namespace Simgame2
 {
     public class Camera
     {
+
+
+
+        private float _DrawDistance;
+
+        public float DrawDistance
+        {
+            get { return _DrawDistance; }
+            set 
+            { 
+                _DrawDistance = value;
+                UpdateProjectionMatrix();
+            }
+        }
+
+
+        private float AspectRatio;
+
         public Camera(float AspectRatio)
         {
-            this.viewMatrix = Matrix.CreateLookAt(new Vector3(0, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 0, -1));
-            projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, AspectRatio, 1.0f, 300.0f);
+            this.AspectRatio = AspectRatio;
+            _DrawDistance = 300.0f;
+            this.viewMatrix = Matrix.CreateLookAt(new Vector3(0, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 0, -1));     /// here
+            UpdateProjectionMatrix();
             MoveCamera(new Vector3(0, 25, 0));
             this.cameraHeight = CameraHeightOffset;
 
         }
 
+        private void UpdateProjectionMatrix()
+        {
+            projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, this.AspectRatio, 1.0f, DrawDistance);
+        }
 
 
+        
 
         public void MoveCamera(Vector3 newLocation)
         {
@@ -59,7 +84,7 @@ namespace Simgame2
             Matrix cameraRotation = Matrix.CreateRotationX(this.updownRot) * Matrix.CreateRotationY(this.leftrightRot);
             //Matrix cameraRotation = Matrix.CreateRotationX(-MathHelper.Pi/6) * Matrix.CreateRotationY(leftrightRot);
 
-            Vector3 cameraOriginalTarget = new Vector3(0, 0, -1);
+            Vector3 cameraOriginalTarget = new Vector3(0, 0, -1);    // here
             Vector3 cameraOriginalUpVector = new Vector3(0, 1, 0);
 
             Vector3 cameraRotatedTarget = Vector3.Transform(cameraOriginalTarget, cameraRotation);
@@ -80,7 +105,7 @@ namespace Simgame2
             Vector3 forwardVector = reflTargetPos - reflCameraPosition;
             sideVector = Vector3.Transform(new Vector3(1, 0, 0), cameraRotation);
             Vector3 reflectionCamUp = Vector3.Cross(sideVector, forwardVector);
-            worldMap.reflectionViewMatrix = Matrix.CreateLookAt(reflCameraPosition, reflTargetPos, reflectionCamUp);
+            worldMap.GetRenderer().reflectionViewMatrix = Matrix.CreateLookAt(reflCameraPosition, reflTargetPos, reflectionCamUp);
 
 
 
@@ -118,10 +143,6 @@ namespace Simgame2
 
         public Ray UnProjectScreenPoint(float mouseX, float mouseY, Viewport vp) 
         {
-         //   Vector3 markerLocation = Vector3.Zero;
-
-         //   Vector2 bias = new Vector2(0, 0);
-
 
             Vector3 nearSource = new Vector3(mouseX, mouseY, 0f);
             Vector3 farSource = new Vector3(mouseX, mouseY, 1f);
@@ -171,21 +192,7 @@ namespace Simgame2
 
                Vector2 bias = new Vector2(0, 0);
 
-
-         //   Vector3 nearSource = new Vector3(mouseX, mouseY, 0f);
-         //   Vector3 farSource = new Vector3(mouseX, mouseY, 1f);
-
-        //    Vector3 nearPoint = vp.Unproject(nearSource,
-        //        projectionMatrix, viewMatrix, Matrix.Identity);
-
-        //    Vector3 farPoint = vp.Unproject(farSource,
-        //        projectionMatrix, viewMatrix, Matrix.Identity);
-
-        //    Vector3 direction = farPoint - nearPoint;
-        //    direction.Normalize();
-
-        //    return new Ray(nearPoint, direction);
-            
+           
             //  mouse location in 3D landscape
             //  Unproject the screen space mouse coordinate into model space 
             //  coordinates. Because the world space matrix is identity, this 

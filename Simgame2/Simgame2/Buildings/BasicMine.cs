@@ -18,17 +18,17 @@ namespace Simgame2.Buildings
         public BasicMine(Game game)
             : base(game)
         {
-           
+            this.Type = EntityTypes.BASIC_MINE;
         }
 
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
             
-            this.AddTexture(this.Game.Content.Load<Texture2D>("BasicMineTex"));
+            this.AddTexture("BasicMineTex");
             this.scale = scale;
             this.rotation = rotation;
             this.location = location;
-            this.LoadModel("BasicMine", effect);
+            this.LoadModel("BasicMine");
         }
 
         public override void Update(GameTime gameTime)
@@ -41,14 +41,7 @@ namespace Simgame2.Buildings
             }
         }
 
-        public void Place(WorldMap map, Vector3 location, bool flatten)
-        {
-            this.location = location;
-            this.PlaceBuilding(map, flatten);
-            
-        }
-
-
+ 
         WorldMap.ResourceCell resourceCell;
 
         public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
@@ -56,7 +49,7 @@ namespace Simgame2.Buildings
             base.Draw(currentViewMatrix, cameraPosition);
             if (this.HasMouseFocus)
             {
-                statusBillboard.Draw(this.game.PlayerCamera);
+                statusBillboard.Draw(this.playerCamera);
             }
         }
 
@@ -65,7 +58,7 @@ namespace Simgame2.Buildings
         {
             if (this.resourceCell == null)
             {
-                resourceCell = this.game.worldMap.GetResourceFromWorldCoor(location.X, -location.Z);
+                resourceCell = this.getResourceCell(location.X, -location.Z);
             }
             // TODO modifyvto allow custom string and images.
             if (statusBillboard.BillboardBackGroundTexture != null)
@@ -73,13 +66,13 @@ namespace Simgame2.Buildings
                // float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.SimulationEnity.Resource.ORE);
                // float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.SimulationEnity.Resource.ORE);
 
-                spriteBatch = new SpriteBatch(this.game.device);
+                spriteBatch = new SpriteBatch(this.device);
 
 
-                RenderTarget2D target = new RenderTarget2D(this.game.device, 400, 600);
-                this.game.device.SetRenderTarget(target);// Now the spriteBatch will render to the RenderTarget2D
+                RenderTarget2D target = new RenderTarget2D(this.device, 400, 600);
+                this.device.SetRenderTarget(target);// Now the spriteBatch will render to the RenderTarget2D
 
-                this.game.device.Clear(Color.Transparent);
+                this.device.Clear(Color.Transparent);
 
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
                 spriteBatch.Draw(statusBillboard.BillboardBackGroundTexture, new Rectangle(0, 0, 400, 600), Color.White);
@@ -90,11 +83,11 @@ namespace Simgame2.Buildings
                // sb.Append("/");
                 //sb.Append(electricMax);
 
-                spriteBatch.DrawString(this.game.font, GetSimEntity().ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
+                spriteBatch.DrawString(this.font, GetSimEntity().ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
 
                 spriteBatch.End();
 
-                this.game.device.SetRenderTarget(null);//This will set the spriteBatch to render to the screen again.
+                this.device.SetRenderTarget(null);//This will set the spriteBatch to render to the screen again.
 
                 this.statusBillboard.SetTexture((Texture2D)target);
 
@@ -102,13 +95,13 @@ namespace Simgame2.Buildings
 
         }
 
-        public override Simulation.SimulationEnity GetSimEntity()
+        public override Simulation.SimulationBuildingEnity GetSimEntity()
         {
             if (basicMineSim == null)
             {
                 if (this.resourceCell == null)
                 {
-                    resourceCell = this.game.worldMap.GetResourceFromWorldCoor(location.X, -location.Z);
+                    resourceCell = this.getResourceCell(location.X, -location.Z);
                 }
                 basicMineSim = new BasicMineSim(this);
                 
@@ -117,7 +110,7 @@ namespace Simgame2.Buildings
             return basicMineSim;
         }
 
-        public Effect effect { get; set; }
+      //  public Effect effect { get; set; }
 
         public static Vector3 StandardScale = new Vector3(5, 5, 5);
         public static Vector3 StandardRotation = new Vector3(0, MathHelper.Pi, 0);
@@ -125,7 +118,7 @@ namespace Simgame2.Buildings
         private BasicMineSim basicMineSim;
 
 
-        private class BasicMineSim : Simulation.SimulationEnity
+        private class BasicMineSim : Simulation.SimulationBuildingEnity
         {
             private BasicMine mineParent;
 

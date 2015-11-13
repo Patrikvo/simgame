@@ -19,22 +19,20 @@ namespace Simgame2.Buildings
         public WindTower(Game game)
             : base(game)
         {
-            
+            this.Type = EntityTypes.WIND_TOWER;
         }
 
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
-            
-
-            this.AddTexture(this.Game.Content.Load<Texture2D>("WindTower_bTex"));  // base texture
-            this.AddTexture(this.Game.Content.Load<Texture2D>("WindTower_rTex"));  // rotor texture
+            this.AddTexture("WindTower_bTex");  // base texture
+            this.AddTexture("WindTower_rTex");  // rotor texture
           
 
             this.scale = scale;
             this.rotation = rotation;
             this.location = location;
 
-            this.LoadModel("WindTower", effect);
+            this.LoadModel("WindTower");
 
             rotorTransform = this.model.Bones["Rotor"].Transform;  // Rotor start position
         }
@@ -50,26 +48,12 @@ namespace Simgame2.Buildings
             base.Update(gameTime);
         }
 
-        public void Place(WorldMap map, Vector3 location, bool flatten)
-        {
-            this.location = location;
-            this.PlaceBuilding(map, flatten);
-        }
-
 
 
         public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
-            //Matrix worldMatrix = Matrix.CreateScale(scale) * Matrix.CreateRotationX(rotation.X) * Matrix.CreateRotationY(rotation.Y) * 
-           //     Matrix.CreateRotationZ(rotation.Z) * Matrix.CreateTranslation(location);
-
             this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
                 
-
-       //     Matrix[] transforms = new Matrix[model.Bones.Count];
-        //    model.CopyAbsoluteBoneTransformsTo(transforms);
-
-
             Matrix worldMatrix = GetWorldMatrix();
             Matrix[] transforms = GetBoneTransforms();
 
@@ -120,7 +104,7 @@ namespace Simgame2.Buildings
 
             if (HasMouseFocus)
             {
-                statusBillboard.Draw(this.game.PlayerCamera);
+                statusBillboard.Draw(this.playerCamera);
             }
         }
 
@@ -131,16 +115,16 @@ namespace Simgame2.Buildings
             // TODO modifyvto allow custom string and images.
             if (statusBillboard.BillboardBackGroundTexture != null)
             {
-                float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.SimulationEnity.Resource.ELECTRICITY);
-                float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.SimulationEnity.Resource.ELECTRICITY);
+                float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.SimulationBuildingEnity.Resource.ELECTRICITY);
+                float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.SimulationBuildingEnity.Resource.ELECTRICITY);
 
-                spriteBatch = new SpriteBatch(this.game.device);
+                spriteBatch = new SpriteBatch(this.device);
 
 
-                RenderTarget2D target = new RenderTarget2D(this.game.device, 400, 400);
-                this.game.device.SetRenderTarget(target);// Now the spriteBatch will render to the RenderTarget2D
+                RenderTarget2D target = new RenderTarget2D(this.device, 400, 400);
+                this.device.SetRenderTarget(target);// Now the spriteBatch will render to the RenderTarget2D
 
-                this.game.device.Clear(Color.Transparent);
+                this.device.Clear(Color.Transparent);
 
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
                 spriteBatch.Draw(statusBillboard.BillboardBackGroundTexture, new Rectangle(0, 0, 400, 400), Color.White);
@@ -151,11 +135,11 @@ namespace Simgame2.Buildings
                 sb.Append("/");
                 sb.Append(electricMax);
 
-                spriteBatch.DrawString(this.game.font, sb.ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
+                spriteBatch.DrawString(this.font, sb.ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
 
                 spriteBatch.End();
 
-                this.game.device.SetRenderTarget(null);//This will set the spriteBatch to render to the screen again.
+                this.device.SetRenderTarget(null);//This will set the spriteBatch to render to the screen again.
 
                 this.statusBillboard.SetTexture((Texture2D)target);
 
@@ -164,7 +148,7 @@ namespace Simgame2.Buildings
         }
 
 
-        public override Simulation.SimulationEnity GetSimEntity()
+        public override Simulation.SimulationBuildingEnity GetSimEntity()
         {
             if (windTowerSim == null)
             {
@@ -175,7 +159,7 @@ namespace Simgame2.Buildings
         }
 
 
-        public Effect effect { get; set; }
+    //    public Effect effect { get; set; }
 
         public static Vector3 StandardScale = new Vector3(5, 5, 5);
         public static Vector3 StandardRotation = new Vector3(0, MathHelper.Pi, 0);
@@ -186,7 +170,7 @@ namespace Simgame2.Buildings
 
         private WindTowerSim windTowerSim;
 
-        private class WindTowerSim : Simulation.SimulationEnity
+        private class WindTowerSim : Simulation.SimulationBuildingEnity
         {
             public WindTowerSim()
             {

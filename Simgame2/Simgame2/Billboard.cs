@@ -81,40 +81,40 @@ namespace Simgame2
             Matrix offCenter = Matrix.CreateTranslation(playerCamera.sideVector * (offset + (this.Width/2)));
 
 
-            this.game.effect.CurrentTechnique = this.game.effect.Techniques["CylBillboard"];
-            this.game.effect.Parameters["xWorld"].SetValue(billboardMatrix * offCenter);
-            this.game.effect.Parameters["xView"].SetValue(playerCamera.viewMatrix);
-            this.game.effect.Parameters["xProjection"].SetValue(playerCamera.projectionMatrix);
-            this.game.effect.Parameters["xCamPos"].SetValue(playerCamera.GetCameraPostion());
+            this.effect.CurrentTechnique = this.effect.Techniques["CylBillboard"];
+            this.effect.Parameters["xWorld"].SetValue(billboardMatrix * offCenter);
+            this.effect.Parameters["xView"].SetValue(playerCamera.viewMatrix);
+            this.effect.Parameters["xProjection"].SetValue(playerCamera.projectionMatrix);
+            this.effect.Parameters["xCamPos"].SetValue(playerCamera.GetCameraPostion());
             
-            this.game.effect.Parameters["xBillboardTexture"].SetValue(billboardTexture);
+            this.effect.Parameters["xBillboardTexture"].SetValue(billboardTexture);
 
             
 
-            RasterizerState prevRasterizerState = this.game.device.RasterizerState;
+            RasterizerState prevRasterizerState = this.device.RasterizerState;
        
-            BlendState prevBlendState = this.game.device.BlendState;
+            BlendState prevBlendState = this.device.BlendState;
 
-            this.game.device.BlendState = BlendState.NonPremultiplied;
-            this.game.device.RasterizerState = RasterizerState.CullNone;
-            this.game.device.DepthStencilState = DepthStencilState.DepthRead;
+            this.device.BlendState = BlendState.NonPremultiplied;
+            this.device.RasterizerState = RasterizerState.CullNone;
+            this.device.DepthStencilState = DepthStencilState.DepthRead;
 
             foreach (EffectPass pass in this.game.effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                this.game.device.SetVertexBuffer(treeVertexBuffer);
-                this.game.device.Indices = this.indexBuffer;
+                this.device.SetVertexBuffer(treeVertexBuffer);
+                this.device.Indices = this.indexBuffer;
 
 
-                this.game.device.DrawIndexedPrimitives(PrimitiveType.TriangleList,
+                this.device.DrawIndexedPrimitives(PrimitiveType.TriangleList,
                     0, 0, this.treeVertexBuffer.VertexCount, 0, 2);
                 
             }
 
-            this.game.device.BlendState = BlendState.Opaque;
+            this.device.BlendState = BlendState.Opaque;
 
-            this.game.device.RasterizerState = prevRasterizerState;
-            this.game.device.DepthStencilState = DepthStencilState.Default;
+            this.device.RasterizerState = prevRasterizerState;
+            this.device.DepthStencilState = DepthStencilState.Default;
         }
 
         private void CreateBillboardVerticesFromList()
@@ -133,7 +133,7 @@ namespace Simgame2
             };
 
 
-            treeVertexBuffer = new VertexBuffer(this.game.device, typeof(VertexPositionTexture), billboardVertices.Length, BufferUsage.WriteOnly);
+            treeVertexBuffer = new VertexBuffer(this.device, typeof(VertexPositionTexture), billboardVertices.Length, BufferUsage.WriteOnly);
             treeVertexBuffer.SetData(billboardVertices);
 
 
@@ -143,7 +143,7 @@ namespace Simgame2
                 0, 1, 3
             };
 
-            indexBuffer = new IndexBuffer(this.game.device, IndexElementSize.SixteenBits, indices.Length, BufferUsage.WriteOnly);
+            indexBuffer = new IndexBuffer(this.device, IndexElementSize.SixteenBits, indices.Length, BufferUsage.WriteOnly);
             indexBuffer.SetData(indices);
         }
 

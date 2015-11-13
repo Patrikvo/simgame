@@ -13,10 +13,10 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2.Simulation
 {
-    public class SimulationEnity
+    public class SimulationBuildingEnity : SimulationEntity
     {
 
-        public SimulationEnity()
+        public SimulationBuildingEnity()
         {
             ResouceAmount = new float[ResourceCount];
             ResourceConsumptionPerSecond = new float[ResourceCount];
@@ -27,6 +27,7 @@ namespace Simgame2.Simulation
             ResourceOutput = new float[ResourceCount];
         }
 
+        
 
         public void AddResource(Resource res, float amount)
         {
@@ -61,7 +62,7 @@ namespace Simgame2.Simulation
         }
 
 
-        public virtual void Update(GameTime gameTime)
+        public override void Update(GameTime gameTime)
         {
             float timeDelta = gameTime.ElapsedGameTime.Milliseconds / 1000;
             for (int i = 0; i < ResourceCount; i++)

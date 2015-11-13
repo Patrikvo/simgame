@@ -104,7 +104,7 @@ namespace Simgame2
         public GameStates.PlaceBuilding PlaceBuildingState;
 
 
-        public Simulation.Simulator simulator = new Simulation.Simulator();
+        public Simulation.Simulator simulator;
 
         // test objects
 
@@ -120,7 +120,7 @@ namespace Simgame2
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            
+            simulator = new Simulation.Simulator(this);
             FreeLookState = new GameStates.FreeLook(this);
             MousePointerLookState = new GameStates.MousePointerLook(this);
             PlaceBuildingState = new GameStates.PlaceBuilding(this);
@@ -160,11 +160,13 @@ namespace Simgame2
             device = graphics.GraphicsDevice;
             effect = Content.Load<Effect>("Series4Effects");
 
-            
-            
-            worldMap = new WorldMap(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
+
             PlayerCamera = new Camera(device.Viewport.AspectRatio);
+            worldMap = new WorldMap(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
+            
             PlayerCamera.worldMap = worldMap;
+
+            PlayerCamera.DrawDistance = 300.0f;
 
             HUD_overlay.PreloadImages(this.Content);
 
@@ -178,20 +180,20 @@ namespace Simgame2
             Texture2D texture = textureGenerator.GenerateGroundTexture(new Color(120, 62, 62, 1), new Vector3(20, 20, 20), 512);
 
 
-            worldMap.waterBumpMap = Content.Load<Texture2D>("waterbump");
+            worldMap.GetRenderer().waterBumpMap = Content.Load<Texture2D>("waterbump");
+
+            worldMap.GetRenderer().Textures = new Texture2D[5];
+            worldMap.GetRenderer().Textures[0] = Content.Load<Texture2D>("Textures\\tex1");
+            worldMap.GetRenderer().Textures[1] = Content.Load<Texture2D>("Textures\\tex0");
+            worldMap.GetRenderer().Textures[2] = Content.Load<Texture2D>("Textures\\tex2");
+            worldMap.GetRenderer().Textures[3] = Content.Load<Texture2D>("Textures\\tex3");
+            worldMap.GetRenderer().Textures[4] = Content.Load<Texture2D>("Textures\\tex1");
 
 
-            worldMap.groundTexture = Content.Load<Texture2D>("Textures\\tex1");
-            worldMap.sandTexture = Content.Load<Texture2D>("Textures\\tex0");
-            worldMap.rockTexture = Content.Load<Texture2D>("Textures\\tex2");
-            worldMap.snowTexture = Content.Load<Texture2D>("Textures\\tex3");
-
-            //worldMap.textureSize = 512;
-
-            worldMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, WorldMap.mapCellScale);
+            worldMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, 5); //WorldMap.mapCellScale);
 
             // skydome
-            worldMap.LoadSkyDome(Content.Load<Model>("dome"));
+            worldMap.GetRenderer().LoadSkyDome(Content.Load<Model>("dome"));
 
 
             PlayerCamera.UpdateViewMatrix();
@@ -200,26 +202,7 @@ namespace Simgame2
 
             entityFactory = EntityFactory.CreateFactory(this, this.worldMap, PlayerCamera.projectionMatrix);
 
-       //     EntityBuilding minebuilding = entityFactory.CreateBasicMine(new Vector3(100, 0, -100), true);
-
-     //       EntityBuilding tower = entityFactory.CreateWindTower(new Vector3(100, 0, -150), true);
-
-      //      EntityBuilding melter = entityFactory.CreateBasicMelter(new Vector3(150, 0, -150), true);
-
-      //      EntityBuilding solar = entityFactory.CreateBasicSolarPlant(new Vector3(200, 0, -200), true);
-
-
-/*
-            selBuilding = new EntityBuilding(this);
-            selBuilding.LoadModel("testbuilding", effect);
-            selBuilding.location = new Vector3(50, 12, -50);
-            selBuilding.scale = new Vector3(1f, 1f, 1f);
-            selBuilding.rotation = new Vector3(0, MathHelper.Pi, 0);
-            selBuilding.projectionMatrix = PlayerCamera.projectionMatrix;
-            selBuilding.AddTexture(Content.Load<Texture2D>("testbuildingtex"));
-            */
-
-
+  
             doneLoading = true;
             ChangeGameState(FreeLookState);
         }
@@ -290,8 +273,8 @@ namespace Simgame2
             
             GraphicsDevice.Clear(Color.Black);
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
-            
-            
+
+
             worldMap.Draw(PlayerCamera, gameTime);
             
 
