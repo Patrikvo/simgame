@@ -28,7 +28,7 @@ namespace Simgame2.Entities
            
         }
 
-
+        
 
         public override void Update(GameTime gameTime)
         {
@@ -37,14 +37,20 @@ namespace Simgame2.Entities
             if (this.moverSim.MovementState == MoverSim.UnitMovementState.MOVING)
             {
                 this.location = this.location + (Velocity * (MaxSpeed * gameTime.ElapsedGameTime.Milliseconds / 1000));
-                int height = this.worldMap.getCellHeightFromWorldCoor(location.X, -location.Z);
+                float height = this.worldMap.getCellHeightFromWorldCoor(location.X, -location.Z);
+                if (height < WorldMap.waterHeight)
+                {
+                    height = WorldMap.waterHeight;
+                }
+
 
                 this.location = new Vector3(location.X, height, location.Z);
             }
             this.UpdateBoundingBox();
 
-            OrientateConformTerrain();
             turnToTarget();
+            OrientateConformTerrain();
+            
             this.UpdateBoundingBox();
 
             if (this.moverSim.MovementState == MoverSim.UnitMovementState.MOVING)
@@ -52,7 +58,10 @@ namespace Simgame2.Entities
                 this.moverSim.UpdatePath();
             }
             // TODO set location, update distace, check if distance < minDistance, then change target
-
+            if (this.HasMouseFocus)
+            {
+                Console.WriteLine(this.moverSim.ToString());
+            }
 
         }
 
@@ -62,6 +71,11 @@ namespace Simgame2.Entities
             {
                 Vector3 newForwardUnit = Vector3.Normalize(TargetLocation - this.location);
                 this.Velocity = newForwardUnit;
+
+                double r = Math.Sqrt(this.Velocity.X*this.Velocity.X + this.Velocity.Y*this.Velocity.Y + this.Velocity.Z*this.Velocity.Z);
+               // double t = Math.Atan(this.Velocity.Y/this.Velocity.X);
+                double p = Math.Acos(-this.Velocity.Z / r);
+                rotation = new Vector3(rotation.X, (float)p, rotation.Z);
 
             }
         }
@@ -77,11 +91,16 @@ namespace Simgame2.Entities
             float l12 = Vector3.Distance(this.corners[7], this.corners[3]);
             float l23 = Vector3.Distance(this.corners[3], this.corners[2]);
 
-            float angle1 = (float)Math.Asin(clamp((h1 - h2) / l12));
+          //  float angle1 = (float)Math.Asin(clamp((h1 - h2) / l12));
 
-            float angle2 = (float)Math.Asin(clamp((h2 - h3) / l23));
+          //  float angle2 = (float)Math.Asin(clamp((h2 - h3) / l23));
 
-            rotation = new Vector3(angle1, rotation.Y, -angle2);
+            float angle1 = (float)Math.Atan(Math.Abs((h1 - h2)) / (l12 * Math.Sqrt(2)));
+            float angle2 = (float)Math.Atan(Math.Abs((h2 - h3)) / (l23 * Math.Sqrt(2)));
+
+
+            //rotation = new Vector3(angle1, rotation.Y, -angle2);
+            rotation = new Vector3(angle1, rotation.Y, angle2);
 
 
 
@@ -153,13 +172,16 @@ namespace Simgame2.Entities
 
         public class MoverSim : Simulation.SimulationEntity
         {
+            public const float StopDistance = 20;
+
+
             public MoverSim(MoverEntity mover) : base()
             {
                 this.mover = mover;
                 this.MovementState = UnitMovementState.IDLE;
                 this.PayloadState = UnitPayloadState.EMPTY;
                 ReachedGoal = true;
-                
+                RefreshTarget = true;
             }
 
             public override void Update(GameTime gameTime)
@@ -173,6 +195,10 @@ namespace Simgame2.Entities
                 return Vector3.Distance(GetLocation(), this.mover.TargetLocation);
             }
 
+            public float DistanceToTarget(Vector3 target)
+            {
+                return Vector3.Distance(GetLocation(), target);
+            }
 
             public Vector3 GetLocation() { return this.mover.location; }
             public void SetTarget(Vector3 targetLoc) 
@@ -190,7 +216,7 @@ namespace Simgame2.Entities
                     {
                         this.Path[i] = new Vector2(pathfinder.Path[i+1].First, pathfinder.Path[i+1].Second);
                         
-                        mover.worldMap.AddEntity(mover.entityFactory.CreateMiniMover(new Vector3(pathfinder.Path[i + 1].First * 5, 20, -pathfinder.Path[i + 1].Second * 5)));
+                    //    mover.worldMap.AddEntity(mover.entityFactory.CreateMiniMover(new Vector3(pathfinder.Path[i + 1].First * 5, 20, -pathfinder.Path[i + 1].Second * 5)));
 
                     }
                     CurrentPathStep = 0; 
@@ -205,9 +231,11 @@ namespace Simgame2.Entities
 
             int CurrentPathStep;
 
+            public bool RefreshTarget;
+
             public bool UpdatePath()
             {
-                if (DistanceToTarget() < 20)
+                if (DistanceToTarget() < Entities.MoverEntity.MoverSim.StopDistance)
                 {
                     CurrentPathStep++;
                     if (CurrentPathStep >= this.Path.Length)
@@ -227,7 +255,17 @@ namespace Simgame2.Entities
 
 
 
-            
+
+            public override string ToString()
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append("MoverUnit: ");
+                sb.Append(" movestate: " + this.MovementState);
+                sb.Append(" loadState: " + this.PayloadState);
+                return sb.ToString();
+            }
+
+
 
             public UnitMovementState MovementState
             {
@@ -242,7 +280,7 @@ namespace Simgame2.Entities
             public UnitPayloadState PayloadState;
             public MoverEntity mover;
             public enum UnitMovementState { IDLE, MOVING };
-            public enum UnitPayloadState { EMPTY, LOADED };
+            public enum UnitPayloadState { EMPTY, LOADED, LOADING, UNLOADING };
             PathFinder pathfinder;
             private Vector2[] Path;
 

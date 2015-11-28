@@ -219,7 +219,7 @@ namespace Simgame2
 
             // water
             renderer.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
-            renderer.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale);
+            renderer.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
 
 
             // skybox
@@ -527,7 +527,7 @@ namespace Simgame2
 
 
         private int maxHeight = 10;
-        private int minHeight = -1;
+        private int minHeight = -10;
         private void generateMap()
         {
             //WorldGenerator.generateBasicMap(this, this.width, this.height, this.minHeight, this.maxHeight);
@@ -557,18 +557,23 @@ namespace Simgame2
                     // traveling through water?
                     if (this.heightMap[adress] <= waterHeight)
                     {
-                        cellTravelResistance[adress] = TravelResistance_Water;
-                        cellTravelResistance[adress] = double.MaxValue;
+                      //  cellTravelResistance[adress] = TravelResistance_Water;
+                        cellTravelResistance[adress] = TravelResistance_Water; // double.MaxValue;
                         continue;
                     }
 
                     // angle between 1 (flat) and 0 straight edge
                     float angle = -Vector3.Dot(getPlaneNormalFromWorldCoor(x, y), Vector3.Up);
 
-                    // can't pass if angle is more than 90°
-                    if (angle < 0.5f)
+                    if (angle < 0)
                     {
-                        cellTravelResistance[adress] =  double.MaxValue;
+                        Console.WriteLine("negative angle found");
+                    }
+
+                    // can't pass if angle is more than ~75°
+                    if (angle < 0.4f)
+                    {
+                        cellTravelResistance[adress] = 70000000.0d;//double.MaxValue;
                         continue;
                     }
 
@@ -580,9 +585,9 @@ namespace Simgame2
                     cellTravelResistance[adress] = 1.0d;
                     if (angle < 1) { cellTravelResistance[adress] = 1.0d; }
                     if (angle < 0.9) { cellTravelResistance[adress] = 5.0d; }
-                    if (angle < 0.8) { cellTravelResistance[adress] = 10.0d; }
-                    if (angle < 0.7) { cellTravelResistance[adress] = 50.0d; }
-                    if (angle < 0.6) { cellTravelResistance[adress] = 100.0d; }
+                    if (angle < 0.8) { cellTravelResistance[adress] = 7.0d; }
+                    if (angle < 0.7) { cellTravelResistance[adress] = 10.0d; }
+                    if (angle < 0.6) { cellTravelResistance[adress] = 15.0d; }
 
                  //   cellTravelResistance[adress] = 100 - (int)Math.Floor((angle-0.5) * 2*100);
                //     cellTravelResistance[adress] = 1;
@@ -603,7 +608,7 @@ namespace Simgame2
 
 
 
-        private const int TravelResistance_Water = 5000;
+        private const int TravelResistance_Water = 100;
 
         private void GenerateSearchTree()
         {
@@ -739,7 +744,7 @@ namespace Simgame2
                     int adress = getCellAdress(x, y); // x + y * mapNumCellsPerRow;
 
 
-                    globalVertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);   ////////////// here
+                    globalVertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);   
 
                     globalVertices[adress].TextureCoordinate.X = ((float)(x * mapCellScaleDivTextureSize));
                     globalVertices[adress].TextureCoordinate.Y = ((float)(y * mapCellScaleDivTextureSize));

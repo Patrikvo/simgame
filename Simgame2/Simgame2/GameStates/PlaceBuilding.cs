@@ -100,7 +100,7 @@ namespace Simgame2.GameStates
                     game.selBuilding.IsGhost = false;
                     game.selBuilding.PlaceBuilding(game.worldMap, true);
                     game.simulator.AddEntity(game.selBuilding.GetSimEntity());
-
+                    game.simulator.MapModified = true;
 
                  //   game.selBuilding = new EntityBuilding(game.selBuilding);
                     game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);

@@ -22,6 +22,7 @@ namespace Simgame2
             this.effect = effect;
             this.device = device;
             AmbientLightLevel = 0.8f;
+            SunLightDirection = new Vector3(-0.5f, -1, -0.5f);
         }
 
         public override void Initialize()
@@ -55,6 +56,8 @@ namespace Simgame2
         public Color FOGCOLOR = new Color(100, 100, 100);
         // Color FOGCOLOR = new Color(0.3f, 0.3f, 0.8f, 1.0f);
 
+
+        public Vector3 SunLightDirection { get; set; }
 
 
         public Effect effect { get; set; }
@@ -114,7 +117,10 @@ namespace Simgame2
 
             this.effect.Parameters["xEnableLighting"].SetValue(true);
             this.effect.Parameters["xAmbient"].SetValue(AmbientLightLevel);
-            this.effect.Parameters["xLightDirection"].SetValue(new Vector3(-0.5f, -1, -0.5f));
+            this.effect.Parameters["xLightDirection"].SetValue(SunLightDirection);
+            this.effect.Parameters["xLightPos"].SetValue(new Vector3(500,500,-500));
+            this.effect.Parameters["xLightPower"].SetValue(1.0f);
+
 
 
             //FOG
@@ -262,7 +268,7 @@ namespace Simgame2
 
             this.effect.Parameters["xEnableLighting"].SetValue(true);
             this.effect.Parameters["xAmbient"].SetValue(AmbientLightLevel);
-            this.effect.Parameters["xLightDirection"].SetValue(new Vector3(-0.5f, -1, -0.5f));
+            this.effect.Parameters["xLightDirection"].SetValue(SunLightDirection);
             this.effect.Parameters["cameraPos"].SetValue(cameraPosition);
 
             effect.CurrentTechnique.Passes[0].Apply();
@@ -308,7 +314,7 @@ namespace Simgame2
             this.refractionMap = this.refractionRenderTarget;
         }
 
-        public void DrawReflectionMap(Camera PlayerCamera, float waterHeight, int mapHeightScale)
+        public void DrawReflectionMap(Camera PlayerCamera, float waterHeight, int mapHeightScale, List<Entity> entities, BoundingFrustum frustum)
         {
             Plane reflectionPlane = this.CreatePlane(waterHeight - (0.5f * mapHeightScale), new Vector3(0, -1, 0), this.reflectionViewMatrix, true);
 
@@ -323,6 +329,16 @@ namespace Simgame2
 
             DrawSkyDome(this.reflectionViewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
             this.DrawTerrain(this.reflectionViewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+
+            foreach (Entity e in  entities)
+            {
+                if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
+                {
+                    e.Draw(this.reflectionViewMatrix, PlayerCamera.GetCameraPostion());
+                }
+            }
+
+
 
             this.effect.Parameters["Clipping"].SetValue(false);
 
@@ -396,7 +412,7 @@ namespace Simgame2
                     currentEffect.Parameters["xTexture"].SetValue(this.cloudMap);
                     currentEffect.Parameters["xEnableLighting"].SetValue(false);
                     currentEffect.Parameters["xAmbient"].SetValue(AmbientLightLevel);
-                    currentEffect.Parameters["xLightDirection"].SetValue(new Vector3(-0.5f, -1, -0.5f));
+                    currentEffect.Parameters["xLightDirection"].SetValue(SunLightDirection);
 
                     // FOG
 

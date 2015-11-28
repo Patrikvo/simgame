@@ -105,6 +105,7 @@
     <Content Include="GameThumbnail.png">
       <XnaPlatformSpecific>true</XnaPlatformSpecific>
     </Content>
+    <Content Include="Notes.txt" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Simgame2Content\Simgame2Content.contentproj">

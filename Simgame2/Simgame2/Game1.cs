@@ -11,7 +11,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    
+    /*
     public struct VertexPositionNormalColored : IVertexType
     {
         public Vector3 Position;
@@ -48,7 +48,7 @@ namespace Simgame2
 
         VertexDeclaration IVertexType.VertexDeclaration { get { return VertexDeclaration; } }
 
-    }
+    }*/
 
     public struct VertexMultitextured : IVertexType
     {
@@ -111,13 +111,14 @@ namespace Simgame2
         public EntityBuilding selBuilding;
 
         
-       
+       public EntityFactory entityFactory;
 
-        
-
+        public Vector3 markerLocation;
+private bool doneLoading = false;
 
         public Game1()
         {
+            this.IsFixedTimeStep = false;    // fixes stutter problem in Win 10.
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
             simulator = new Simulation.Simulator(this);
@@ -139,12 +140,6 @@ namespace Simgame2
             
             base.Initialize();
         }
-
-
-
-        public EntityFactory entityFactory;
-
-        private bool doneLoading = false;
 
 
 
@@ -216,7 +211,7 @@ namespace Simgame2
         }
 
 
-        public Vector3 markerLocation;
+        
 
         protected override void Update(GameTime gameTime)
         {
@@ -310,6 +305,12 @@ namespace Simgame2
             {
                 HUD_overlay.Draw(gameTime, this.device);
             }
+
+            if (drawtime > 20)
+            {
+                int a = 0;
+            }
+
 
             base.Draw(gameTime);
         }

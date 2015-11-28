@@ -1,0 +1,14 @@
+﻿
+
+
+
+change MoverEnity:
+low level:
+make class for basic movement (moveto, closeTo etc)
+make class for Basic animation
+
+medium level:
+basic behaviour blocks (find mine, moveto mine, load, ...)
+
+high level:
+composition of behaviour blocks.

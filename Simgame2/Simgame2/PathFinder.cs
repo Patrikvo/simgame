@@ -21,6 +21,11 @@ namespace Simgame2
 
             SetUp();
             FindPath();
+            if (Path != null)
+            {
+                CompressPath();
+            }
+            
         }
 
 
@@ -70,6 +75,7 @@ namespace Simgame2
                     }
                     Path[next.Prev.Length] = next.Coor;
                     GoalReached = true;
+                    
                     break;
                 }
 
@@ -87,10 +93,24 @@ namespace Simgame2
 
                 for (int i = 0; i < 8; i++)
                 {
-                    // skip all already visited nodes
+                    
                     if (expandableNodes[i].First >= 0 && expandableNodes[i].Second >= 0 && expandableNodes[i].First < MaxX && expandableNodes[i].Second < MaxY)
                     {
-                        double cost = next.RouteCost + getWeigth(expandableNodes[i].First, expandableNodes[i].Second);
+                        double TravelWeight = getWeigth(expandableNodes[i].First, expandableNodes[i].Second);
+                        if (TravelWeight >= double.MaxValue - 1) 
+                        { 
+                            continue; 
+                        }
+                        double cost = next.RouteCost + TravelWeight;
+
+
+                       // Console.WriteLine("node " + expandableNodes[i].First.ToString() + ", " + expandableNodes[i].Second.ToString() +
+                       //     " has weight " + getWeigth(expandableNodes[i].First, expandableNodes[i].Second) + " and cost " + cost);
+
+                        if (cost < 0) 
+                        { 
+                            cost = double.MaxValue; 
+                        }
                         if (VisitedWithDistance[adress(expandableNodes[i].First, expandableNodes[i].Second)] > cost)
                         //if (!IsVisited(expandableNodes[i].First, expandableNodes[i].Second))
                         {
@@ -110,7 +130,11 @@ namespace Simgame2
                             newNode.Prev[next.Prev.Length] = next.Coor;
 
                             newNode.RouteCost = next.RouteCost + getWeigth(newNode.Coor.First, newNode.Coor.Second);
-
+                            // check for overflow
+                            if (newNode.RouteCost < 0) 
+                            { 
+                                newNode.RouteCost = double.MaxValue; 
+                            }
  
 
                             nodesToExpand.Add(newNode);
@@ -119,7 +143,98 @@ namespace Simgame2
                 }
             }
 
+
+            if (Path == null)
+            {
+                int a = 0;
+            }
         }
+
+
+        private void CompressPath()
+        {
+            List<Pair<int>> CompressedPath = new List<Pair<int>>(); ;
+
+            Pair<int> runStart = Path[1];
+            direction currentDirection = direction.down;
+            direction currentNode;
+            for (int i = 2; i < Path.Length; i++)
+            {
+                currentNode = getDirection(Path[i - 1], Path[i]);
+                if (currentNode == currentDirection)
+                {
+                    // still going in the same direction
+                    continue;
+                }
+                else
+                {
+                    // changing direction.
+                    CompressedPath.Add(runStart);
+                    runStart = Path[i];
+                    currentDirection = currentNode;
+                }
+            }
+            CompressedPath.Add(runStart);
+            CompressedPath.Add(Path[Path.Length - 1]);
+            this.Path = CompressedPath.ToArray();
+        }
+
+        private direction getDirection(Pair<int> first, Pair<int> second)
+        {
+            if (first.First == second.First)
+            {
+                if (first.Second > second.Second)
+                {
+                    return direction.down;
+                }
+                else
+                {
+                    return direction.up;
+                }
+            }
+            else
+            {
+                if (first.Second == second.Second)
+                {
+                    if (first.First < second.First)
+                    {
+                        return direction.right;
+                    }
+                    else
+                    {
+                        return direction.left;
+                    }
+                }
+                else
+                {
+                    if (first.First < second.First)
+                    {
+                        if (first.Second < second.Second)
+                        {
+                            return direction.right_up;
+                        }
+                        else
+                        {
+                            return direction.right_down;
+                        }
+                    }
+                    else
+                    {
+                        if (first.Second < second.Second)
+                        {
+                            return direction.left_up;
+                        }
+                        else
+                        {
+                            return direction.down_left;
+                        }
+                    }
+                }
+            }
+        }
+
+
+        public enum direction { up, right_up, right, right_down, down, down_left, left, left_up };
 
 
         PriorityQueue<Node> nodesToExpand;

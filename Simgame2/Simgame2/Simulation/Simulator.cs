@@ -18,8 +18,10 @@ namespace Simgame2.Simulation
         {
             SimEntities = new List<SimulationEntity>();
             this.game = game;
+            MapModified = false;
         }
 
+        public Boolean MapModified;
 
         public void Update(GameTime gameTime) 
         {
@@ -32,13 +34,16 @@ namespace Simgame2.Simulation
                     if (e is Entities.MoverEntity.MoverSim)
                     {
                         Entities.MoverEntity.MoverSim s = (Entities.MoverEntity.MoverSim)e;
+                        if (MapModified) { s.RefreshTarget = true; }
 
                         if (s.MovementState == Entities.MoverEntity.MoverSim.UnitMovementState.IDLE)
                         {
                             if (s.PayloadState == Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY)
                             {
                                 Vector3 target = SetTargetNearest(s, Entity.EntityTypes.BASIC_MINE);
-                                if (target != Vector3.Zero){
+
+                                if (target != Vector3.Zero && s.DistanceToTarget(target) > Entities.MoverEntity.MoverSim.StopDistance)
+                                {
                                     s.SetTarget(target);
                                     s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.MOVING;
                                 }
@@ -51,10 +56,10 @@ namespace Simgame2.Simulation
                                 }
                             }
                         }
-                        else
-                        {
-                            if (s.MovementState == Entities.MoverEntity.MoverSim.UnitMovementState.MOVING)
-                            {
+                       // else
+                       // {
+                         //   if (s.MovementState == Entities.MoverEntity.MoverSim.UnitMovementState.MOVING)
+                          //  {
                                 if (s.ReachedGoal) // .DistanceToTarget() < 20)
                                 {
                                     if (s.PayloadState == Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY)
@@ -68,8 +73,8 @@ namespace Simgame2.Simulation
                                         s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.IDLE;
                                     }
                                 }
-                            }
-                        }
+                        //    }
+                      //  }
 
 
 
@@ -78,6 +83,8 @@ namespace Simgame2.Simulation
 
                 }
             }
+            MapModified = false;
+
         }
 
         public void AddEntity(SimulationEntity s)
