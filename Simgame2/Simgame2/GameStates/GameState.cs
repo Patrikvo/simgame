@@ -102,7 +102,7 @@ namespace Simgame2.GameStates
             {
                 Entities.MoverEntity mover = this.game.entityFactory.CreateMover(game.PlayerCamera.GetCameraPostion());
                 this.game.worldMap.AddEntity(mover);
-                this.game.simulator.AddEntity(mover.GetSimEntity());
+                this.game.simulator.AddEntity(mover.movement.GetSimEntity());
 
 
                     ButtonInsertDown = false;
