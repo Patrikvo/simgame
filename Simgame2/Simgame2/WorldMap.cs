@@ -19,17 +19,31 @@ namespace Simgame2
 
     public class WorldMap : Microsoft.Xna.Framework.GameComponent
     {
-        private Renderer renderer;
+       // private Renderer renderer;
+        private PrelightingRenderer prelightRender;  // new line
 
         private const int mapCellScale = 5;
         private const int mapHeightScale = 2;
 
-   
+        private Effect modelEffect;   // new line
+
+        PPPointLight playerLight;
+
+        Camera playerCamera;
         public WorldMap(Game1 game, int mapNumCellsPerRow, int mapNumCellPerColumn, Effect effect, GraphicsDevice device)
             : base(game)
         {
-            renderer = new Renderer(game, effect, device);
+         //   renderer = new Renderer(game, effect, device);
+            playerLight = new PPPointLight(new Vector3(0, 0, 0), Color.White* 0.85f, 100);
+            this.playerCamera = game.PlayerCamera;
             entities = new List<Entity>();
+
+            modelEffect = game.Content.Load<Effect>("PrelightEffects");
+
+            prelightRender = new PrelightingRenderer(game, effect, device, entities);   // new line
+
+            prelightRender.Lights.Add(playerLight);
+
 
             this.mapNumCellsPerRow = mapNumCellsPerRow;
             this.mapNumCellPerColumn = mapNumCellPerColumn;
@@ -49,23 +63,25 @@ namespace Simgame2
         }
 
 
-        public Renderer GetRenderer() { return renderer; }
-        
+       // public Renderer GetRenderer() { return renderer; }
+        public PrelightingRenderer GetRenderer() { return this.prelightRender; }
         
 
         public override void Initialize()
         {
             base.Initialize();
-            renderer.Initialize();
+           // renderer.Initialize();  // new line
+            prelightRender.Initialize();
 
-            renderer.SetUpWaterVertices(1000, 1000, mapCellScale, waterHeight);
+         //   renderer.SetUpWaterVertices(1000, 1000, mapCellScale, waterHeight);
+            prelightRender.SetUpWaterVertices(1000, 1000, mapCellScale, waterHeight);
         }
 
 
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
-
+            playerLight.Position = new Vector3(playerCamera.GetCameraPostion().X, playerCamera.GetCameraPostion().Y+20, playerCamera.GetCameraPostion().Z);
         }
 
  
@@ -215,38 +231,62 @@ namespace Simgame2
             this.frustum = frustum;
 
             GenerateView(PlayerCamera.GetCameraPostion());
-
+            FindVisibleEnities();
 
             // water
-            renderer.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
-            renderer.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
+           // renderer.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
+           //  renderer.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
+
+            prelightRender.drawDepthNormalMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+            prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+
+            this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);  // new line
+            prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);  // new line
 
 
             // skybox
-            renderer.GeneratePerlinNoise(time);
+          //  renderer.GeneratePerlinNoise(time);
+            prelightRender.GeneratePerlinNoise(time);  // new line
 
-            renderer.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
+          //  renderer.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
+            prelightRender.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);  // new line
 
+           // renderer.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+            prelightRender.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
 
-            renderer.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+          //  renderer.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+          //  renderer.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
 
-
-            renderer.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-            renderer.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
+            prelightRender.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+            prelightRender.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
 
             enitiesDrawn = 0;
             foreach (Entity e in entities)
             {
-                if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
+                //if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
+                if (e.IsVisible)
                 {
                     enitiesDrawn++;
                   //  e.ShowBoundingBox = true;
+
+                 //   e.CacheEffects();
+                    e.SetModelEffect(modelEffect, false);
                     e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
+                //    e.RestoreEffects();
                 }
             }
 
 
-            ((Game1)base.Game).debugImg = MiniMap(PlayerCamera.GetCameraPostion());
+          //  ((Game1)base.Game).debugImg = MiniMap(PlayerCamera.GetCameraPostion());
+            ((Game1)base.Game).debugImg = prelightRender.lightTarg;
+          //  ((Game1)base.Game).debugImg = prelightRender.depthTarg;
+
+        /*    Color[] texdata = new Color[prelightRender.depthTarg.Width * prelightRender.depthTarg.Height];
+            prelightRender.depthTarg.GetData(texdata);
+            ((Game1)base.Game).debugImg = new Texture2D(prelightRender.graphicsDevice, prelightRender.depthTarg.Width , prelightRender.depthTarg.Height);
+            ((Game1)base.Game).debugImg.SetData(texdata);
+            */
+
         }
 
 
@@ -275,7 +315,8 @@ namespace Simgame2
         {
             entity.FOGNEAR = Renderer.FOGNEAR;
             entity.FOGFAR = Renderer.FOGFAR;
-            entity.FOGCOLOR = renderer.FOGCOLOR;
+         //   entity.FOGCOLOR = renderer.FOGCOLOR;
+            entity.FOGCOLOR = this.prelightRender .FOGCOLOR;
             this.entities.Add(entity);
         }
 
@@ -289,7 +330,8 @@ namespace Simgame2
         {
             int maxVertices = mapNumCellsPerRow * mapNumCellPerColumn * 2;
             int maxIndices = maxVertices * 3;
-            return "vertices: " + renderer.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + renderer.terrainIndexBuffer.IndexCount + "/" + maxVertices +
+          //  return "vertices: " + renderer.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + renderer.terrainIndexBuffer.IndexCount + "/" + maxVertices +
+            return "vertices: " + prelightRender.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + prelightRender.terrainIndexBuffer.IndexCount + "/" + maxVertices +
                Environment.NewLine + " - entities: " + enitiesDrawn + "/" + entities.Count;
         }
 
@@ -355,7 +397,8 @@ namespace Simgame2
 
           private Texture2D MiniMap(Vector3 cameraPosition)
         {
-            Texture2D Minimap = new Texture2D(renderer.device, this.mapNumCellsPerRow, this.mapNumCellPerColumn, false, SurfaceFormat.Color);
+          //  Texture2D Minimap = new Texture2D(renderer.device, this.mapNumCellsPerRow, this.mapNumCellPerColumn, false, SurfaceFormat.Color);
+            Texture2D Minimap = new Texture2D(this.prelightRender.device, this.mapNumCellsPerRow, this.mapNumCellPerColumn, false, SurfaceFormat.Color);
 
             Color[] noisyColors = new Color[this.mapNumCellsPerRow * this.mapNumCellPerColumn];
             int r, g, b;
@@ -527,7 +570,7 @@ namespace Simgame2
 
 
         private int maxHeight = 10;
-        private int minHeight = -10;
+        private int minHeight = 2; //-10;
         private void generateMap()
         {
             //WorldGenerator.generateBasicMap(this, this.width, this.height, this.minHeight, this.maxHeight);
@@ -703,7 +746,10 @@ namespace Simgame2
             regionHeight = regionDown - regionUp;
 
 
-            renderer.vertices = new VertexMultitextured[regionWidth * regionHeight];
+          //  renderer.vertices = new VertexMultitextured[regionWidth * regionHeight];
+            this.prelightRender.vertices = new VertexMultitextured[regionWidth * regionHeight];
+
+
            // float mapCellScaleDivTextureSize = mapCellScale / textureSize;
 
 
@@ -714,20 +760,36 @@ namespace Simgame2
                 {
                     int adress = (x - regionLeft) + (y - regionUp) * regionWidth;
 
-                    renderer.vertices[adress] = globalVertices[getCellAdress(x, y)];
+                  //  renderer.vertices[adress] = globalVertices[getCellAdress(x, y)];
+                    this.prelightRender.vertices[adress] = globalVertices[getCellAdress(x, y)];
                 }
             }
 
 
-            renderer.updateIndices(regionWidth, regionHeight);
- 
-            renderer.CopyToTerrainBuffers();
+          //  renderer.updateIndices(regionWidth, regionHeight);
+            prelightRender.updateIndices(regionWidth, regionHeight);
 
+
+          //  renderer.CopyToTerrainBuffers();
+            prelightRender.CopyToTerrainBuffers();
 
         }
 
 
-
+        private void FindVisibleEnities()
+        {
+            foreach (Entity e in entities)
+            {
+                if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
+                {
+                    e.IsVisible = true;
+                }
+                else
+                {
+                    e.IsVisible = false;
+                }
+            }
+        }
 
 
         VertexMultitextured[] globalVertices;

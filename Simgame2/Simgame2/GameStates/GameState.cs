@@ -35,12 +35,15 @@ namespace Simgame2.GameStates
             
 
             game.PlayerCamera.AdjustCameraAltitude(gameTime);
+            
 
 
             this.currentMouseState =  Mouse.GetState();
             this.keyState = Keyboard.GetState();
 
             game.entityFactory.Update(gameTime);
+
+            this.game.worldMap.Update(gameTime);
 
             // place building code
             if (game.selBuilding != null)
@@ -59,6 +62,12 @@ namespace Simgame2.GameStates
                 moveVector += new Vector3(1, 0, 0);
             if (keyState.IsKeyDown(Keys.Left) || keyState.IsKeyDown(Keys.A))
                 moveVector += new Vector3(-1, 0, 0);
+
+
+            if (keyState.IsKeyDown(Keys.R))
+                game.PlayerCamera.cameraHeight = -game.PlayerCamera.cameraHeight;
+            if (keyState.IsKeyDown(Keys.F))
+                moveVector += new Vector3(0, -1, 0);
 
 
             game.PlayerCamera.AddToCameraPosition(moveVector * timeDifference);

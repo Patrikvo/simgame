@@ -39,7 +39,7 @@ namespace Simgame2
             _DrawDistance = 300.0f;
             this.viewMatrix = Matrix.CreateLookAt(new Vector3(0, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 0, -1));     /// here
             UpdateProjectionMatrix();
-            MoveCamera(new Vector3(0, 25, 0));
+            MoveCamera(new Vector3(500, 25, -500));
             this.cameraHeight = CameraHeightOffset;
 
         }

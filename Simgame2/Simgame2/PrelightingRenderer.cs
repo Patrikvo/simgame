@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Xna.Framework;
@@ -8,22 +8,212 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using System.IO;
 
 
 namespace Simgame2
 {
 
-    public class Renderer : Microsoft.Xna.Framework.GameComponent
+    public class PrelightingRenderer : Microsoft.Xna.Framework.GameComponent
     {
-        public Renderer(Game game, Effect effect, GraphicsDevice device)
+        // Normal, depth, and light map render targets
+        public RenderTarget2D depthTarg;
+        public RenderTarget2D normalTarg;
+        public RenderTarget2D lightTarg;
+
+        // Depth/normal effect and light mapping effect
+        Effect depthNormalEffect;
+        Effect lightingEffect;
+
+        // Point light (sphere) mesh
+        Model lightMesh;
+
+        // List of models, lights, and the camera
+     //   public List<CModel> Models { get; set; }
+        public List<Entity> entities;
+        public List<PPPointLight> Lights { get; set; }
+        public Camera Camera { get; set; }
+
+        public GraphicsDevice graphicsDevice;
+        int viewWidth = 0, viewHeight = 0;
+
+
+
+
+
+        public PrelightingRenderer(Game game, Effect effect, GraphicsDevice device, List<Entity> entities)
             : base(game)
         {
+            viewWidth = device.Viewport.Width;
+            viewHeight = device.Viewport.Height;
+
+            // Create the three render targets
+            depthTarg = new RenderTarget2D(device, viewWidth, viewHeight, false, SurfaceFormat.Single, DepthFormat.Depth24);
+            normalTarg = new RenderTarget2D(device, viewWidth, viewHeight, false, SurfaceFormat.Color, DepthFormat.Depth24);
+            lightTarg = new RenderTarget2D(device, viewWidth, viewHeight, false, SurfaceFormat.Color, DepthFormat.Depth24);
+
+            // Load effects
+            depthNormalEffect = game.Content.Load<Effect>("PPDepthNormal");
+            lightingEffect = game.Content.Load<Effect>("PPLight");
+            this.effect = game.Content.Load<Effect>("PrelightEffects");
+            // Set effect parameters to light mapping effect
+            lightingEffect.Parameters["viewportWidth"].SetValue(viewWidth);
+            lightingEffect.Parameters["viewportHeight"].SetValue(viewHeight);
+
+            // Load point light mesh and set light mapping effect to it
+            lightMesh = game.Content.Load<Model>("PPLightMesh");
+            lightMesh.Meshes[0].MeshParts[0].Effect = lightingEffect;
+            
+
+            this.graphicsDevice = device;
+            this.entities = entities;
+
+            this.Lights = new List<PPPointLight>()
+{
+new PPPointLight(new Vector3(500, 50, -500), Color.Red * .85f,
+100),
+new PPPointLight(new Vector3(550, 50, -550), Color.Blue * .85f,
+100),
+new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
+100)
+, new PPPointLight(new Vector3(600, 100, -600), Color.White * .85f, 200000)
+};
+
+
+
+            // original code: 
             this.PlayerCamera = ((Game1)game).PlayerCamera;
-            this.effect = effect;
+          //  this.effect = effect;
             this.device = device;
-            AmbientLightLevel = 0.8f;
+            AmbientLightLevel = 0.5f;
             SunLightDirection = new Vector3(-0.5f, -1, -0.5f);
         }
+
+
+        public void drawDepthNormalMap(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
+        {
+            // Set the render targets to 'slots' 1 and 2
+            graphicsDevice.SetRenderTargets(normalTarg, depthTarg);
+            // Clear the render target to 1 (infinite depth)
+            graphicsDevice.Clear(Color.White);
+            // Draw each model with the PPDepthNormal effect
+
+
+            Matrix worldMatrix = Matrix.Identity;
+            this.depthNormalEffect.Parameters["World"].SetValue(worldMatrix);
+            this.depthNormalEffect.Parameters["View"].SetValue(currentViewMatrix);
+            this.depthNormalEffect.Parameters["Projection"].SetValue(projectionMatrix);
+
+            BlendState stored = this.device.BlendState;
+            this.device.BlendState = BlendState.Opaque;
+
+            this.depthNormalEffect.CurrentTechnique.Passes[0].Apply();
+            foreach (EffectPass pass in this.depthNormalEffect.CurrentTechnique.Passes)
+            {
+                this.graphicsDevice.SetVertexBuffer(this.terrainVertexBuffer);
+                this.graphicsDevice.Indices = this.terrainIndexBuffer;
+
+
+
+                int noVertices = this.terrainVertexBuffer.VertexCount;
+                int noTriangles = this.terrainIndexBuffer.IndexCount / 3;
+                this.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, noVertices, 0, noTriangles);
+            }
+
+            foreach (Entity e in entities)
+            {
+                //if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
+                if (e.IsVisible)
+                {
+                 //   e.CacheEffects();
+                    e.SetModelEffect(depthNormalEffect, false);
+                    e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
+                   // e.RestoreEffects();
+                }
+            }
+
+            this.device.BlendState = stored;
+
+            // Un-set the render targets
+            graphicsDevice.SetRenderTargets(null);
+
+            
+            
+
+        }
+
+      
+
+
+        public void drawLightMap(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
+        {
+            // Set the depth and normal map info to the effect
+            lightingEffect.Parameters["DepthTexture"].SetValue(depthTarg);
+            lightingEffect.Parameters["NormalTexture"].SetValue(normalTarg);
+
+
+            // Calculate the view * projection matrix
+            Matrix viewProjection = currentViewMatrix * projectionMatrix;
+
+            // Set the inverse of the view * projection matrix to the effect
+            Matrix invViewProjection = Matrix.Invert(viewProjection);
+            lightingEffect.Parameters["InvViewProjection"].SetValue(invViewProjection);
+
+            // Set the render target to the graphics device
+            graphicsDevice.SetRenderTarget(lightTarg);
+
+            // Clear the render target to black (no light)
+            graphicsDevice.Clear(Color.Black);
+         
+
+            // Set render states to additive (lights will add their influences)
+            graphicsDevice.BlendState = BlendState.Additive;
+            graphicsDevice.DepthStencilState = DepthStencilState.None;
+
+            foreach (PPPointLight light in Lights)
+            {
+                // Set the light's parameters to the effect
+                light.SetEffectParameters(lightingEffect);
+
+                // Calculate the world * view * projection matrix and set it to
+                // the effect
+                Matrix wvp = (Matrix.CreateScale(light.Attenuation) * Matrix.CreateTranslation(light.Position)) * viewProjection;
+                lightingEffect.Parameters["WorldViewProjection"].SetValue(wvp);
+
+                // Determine the distance between the light and camera
+                float dist = Vector3.Distance(cameraPosition, light.Position);
+
+                // If the camera is inside the light-sphere, invert the cull mode
+                // to draw the inside of the sphere instead of the outside
+                if (dist < light.Attenuation) 
+                    graphicsDevice.RasterizerState = RasterizerState.CullClockwise;
+
+                // Draw the point-light-sphere
+                lightMesh.Meshes[0].Draw();
+
+                // Revert the cull mode
+                graphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+            }
+
+            // Revert the blending and depth render states
+            graphicsDevice.BlendState = BlendState.Opaque;
+            graphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+            // Un-set the render target
+            graphicsDevice.SetRenderTarget(null);
+        }
+
+        // TODO modifiy     page 93
+
+
+
+
+
+
+
+
+
+
 
         public override void Initialize()
         {
@@ -100,9 +290,9 @@ namespace Simgame2
         public void DrawTerrain(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
         {
             Matrix worldMatrix = Matrix.Identity;
-            this.effect.Parameters["xWorld"].SetValue(worldMatrix);
-            this.effect.Parameters["xView"].SetValue(currentViewMatrix);
-            this.effect.Parameters["xProjection"].SetValue(projectionMatrix);
+            this.effect.Parameters["World"].SetValue(worldMatrix);
+            this.effect.Parameters["View"].SetValue(currentViewMatrix);
+            this.effect.Parameters["Projection"].SetValue(projectionMatrix);
 
             this.effect.Parameters["xTexture"].SetValue(this.Textures[0]);
 
@@ -116,9 +306,13 @@ namespace Simgame2
 
 
             this.effect.Parameters["xEnableLighting"].SetValue(true);
-            this.effect.Parameters["xAmbient"].SetValue(AmbientLightLevel);
+            this.effect.Parameters["xAmbient"].SetValue(new Vector3(0.5f,0.5f,0.5f));
+            this.effect.Parameters["xDiffuseColor"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
+
+            
+
             this.effect.Parameters["xLightDirection"].SetValue(SunLightDirection);
-            this.effect.Parameters["xLightPos"].SetValue(new Vector3(500,500,-500));
+            this.effect.Parameters["xLightPos"].SetValue(new Vector3(500, 500, -500));
             this.effect.Parameters["xLightPower"].SetValue(1.0f);
 
 
@@ -132,6 +326,14 @@ namespace Simgame2
             this.effect.Parameters["FogFar"].SetValue(this.PlayerCamera.DrawDistance);
             this.effect.Parameters["cameraPos"].SetValue(cameraPosition);
 
+
+
+            
+                this.effect.Parameters["LightTexture"].SetValue(lightTarg);
+            
+                this.effect.Parameters["viewportWidth"].SetValue(viewWidth);
+            
+                this.effect.Parameters["viewportHeight"].SetValue(viewHeight);
 
 
             this.effect.CurrentTechnique.Passes[0].Apply();
@@ -208,7 +410,7 @@ namespace Simgame2
         #region WATER
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        
+
         private RenderTarget2D refractionRenderTarget;
         private RenderTarget2D reflectionRenderTarget;
         private Texture2D refractionMap;
@@ -242,10 +444,10 @@ namespace Simgame2
         {
             effect.CurrentTechnique = effect.Techniques["Water"];
             Matrix worldMatrix = Matrix.Identity;
-            effect.Parameters["xWorld"].SetValue(worldMatrix);
-            effect.Parameters["xView"].SetValue(currentViewMatrix);
+            effect.Parameters["World"].SetValue(worldMatrix);
+            effect.Parameters["View"].SetValue(currentViewMatrix);
             effect.Parameters["xReflectionView"].SetValue(reflectionViewMatrix);
-            effect.Parameters["xProjection"].SetValue(projectionMatrix);
+            effect.Parameters["Projection"].SetValue(projectionMatrix);
             effect.Parameters["xReflectionMap"].SetValue(reflectionMap);
             effect.Parameters["xRefractionMap"].SetValue(refractionMap);
             effect.Parameters["xWaterBumpMap"].SetValue(waterBumpMap);
@@ -267,7 +469,8 @@ namespace Simgame2
 
 
             this.effect.Parameters["xEnableLighting"].SetValue(true);
-            this.effect.Parameters["xAmbient"].SetValue(AmbientLightLevel);
+            this.effect.Parameters["xAmbient"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
+            this.effect.Parameters["xDiffuseColor"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
             this.effect.Parameters["xLightDirection"].SetValue(SunLightDirection);
             this.effect.Parameters["cameraPos"].SetValue(cameraPosition);
 
@@ -330,7 +533,7 @@ namespace Simgame2
             DrawSkyDome(this.reflectionViewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
             this.DrawTerrain(this.reflectionViewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
 
-            foreach (Entity e in  entities)
+            foreach (Entity e in entities)
             {
                 //if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
                 if (e.IsVisible)
@@ -350,7 +553,7 @@ namespace Simgame2
 
         }
 
-        
+
 
 
         #endregion
@@ -361,7 +564,7 @@ namespace Simgame2
         #region SKYDOME
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-        
+
         private RenderTarget2D cloudsRenderTarget;
         private Texture2D cloudStaticMap;
         private VertexPositionTexture[] fullScreenVertices;
@@ -407,12 +610,13 @@ namespace Simgame2
                 {
                     Matrix worldMatrix = modelTransforms[mesh.ParentBone.Index] * wMatrix;
                     currentEffect.CurrentTechnique = currentEffect.Techniques["SkyDome"];
-                    currentEffect.Parameters["xWorld"].SetValue(worldMatrix);
-                    currentEffect.Parameters["xView"].SetValue(currentViewMatrix);
-                    currentEffect.Parameters["xProjection"].SetValue(projectionMatrix);
+                    currentEffect.Parameters["World"].SetValue(worldMatrix);
+                    currentEffect.Parameters["View"].SetValue(currentViewMatrix);
+                    currentEffect.Parameters["Projection"].SetValue(projectionMatrix);
                     currentEffect.Parameters["xTexture"].SetValue(this.cloudMap);
                     currentEffect.Parameters["xEnableLighting"].SetValue(false);
-                    currentEffect.Parameters["xAmbient"].SetValue(AmbientLightLevel);
+                    currentEffect.Parameters["xAmbient"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
+                    currentEffect.Parameters["xDiffuseColor"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
                     currentEffect.Parameters["xLightDirection"].SetValue(SunLightDirection);
 
                     // FOG

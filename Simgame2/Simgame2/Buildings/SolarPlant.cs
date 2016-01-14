@@ -59,12 +59,12 @@ namespace Simgame2.Buildings
                 foreach (Effect currentEffect in mesh.Effects)
                 {
 
-                    currentEffect.Parameters["xView"].SetValue(currentViewMatrix);
-                    currentEffect.Parameters["xProjection"].SetValue(projectionMatrix);
+                    currentEffect.Parameters["View"].SetValue(currentViewMatrix);
+                    currentEffect.Parameters["Projection"].SetValue(projectionMatrix);
                     currentEffect.CurrentTechnique = currentEffect.Techniques["Textured"];
 
                     currentEffect.Parameters["xTexture"].SetValue(this.texture[meshNum]);
-                    currentEffect.Parameters["xWorld"].SetValue(transforms[mesh.ParentBone.Index] * worldMatrix);
+                    currentEffect.Parameters["World"].SetValue(transforms[mesh.ParentBone.Index] * worldMatrix);
 
                     currentEffect.Parameters["xIsTransparant"].SetValue(this.IsTransparant);
                     if (CanPlace)

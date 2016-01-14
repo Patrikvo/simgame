@@ -45,8 +45,8 @@ namespace Simgame2.Entities
             }
             this.UpdateBoundingBox();
 
-            turnToTarget();
-            OrientateConformTerrain();
+            this.movement.turnToTarget();
+            this.movement.OrientateConformTerrain();
             
             this.UpdateBoundingBox();
 
@@ -62,46 +62,6 @@ namespace Simgame2.Entities
 
         }
 
-        private void turnToTarget()
-        {
-            if (this.movement.TargetLocation != Vector3.Zero)
-            {
-                Vector3 newForwardUnit = Vector3.Normalize(this.movement.TargetLocation - this.location);
-                this.movement.Velocity = newForwardUnit;
-
-                double r = Math.Sqrt(this.movement.Velocity.X * this.movement.Velocity.X + this.movement.Velocity.Y * this.movement.Velocity.Y + this.movement.Velocity.Z * this.movement.Velocity.Z);
-               // double t = Math.Atan(this.Velocity.Y/this.Velocity.X);
-                double p = Math.Acos(-this.movement.Velocity.Z / r);
-                rotation = new Vector3(rotation.X, (float)p, rotation.Z);
-
-            }
-        }
-
-        private void OrientateConformTerrain()
-        {
- 
-
-            int h1 = this.worldMap.getExactHeightFromWorldCoor(this.corners[7].X, -this.corners[7].Z);
-            int h2 = this.worldMap.getExactHeightFromWorldCoor(this.corners[3].X, -this.corners[3].Z);
-            int h3 = this.worldMap.getExactHeightFromWorldCoor(this.corners[2].X, -this.corners[2].Z);
-
-            float l12 = Vector3.Distance(this.corners[7], this.corners[3]);
-            float l23 = Vector3.Distance(this.corners[3], this.corners[2]);
-
-          //  float angle1 = (float)Math.Asin(clamp((h1 - h2) / l12));
-
-          //  float angle2 = (float)Math.Asin(clamp((h2 - h3) / l23));
-
-            float angle1 = (float)Math.Atan(Math.Abs((h1 - h2)) / (l12 * Math.Sqrt(2)));
-            float angle2 = (float)Math.Atan(Math.Abs((h2 - h3)) / (l23 * Math.Sqrt(2)));
-
-
-            //rotation = new Vector3(angle1, rotation.Y, -angle2);
-            rotation = new Vector3(angle1, rotation.Y, angle2);
-
-
-
-        }
 
         float clamp(float a)
         {
