@@ -161,7 +161,7 @@ private bool doneLoading = false;
             
             PlayerCamera.worldMap = worldMap;
 
-            PlayerCamera.DrawDistance = 300.0f;
+            PlayerCamera.DrawDistance = 600.0f; // 300.0f;
 
             HUD_overlay.PreloadImages(this.Content);
 

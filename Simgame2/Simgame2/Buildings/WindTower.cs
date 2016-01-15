@@ -102,7 +102,7 @@ namespace Simgame2.Buildings
                 DrawBoundingBox(currentViewMatrix, cameraPosition);
             }
 
-            if (HasMouseFocus)
+            if (HasMouseFocus && !HideBillboard)
             {
                 statusBillboard.Draw(this.playerCamera);
             }

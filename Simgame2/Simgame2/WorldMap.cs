@@ -34,7 +34,7 @@ namespace Simgame2
             : base(game)
         {
          //   renderer = new Renderer(game, effect, device);
-            playerLight = new PPPointLight(new Vector3(0, 0, 0), Color.White* 0.85f, 100);
+            playerLight = new PPPointLight(new Vector3(0, 0, 0), Color.White* 0.50f, 100);
             this.playerCamera = game.PlayerCamera;
             entities = new List<Entity>();
 
@@ -570,7 +570,7 @@ namespace Simgame2
 
 
         private int maxHeight = 10;
-        private int minHeight = 2; //-10;
+        private int minHeight = -10;// 2; //-10;
         private void generateMap()
         {
             //WorldGenerator.generateBasicMap(this, this.width, this.height, this.minHeight, this.maxHeight);

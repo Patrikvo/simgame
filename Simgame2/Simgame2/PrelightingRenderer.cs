@@ -127,7 +127,9 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
                 {
                  //   e.CacheEffects();
                     e.SetModelEffect(depthNormalEffect, false);
+                    e.HideBillboard = true;
                     e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
+                    e.HideBillboard = false;
                    // e.RestoreEffects();
                 }
             }

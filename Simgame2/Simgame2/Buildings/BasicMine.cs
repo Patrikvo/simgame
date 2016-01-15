@@ -47,7 +47,7 @@ namespace Simgame2.Buildings
         public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
             base.Draw(currentViewMatrix, cameraPosition);
-            if (this.HasMouseFocus)
+            if (this.HasMouseFocus && !HideBillboard)
             {
                 statusBillboard.Draw(this.playerCamera);
             }

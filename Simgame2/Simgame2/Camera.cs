@@ -119,8 +119,14 @@ namespace Simgame2
         public void AdjustCameraAltitude(GameTime gameTime)
         {
             // keeps camera at a set height above the terrain.
-            int intendedCameraHeight = (worldMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, -this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
+            double intendedCameraHeight = (worldMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, -this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
             // int intendedCameraHeight = worldMap.getAltitude(cameraPosition.X, cameraPosition.Z) + CameraHeightOffset;
+
+            if (intendedCameraHeight < (WorldMap.waterHeight + CameraHeightOffset))
+            {
+                intendedCameraHeight = WorldMap.waterHeight + CameraHeightOffset;
+            }
+
 
             if (this.cameraHeight < intendedCameraHeight)
             {
@@ -237,8 +243,8 @@ namespace Simgame2
 
 
         
-        public const float moveSpeed = 80.0f;
-        public const float riseSpeed = 60.0f;
+        public const float moveSpeed = 160.0f; // 80.0f;
+        public const float riseSpeed = 160.0f;
         public const float dropSpeed = 30.0f;
         public const float rotationSpeed = 0.3f;
 
