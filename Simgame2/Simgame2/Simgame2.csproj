@@ -95,7 +95,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Game1.cs" />
-    <Compile Include="Renderer.cs" />
     <Compile Include="Simulation\SimulationBuildingEnity.cs" />
     <Compile Include="Simulation\SimulationEntity.cs" />
     <Compile Include="Simulation\Simulator.cs" />

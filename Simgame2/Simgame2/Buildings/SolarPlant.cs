@@ -155,7 +155,7 @@ namespace Simgame2.Buildings
 
     //    public Effect effect { get; set; }
 
-        public static Vector3 StandardScale = new Vector3(5, 5, 5);
+        public static Vector3 StandardScale = new Vector3(10, 10, 10);    // (5, 5, 5);
         public static Vector3 StandardRotation = new Vector3(0, MathHelper.Pi, 0);
 
        // private float rotorRotation = 0;

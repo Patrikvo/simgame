@@ -19,13 +19,12 @@ namespace Simgame2
 
     public class WorldMap : Microsoft.Xna.Framework.GameComponent
     {
-       // private Renderer renderer;
-        private PrelightingRenderer prelightRender;  // new line
+        private PrelightingRenderer prelightRender;
 
         private const int mapCellScale = 5;
         private const int mapHeightScale = 2;
 
-        private Effect modelEffect;   // new line
+        private Effect modelEffect;
 
         PPPointLight playerLight;
 
@@ -33,14 +32,13 @@ namespace Simgame2
         public WorldMap(Game1 game, int mapNumCellsPerRow, int mapNumCellPerColumn, Effect effect, GraphicsDevice device)
             : base(game)
         {
-         //   renderer = new Renderer(game, effect, device);
             playerLight = new PPPointLight(new Vector3(0, 0, 0), Color.White* 0.50f, 100);
             this.playerCamera = game.PlayerCamera;
             entities = new List<Entity>();
 
             modelEffect = game.Content.Load<Effect>("PrelightEffects");
 
-            prelightRender = new PrelightingRenderer(game, effect, device, entities);   // new line
+            prelightRender = new PrelightingRenderer(game, effect, device, entities);
 
             prelightRender.Lights.Add(playerLight);
 
@@ -63,17 +61,14 @@ namespace Simgame2
         }
 
 
-       // public Renderer GetRenderer() { return renderer; }
         public PrelightingRenderer GetRenderer() { return this.prelightRender; }
         
 
         public override void Initialize()
         {
             base.Initialize();
-           // renderer.Initialize();  // new line
             prelightRender.Initialize();
 
-         //   renderer.SetUpWaterVertices(1000, 1000, mapCellScale, waterHeight);
             prelightRender.SetUpWaterVertices(1000, 1000, mapCellScale, waterHeight);
         }
 
@@ -234,28 +229,19 @@ namespace Simgame2
             FindVisibleEnities();
 
             // water
-           // renderer.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
-           //  renderer.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
-
             prelightRender.drawDepthNormalMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
             prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
 
-            this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);  // new line
-            prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);  // new line
+            this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
+            prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
 
 
             // skybox
-          //  renderer.GeneratePerlinNoise(time);
-            prelightRender.GeneratePerlinNoise(time);  // new line
+            prelightRender.GeneratePerlinNoise(time);
 
-          //  renderer.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
-            prelightRender.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);  // new line
+            prelightRender.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
 
-           // renderer.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
             prelightRender.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-
-          //  renderer.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-          //  renderer.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
 
             prelightRender.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
             prelightRender.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
@@ -263,22 +249,19 @@ namespace Simgame2
             enitiesDrawn = 0;
             foreach (Entity e in entities)
             {
-                //if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
                 if (e.IsVisible)
                 {
                     enitiesDrawn++;
                   //  e.ShowBoundingBox = true;
 
-                 //   e.CacheEffects();
                     e.SetModelEffect(modelEffect, false);
                     e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
-                //    e.RestoreEffects();
                 }
             }
 
 
-          //  ((Game1)base.Game).debugImg = MiniMap(PlayerCamera.GetCameraPostion());
-            ((Game1)base.Game).debugImg = prelightRender.lightTarg;
+            ((Game1)base.Game).debugImg = MiniMap(PlayerCamera.GetCameraPostion());
+          //  ((Game1)base.Game).debugImg = prelightRender.lightTarg;
           //  ((Game1)base.Game).debugImg = prelightRender.depthTarg;
 
         /*    Color[] texdata = new Color[prelightRender.depthTarg.Width * prelightRender.depthTarg.Height];
@@ -313,9 +296,8 @@ namespace Simgame2
 
         public void AddEntity(Entity entity)
         {
-            entity.FOGNEAR = Renderer.FOGNEAR;
-            entity.FOGFAR = Renderer.FOGFAR;
-         //   entity.FOGCOLOR = renderer.FOGCOLOR;
+            entity.FOGNEAR = PrelightingRenderer.FOGNEAR;
+            entity.FOGFAR = PrelightingRenderer.FOGFAR;
             entity.FOGCOLOR = this.prelightRender .FOGCOLOR;
             this.entities.Add(entity);
         }

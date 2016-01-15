@@ -205,13 +205,6 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
             graphicsDevice.SetRenderTarget(null);
         }
 
-        // TODO modifiy     page 93
-
-
-
-
-
-
 
 
 
@@ -243,8 +236,8 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
 
 
         public const float FOGDISTANCE = 50.0f;
-        public const float FOGNEAR = 250.0f;
-        public const float FOGFAR = 300.0f;
+        public const float FOGNEAR = 550.0f;
+        public const float FOGFAR = 600.0f;
         public Color FOGCOLOR = new Color(100, 100, 100);
         // Color FOGCOLOR = new Color(0.3f, 0.3f, 0.8f, 1.0f);
 
@@ -322,9 +315,7 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
             //FOG
 
             this.effect.Parameters["FogColor"].SetValue(this.FOGCOLOR.ToVector4());
-            //this.effect.Parameters["FogNear"].SetValue(Renderer.FOGNEAR);
-            //this.effect.Parameters["FogFar"].SetValue(Renderer.FOGFAR);
-            this.effect.Parameters["FogNear"].SetValue(this.PlayerCamera.DrawDistance - Renderer.FOGDISTANCE);
+            this.effect.Parameters["FogNear"].SetValue(this.PlayerCamera.DrawDistance - PrelightingRenderer.FOGDISTANCE);
             this.effect.Parameters["FogFar"].SetValue(this.PlayerCamera.DrawDistance);
             this.effect.Parameters["cameraPos"].SetValue(cameraPosition);
 
@@ -461,7 +452,7 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
             effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
             //effect.Parameters["FogNear"].SetValue(FOGNEAR);
             //effect.Parameters["FogFar"].SetValue(FOGFAR);
-            effect.Parameters["FogNear"].SetValue(this.PlayerCamera.DrawDistance - Renderer.FOGDISTANCE);
+            effect.Parameters["FogNear"].SetValue(this.PlayerCamera.DrawDistance - PrelightingRenderer.FOGDISTANCE);
             effect.Parameters["FogFar"].SetValue(this.PlayerCamera.DrawDistance);
 
 
@@ -626,7 +617,7 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
                     currentEffect.Parameters["FogColor"].SetValue(this.FOGCOLOR.ToVector4());
                     //currentEffect.Parameters["FogNear"].SetValue(Renderer.FOGNEAR);
                     //currentEffect.Parameters["FogFar"].SetValue(Renderer.FOGFAR);
-                    currentEffect.Parameters["FogNear"].SetValue(this.PlayerCamera.DrawDistance - Renderer.FOGDISTANCE);
+                    currentEffect.Parameters["FogNear"].SetValue(this.PlayerCamera.DrawDistance - PrelightingRenderer.FOGDISTANCE);
                     currentEffect.Parameters["FogFar"].SetValue(this.PlayerCamera.DrawDistance);
 
                     currentEffect.Parameters["cameraPos"].SetValue(cameraPosition);
