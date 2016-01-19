@@ -447,7 +447,7 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
             effect.Parameters["xWaveLength"].SetValue(0.01f);
             effect.Parameters["xWaveHeight"].SetValue(0.03f);
 
-            effect.Parameters["xCamPos"].SetValue(cameraPosition);
+         //   effect.Parameters["xCamPos"].SetValue(cameraPosition);
 
             effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
             //effect.Parameters["FogNear"].SetValue(FOGNEAR);
