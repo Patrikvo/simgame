@@ -230,7 +230,7 @@ namespace Simgame2
 
             // water
             prelightRender.drawDepthNormalMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-            prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+            prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), this.frustum);
 
             this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
             prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
@@ -314,7 +314,7 @@ namespace Simgame2
             int maxIndices = maxVertices * 3;
           //  return "vertices: " + renderer.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + renderer.terrainIndexBuffer.IndexCount + "/" + maxVertices +
             return "vertices: " + prelightRender.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + prelightRender.terrainIndexBuffer.IndexCount + "/" + maxVertices +
-               Environment.NewLine + " - entities: " + enitiesDrawn + "/" + entities.Count;
+               Environment.NewLine + " - entities: " + enitiesDrawn + "/" + entities.Count + " - lights: " + prelightRender.DrawnLights + "/" + prelightRender.Lights.Count;
         }
 
 

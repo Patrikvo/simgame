@@ -37,7 +37,7 @@ namespace Simgame2
         public GraphicsDevice graphicsDevice;
         int viewWidth = 0, viewHeight = 0;
 
-
+        public int DrawnLights { get; set; }
 
 
 
@@ -144,10 +144,10 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
 
         }
 
-      
 
 
-        public void drawLightMap(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
+
+        public void drawLightMap(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition, BoundingFrustum frustum)
         {
             // Set the depth and normal map info to the effect
             lightingEffect.Parameters["DepthTexture"].SetValue(depthTarg);
@@ -171,7 +171,7 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
             // Set render states to additive (lights will add their influences)
             graphicsDevice.BlendState = BlendState.Additive;
             graphicsDevice.DepthStencilState = DepthStencilState.None;
-
+            DrawnLights = 0;
             foreach (PPPointLight light in Lights)
             {
                 // Set the light's parameters to the effect
@@ -182,6 +182,12 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
                 Matrix wvp = (Matrix.CreateScale(light.Attenuation) * Matrix.CreateTranslation(light.Position)) * viewProjection;
                 lightingEffect.Parameters["WorldViewProjection"].SetValue(wvp);
 
+                // skip all invisible lights.
+                if (frustum.Contains(light.GetBoundingSphere()) == ContainmentType.Disjoint)
+                {
+                    continue;
+                }
+                DrawnLights++;
                 // Determine the distance between the light and camera
                 float dist = Vector3.Distance(cameraPosition, light.Position);
 
@@ -522,8 +528,8 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
 
             this.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.Black, 1.0f, 0);
 
-
             DrawSkyDome(this.reflectionViewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+            
             this.DrawTerrain(this.reflectionViewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
 
             foreach (Entity e in entities)
@@ -581,7 +587,6 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
                 for (int y = 0; y < resolution; y++)
                 {
                     noisyColors[x + y * resolution] = new Color(new Vector3((float)rand.Next(1000) / 1000.0f, 0, 0));
-
                 }
 
             Texture2D noiseImage = new Texture2D(device, resolution, resolution, true, SurfaceFormat.Color);
@@ -597,6 +602,7 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
             this.skyDome.CopyAbsoluteBoneTransformsTo(modelTransforms);
 
             Matrix wMatrix = Matrix.CreateTranslation(0, -0.3f, 0) * Matrix.CreateScale(300) * Matrix.CreateTranslation(cameraPosition);
+            
             foreach (ModelMesh mesh in this.skyDome.Meshes)
             {
                 foreach (Effect currentEffect in mesh.Effects)
@@ -649,7 +655,7 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
 
             this.effect.CurrentTechnique = this.effect.Techniques["PerlinNoise"];
             this.effect.Parameters["xTexture0"].SetValue(this.cloudStaticMap);
-            this.effect.Parameters["xOvercast"].SetValue(0.9f);
+            this.effect.Parameters["xOvercast"].SetValue(0.8f);
             this.effect.Parameters["xTime"].SetValue(time / 8000.0f);
             this.effect.CurrentTechnique.Passes[0].Apply();
             foreach (EffectPass pass in this.effect.CurrentTechnique.Passes)

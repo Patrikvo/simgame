@@ -47,8 +47,10 @@ namespace Simgame2
         private void UpdateProjectionMatrix()
         {
             projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, this.AspectRatio, 1.0f, DrawDistance);
+            BigProjectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, this.AspectRatio, 1.0f, DrawDistance*100);
         }
 
+        
 
         
 
@@ -253,6 +255,7 @@ namespace Simgame2
         //private WorldMap worldMap;
 
         public Matrix projectionMatrix;
+        public Matrix BigProjectionMatrix;
 
     }
 }
