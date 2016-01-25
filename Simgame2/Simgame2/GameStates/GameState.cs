@@ -117,6 +117,38 @@ namespace Simgame2.GameStates
                     ButtonInsertDown = false;
             }
 
+
+            if (keyState.IsKeyDown(Keys.S))
+            {
+                ButtonSDown = true;
+            }
+            if (keyState.IsKeyUp(Keys.S) && ButtonSDown == true)
+            {
+                this.game.worldMap.SaveMap(@"c:\temp\map.dat");
+                ButtonSDown = false;
+            }
+
+
+            if (keyState.IsKeyDown(Keys.L))
+            {
+                ButtonLDown = true;
+            }
+            if (keyState.IsKeyUp(Keys.L) && ButtonLDown == true)
+            {
+                this.game.worldMap.LoadMap(@"c:\temp\map.dat");
+                ButtonLDown = false;
+            }
+
+            if (keyState.IsKeyDown(Keys.N))
+            {
+                ButtonNDown = true;
+            }
+            if (keyState.IsKeyUp(Keys.N) && ButtonNDown == true)
+            {
+                this.game.worldMap.CreateNewMap(this.game.worldMap.mapNumCellsPerRow, this.game.worldMap.mapNumCellPerColumn);
+                ButtonNDown = false;
+            }
+
         }
 
 
@@ -140,6 +172,11 @@ namespace Simgame2.GameStates
         protected bool mouseRightButtonDown = false;
         protected bool ButtonSpaceDown = false;
         protected bool ButtonInsertDown = false;
+
+
+        protected bool ButtonSDown = false;
+        protected bool ButtonLDown = false;
+        protected bool ButtonNDown = false;
 
         protected Game1 game;
     }

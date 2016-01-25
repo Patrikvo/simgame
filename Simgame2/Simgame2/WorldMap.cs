@@ -23,6 +23,7 @@ namespace Simgame2
 
         private const int mapCellScale = 5;
         private const int mapHeightScale = 2;
+        public const float waterHeight = 2.75f * (float)mapHeightScale;
 
         private Effect modelEffect;
 
@@ -34,31 +35,256 @@ namespace Simgame2
         {
             playerLight = new PPPointLight(new Vector3(0, 0, 0), Color.White* 0.50f, 100);
             this.playerCamera = game.PlayerCamera;
-            entities = new List<Entity>();
 
             modelEffect = game.Content.Load<Effect>("PrelightEffects");
+
+            this.textureSize = 512;
+
+            if (LoadMap(@"c:\temp\map.dat") != true)
+            {
+                CreateNewMap(mapNumCellsPerRow, mapNumCellPerColumn);
+            }
 
             prelightRender = new PrelightingRenderer(game, effect, device, entities);
 
             prelightRender.Lights.Add(playerLight);
 
 
+            this.Initialize();
+        }
+
+
+        public void CreateNewMap(int mapNumCellsPerRow, int mapNumCellPerColumn)
+        {
+            entities = new List<Entity>();
             this.mapNumCellsPerRow = mapNumCellsPerRow;
             this.mapNumCellPerColumn = mapNumCellPerColumn;
-            
+
             this.heightMap = new int[mapNumCellsPerRow * mapNumCellPerColumn];
             this.textureMap = new Vector4[mapNumCellsPerRow * mapNumCellPerColumn];
             this.sector = new int[mapNumCellsPerRow * mapNumCellPerColumn];
 
-            this.textureSize = 512;
+            
 
             generateMap();
-            
+
             PrecalculateVertices();
             GenerateMovementMap();
-
-            this.Initialize();
         }
+
+
+
+        // TODO add entities to save and load functions
+        // TODO add run lenght encoding to reduce filesize
+
+        private const int FileVersionNum = 19467;
+        public string FileLoadResult;
+        public bool LoadMap(string fileName)
+        {
+
+            bool result = false;
+            if (System.IO.File.Exists(fileName))
+            {
+                using (System.IO.BinaryReader reader = new System.IO.BinaryReader(System.IO.File.Open(fileName, System.IO.FileMode.Open)))
+                {
+                    int readFileVersion = reader.ReadInt32();
+                    if (readFileVersion != FileVersionNum)
+                    {
+                        FileLoadResult = "File has no valid format";
+                        return false;
+                    }
+
+                    this.mapNumCellsPerRow = reader.ReadInt32();
+                    this.mapNumCellPerColumn = reader.ReadInt32();
+
+                    int heightMapLength = reader.ReadInt32();
+                    this.heightMap = new int[heightMapLength];
+                    for (int i = 0; i < this.heightMap.Length; i++)
+                    {
+                        this.heightMap[i] = reader.ReadInt32();
+                    }
+
+                    int sectorLength = reader.ReadInt32();
+                    this.sector = new int[sectorLength];
+                    for (int i = 0; i < this.sector.Length; i++)
+                    {
+                        this.sector[i] = reader.ReadInt32();
+                    }
+
+                    int pointXLength = reader.ReadInt32();
+                    this.pointX = new int[pointXLength];
+                    for (int i = 0; i < this.pointX.Length; i++)
+                    {
+                        pointX[i] = reader.ReadInt32();
+                    }
+
+                    int pointYLength = reader.ReadInt32();
+                    this.pointY = new int[pointYLength];
+                    for (int i = 0; i < this.pointY.Length; i++)
+                    {
+                        pointY[i] = reader.ReadInt32();
+                    }
+
+                    int pointAltitudeLength = reader.ReadInt32();
+                    this.pointAltitude = new int[pointAltitudeLength];
+                    for (int i = 0; i < this.pointAltitude.Length; i++)
+                    {
+                        pointAltitude[i] = reader.ReadInt32();
+                    }
+
+
+                    // this.textureMap			vector4[]
+                    int texturMapLength = reader.ReadInt32();
+                    this.textureMap = new Vector4[texturMapLength];
+                    float x, y, z, w;
+                    for (int i = 0; i < this.textureMap.Length; i++)
+                    {
+                        x = reader.ReadSingle();
+                        y = reader.ReadSingle();
+                        z = reader.ReadSingle();
+                        w = reader.ReadSingle();
+
+                        textureMap[i] = new Vector4(x, y, z, w);
+                    }
+
+
+
+
+
+                    // this.resources			ResourceCell[]
+                    int resourceCellLength = reader.ReadInt32();
+                    this.resources = new ResourceCell[resourceCellLength];
+
+                    for (int i = 0; i < this.resources.Length; i++)
+                    {
+                        this.resources[i] = new ResourceCell();
+
+                        this.resources[i].Aluminium = reader.ReadSingle();
+
+
+                        this.resources[i].Copper = reader.ReadSingle();
+                        this.resources[i].Gold = reader.ReadSingle();
+                        this.resources[i].Iron = reader.ReadSingle();
+                        this.resources[i].Lead = reader.ReadSingle();
+                        this.resources[i].Lithium = reader.ReadSingle();
+                        this.resources[i].Nickel = reader.ReadSingle();
+                        this.resources[i].Platinum = reader.ReadSingle();
+                        this.resources[i].Silver = reader.ReadSingle();
+                        this.resources[i].Titanium = reader.ReadSingle();
+                        this.resources[i].Tungsten = reader.ReadSingle();
+                        this.resources[i].Uranium = reader.ReadSingle();
+                    }
+
+
+
+                    // entities			List<Entity>
+
+
+
+
+                    PrecalculateVertices();
+                    GenerateMovementMap();
+                    GenerateSearchTree();
+
+                    entities = new List<Entity>();
+                    result = true;
+                }
+
+
+            }
+
+
+
+            return result;
+        }
+
+        public bool SaveMap(string fileName)
+        {
+            bool result = false;
+            using (System.IO.BinaryWriter writer = new System.IO.BinaryWriter(System.IO.File.Open(fileName, System.IO.FileMode.Create)))
+            {
+                writer.Write(FileVersionNum);
+
+                writer.Write(this.mapNumCellsPerRow);   // int
+                writer.Write(this.mapNumCellPerColumn);  // int
+
+                writer.Write(this.heightMap.Length); // int
+                for (int i = 0; i < this.heightMap.Length; i++)
+                {
+                    writer.Write(this.heightMap[i]);   // int
+                }
+
+                writer.Write(this.sector.Length); // int
+                for (int i = 0; i < this.sector.Length; i++)
+                {
+                    writer.Write(this.sector[i]);   // int
+                }
+
+                writer.Write(this.pointX.Length); // int
+                for (int i = 0; i < this.pointX.Length; i++)
+                {
+                    writer.Write(this.pointX[i]);   // int
+                }
+
+                writer.Write(this.pointY.Length); // int
+                for (int i = 0; i < this.pointY.Length; i++)
+                {
+                    writer.Write(this.pointY[i]);   // int
+                }
+
+                writer.Write(this.pointAltitude.Length); // int
+                for (int i = 0; i < this.pointAltitude.Length; i++)
+                {
+                    writer.Write(this.pointAltitude[i]);   // int
+                }
+
+
+                // this.textureMap			vector4[]
+                writer.Write(this.textureMap.Length); // int
+                for (int i = 0; i < this.textureMap.Length; i++)
+                {
+                    writer.Write(this.textureMap[i].X);   // float
+                    writer.Write(this.textureMap[i].Y);   // float
+                    writer.Write(this.textureMap[i].Z);   // float
+                    writer.Write(this.textureMap[i].W);   // float
+                }
+
+
+                
+
+
+                // this.resources			ResourceCell[]
+                writer.Write(this.resources.Length); // int
+                for (int i = 0; i < this.resources.Length; i++)
+                {
+                    writer.Write(this.resources[i].Aluminium);   // float
+                    writer.Write(this.resources[i].Copper);   // float
+                    writer.Write(this.resources[i].Gold);   // float
+                    writer.Write(this.resources[i].Iron);   // float
+                    writer.Write(this.resources[i].Lead);   // float
+                    writer.Write(this.resources[i].Lithium);   // float
+                    writer.Write(this.resources[i].Nickel);   // float
+                    writer.Write(this.resources[i].Platinum);   // float
+                    writer.Write(this.resources[i].Silver);   // float
+                    writer.Write(this.resources[i].Titanium);   // float
+                    writer.Write(this.resources[i].Tungsten);   // float
+                    writer.Write(this.resources[i].Uranium);   // float
+                }
+
+
+
+                // entities			List<Entity>
+                result = true;
+
+            }
+
+
+
+            return result;
+        }
+
+
+
 
 
         public PrelightingRenderer GetRenderer() { return this.prelightRender; }
@@ -359,6 +585,11 @@ namespace Simgame2
         {
             this.resources = resources;
         }
+        
+        
+
+
+        // /////////////
 
           public  int[] pointX;
           public  int[] pointY;
@@ -935,7 +1166,7 @@ namespace Simgame2
 
         // Water
 
-        public const float waterHeight = 2.75f * (float)mapHeightScale;
+        
 
 
 
@@ -1018,99 +1249,9 @@ namespace Simgame2
 
 
 
-        public class ResourceCell
-        {
-            // amount in percent
-            public float Iron;
-            public float Copper;
-            public float Aluminium;
-            public float Lithium;
-            public float Titanium;
-            public float Nickel;
-            public float Silver;
-            public float Tungsten;
-            public float Platinum;
-            public float Gold;
-            public float Lead;
-            public float Uranium;
-
-            public void Randomize(Random rnd)
-            {
-                //Random rnd = new Random();
-                Iron = rnd.Next(100);
-                Copper = rnd.Next(100);
-                Aluminium = rnd.Next(100);
-                Lithium = rnd.Next(100);
-                Titanium = rnd.Next(100);
-                Nickel = rnd.Next(100);
-                Silver = rnd.Next(100);
-                Tungsten = rnd.Next(100);
-                Platinum = rnd.Next(100);
-                Gold = rnd.Next(100);
-                Lead = rnd.Next(100);
-                Uranium = rnd.Next(100);
-                Normalize();
-            }
-
-            public void Normalize()
-            {
-                float val = Iron + Copper + Aluminium + Lithium + Titanium + Nickel + Silver + Tungsten + Platinum + Gold + Lead + Uranium;
-
-                Iron = Iron / val * 100;
-                Copper = Copper / val * 100;
-                Aluminium = Aluminium / val * 100;
-                Lithium = Lithium / val * 100;
-                Titanium = Titanium / val * 100;
-                Nickel = Nickel / val * 100;
-                Silver = Silver / val * 100;
-                Tungsten = Tungsten / val * 100;
-                Platinum = Platinum / val * 100;
-                Gold = Gold / val * 100;
-                Lead = Lead / val * 100;
-                Uranium = Uranium / val * 100;
-            }
+        
 
 
-
-            public override string ToString()
-            {
-                System.Text.StringBuilder sb = new System.Text.StringBuilder();
-
-                sb.Append("Iron: "); sb.Append((int)(Iron * 1)); sb.AppendLine();
-                sb.Append("Copper: "); sb.Append((int)(Copper * 1)); sb.AppendLine();
-                sb.Append("Aluminium: "); sb.Append((int)(Aluminium * 1)); sb.AppendLine();
-                sb.Append("Lithium: "); sb.Append((int)(Lithium * 1)); sb.AppendLine();
-                sb.Append("Titanium: "); sb.Append((int)(Titanium * 1)); sb.AppendLine();
-                sb.Append("Nickel: "); sb.Append((int)(Nickel * 1)); sb.AppendLine();
-                sb.Append("Silver: "); sb.Append((int)(Silver * 1)); sb.AppendLine();
-                sb.Append("Tungsten: "); sb.Append((int)(Tungsten * 1)); sb.AppendLine();
-                sb.Append("Platinum: "); sb.Append((int)(Platinum * 1)); sb.AppendLine();
-                sb.Append("Gold: "); sb.Append((int)(Gold * 1)); sb.AppendLine();
-                sb.Append("Lead: "); sb.Append((int)(Lead * 1)); sb.AppendLine();
-                sb.Append("Uranium: "); sb.Append((int)(Uranium * 1)); sb.AppendLine();
-
-                return sb.ToString();
-            }
-
-        }
-
-
-        /*
-         
-Iron
-Copper
-Aluminium
-Lithium
-Titanium
-Nickel
-Silver
-Tungsten
-Platinum
-Gold
-Lead
-Uranium
-          
-         * */
 
         #endregion PrivateMembers
 

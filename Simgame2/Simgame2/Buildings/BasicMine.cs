@@ -42,7 +42,7 @@ namespace Simgame2.Buildings
         }
 
  
-        WorldMap.ResourceCell resourceCell;
+        ResourceCell resourceCell;
 
         public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {

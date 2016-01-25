@@ -284,7 +284,7 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
 
         public Texture2D[] Textures;
 
-        private Int16[] indices;
+        public Int16[] indices;
         public VertexMultitextured[] vertices;
 
 

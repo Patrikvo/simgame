@@ -52,6 +52,19 @@ namespace Simgame2
 
     public struct VertexMultitextured : IVertexType
     {
+        public VertexMultitextured (
+         Vector3 position,
+         Vector3 normal,
+         Vector4 textureCoordinate,
+         Vector4 texWeights
+            )
+        {
+            this.Position = position;
+            this.Normal = normal;
+            this.TextureCoordinate = textureCoordinate;
+            this.TexWeights = texWeights;
+        }
+
         public Vector3 Position;
         public Vector3 Normal;
         public Vector4 TextureCoordinate;
@@ -74,7 +87,8 @@ namespace Simgame2
 
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        private const int mapNumCellsPerSide = 320;   // 20 40 80 160 320 640 1280
+        //private const int mapNumCellsPerSide = 320; // 20 40 80 160 320 640 1280
+        private const int mapNumCellsPerSide = 321; // 20 40 80 160 320 640 1280
 
         // Rendering objects
         private GraphicsDeviceManager graphics;
@@ -95,6 +109,7 @@ namespace Simgame2
 
         // Game Objects
         public WorldMap worldMap;
+        public LODTerrain.LODTerrain LODMap;
         public TextureGenerator textureGenerator;
 
 
