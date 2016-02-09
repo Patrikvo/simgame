@@ -101,7 +101,7 @@ namespace Simgame2.Buildings
             {
                 if (this.resourceCell == null)
                 {
-                    resourceCell = this.getResourceCell(location.X, -location.Z);
+                    resourceCell = this.getResourceCell(location.X, location.Z);
                 }
                 basicMineSim = new BasicMineSim(this);
                 

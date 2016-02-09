@@ -61,7 +61,8 @@ namespace Simgame2.GameStates
             mouseCursorRay = game.PlayerCamera.UnProjectScreenPoint(currentMouseState.X, currentMouseState.Y, this.game.GraphicsDevice.Viewport);
                 
             
-            entityWithFocus = this.game.worldMap.FindEntityAt(mouseCursorRay);
+            //entityWithFocus = this.game.worldMap.FindEntityAt(mouseCursorRay);
+            entityWithFocus = this.game.LODMap.FindEntityAt(mouseCursorRay);
 
             if (entityWithFocus != null)
             {

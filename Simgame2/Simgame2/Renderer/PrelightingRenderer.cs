@@ -11,11 +11,36 @@ using Microsoft.Xna.Framework.Media;
 using System.IO;
 
 
-namespace Simgame2
+namespace Simgame2.Renderer
 {
 
     public class PrelightingRenderer : Microsoft.Xna.Framework.GameComponent
     {
+        public MainLightSource SunLight;
+
+        //shadow map
+
+        // Position and target of the shadowing light
+        public Vector3 ShadowLightPosition { get; set; }
+        public Vector3 ShadowLightTarget { get; set; }
+
+        // Shadow depth target and depth-texture effect
+        public RenderTarget2D shadowDepthTarg;
+        Effect shadowDepthEffect;
+
+        // Depth texture parameters
+        int shadowMapSize = 2048;
+        int shadowFarPlane = 750;
+
+        // Shadow light view and projection
+        Matrix shadowView, shadowProjection;
+
+        // Shadow properties
+        public bool DoShadowMapping { get; set; }
+        public float ShadowMult { get; set; }
+
+
+
         // Normal, depth, and light map render targets
         public RenderTarget2D depthTarg;
         public RenderTarget2D normalTarg;
@@ -27,6 +52,10 @@ namespace Simgame2
 
         // Point light (sphere) mesh
         Model lightMesh;
+
+        // diffuse lightdirection
+   //     public Vector3 LightDirection;
+
 
         // List of models, lights, and the camera
      //   public List<CModel> Models { get; set; }
@@ -40,22 +69,40 @@ namespace Simgame2
         public int DrawnLights { get; set; }
 
 
+        private Game1 game;
+
+        Model sun;
+
+        
 
         public PrelightingRenderer(Game game, Effect effect, GraphicsDevice device, List<Entity> entities)
             : base(game)
         {
+ 
+
             viewWidth = device.Viewport.Width;
             viewHeight = device.Viewport.Height;
+            this.game = (Game1)game;
+
+            
 
             // Create the three render targets
             depthTarg = new RenderTarget2D(device, viewWidth, viewHeight, false, SurfaceFormat.Single, DepthFormat.Depth24);
             normalTarg = new RenderTarget2D(device, viewWidth, viewHeight, false, SurfaceFormat.Color, DepthFormat.Depth24);
             lightTarg = new RenderTarget2D(device, viewWidth, viewHeight, false, SurfaceFormat.Color, DepthFormat.Depth24);
+            //shadowDepthTarg = new RenderTarget2D(device, shadowMapSize, shadowMapSize, false, SurfaceFormat.Single, DepthFormat.Depth24);
+            shadowDepthTarg = new RenderTarget2D(device, shadowMapSize, shadowMapSize, false, SurfaceFormat.Single, DepthFormat.Depth24);
+            
+            
+
 
             // Load effects
             depthNormalEffect = game.Content.Load<Effect>("PPDepthNormal");
             lightingEffect = game.Content.Load<Effect>("PPLight");
             this.effect = game.Content.Load<Effect>("PrelightEffects");
+            shadowDepthEffect = game.Content.Load<Effect>("ShadowDepthEffect");
+
+
             // Set effect parameters to light mapping effect
             lightingEffect.Parameters["viewportWidth"].SetValue(viewWidth);
             lightingEffect.Parameters["viewportHeight"].SetValue(viewHeight);
@@ -63,21 +110,19 @@ namespace Simgame2
             // Load point light mesh and set light mapping effect to it
             lightMesh = game.Content.Load<Model>("PPLightMesh");
             lightMesh.Meshes[0].MeshParts[0].Effect = lightingEffect;
+
+     //       sun =  game.Content.Load<Model>("PPLightMesh");
+    //        sun.Meshes[0].MeshParts[0].Effect = this.effect.Clone();
+
             
+            //shadow map
+            shadowDepthEffect.Parameters["FarPlane"].SetValue(shadowFarPlane);
 
             this.graphicsDevice = device;
             this.entities = entities;
 
-            this.Lights = new List<PPPointLight>()
-{
-new PPPointLight(new Vector3(500, 50, -500), Color.Red * .85f,
-100),
-new PPPointLight(new Vector3(550, 50, -550), Color.Blue * .85f,
-100),
-new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
-100)
-, new PPPointLight(new Vector3(600, 100, -600), Color.White * .85f, 200000)
-};
+
+            SunLight = new MainLightSource();
 
 
 
@@ -85,8 +130,8 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
             this.PlayerCamera = ((Game1)game).PlayerCamera;
           //  this.effect = effect;
             this.device = device;
-            AmbientLightLevel = 0.5f;
-            SunLightDirection = new Vector3(-0.5f, -1, -0.5f);
+            AmbientLightLevel = 0.2f;
+      //      SunLightDirection = new Vector3(-0.5f, -1, -0.5f);
         }
 
 
@@ -212,11 +257,77 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
         }
 
 
+        public void drawShadowDepthMap()
+        {
+            // Calculate view and projection matrices for the "light"
+            // shadows are being calculated for
+            shadowView = Matrix.CreateLookAt(ShadowLightPosition, ShadowLightTarget, Vector3.Up);
+
+       
+            shadowProjection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(90), 1, 1, shadowFarPlane);
+
+                // Set render target
+            graphicsDevice.SetRenderTarget(shadowDepthTarg);
+            // Clear the render target to 1 (infinite depth)
+            graphicsDevice.Clear(Color.White);
+            // Draw each model with the ShadowDepthEffect effect
+
+            BlendState stored = this.device.BlendState;
+            this.device.BlendState = BlendState.Opaque;
+
+            this.shadowDepthEffect.Parameters["World"].SetValue(Matrix.Identity);
+            this.shadowDepthEffect.Parameters["View"].SetValue(shadowView);
+            this.shadowDepthEffect.Parameters["Projection"].SetValue(shadowProjection);
+
+
+            this.shadowDepthEffect.CurrentTechnique.Passes[0].Apply();
+            foreach (EffectPass pass in this.shadowDepthEffect.CurrentTechnique.Passes)
+            {
+                this.graphicsDevice.SetVertexBuffer(this.terrainVertexBuffer);
+                this.graphicsDevice.Indices = this.terrainIndexBuffer;
+
+
+
+                int noVertices = this.terrainVertexBuffer.VertexCount;
+                int noTriangles = this.terrainIndexBuffer.IndexCount / 3;
+                this.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, noVertices, 0, noTriangles);
+            }
+
+
+            foreach (Entity e in entities)
+            {
+                //if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
+              //  if (e.IsVisible)
+                {
+                    //   e.CacheEffects();
+                    e.SetModelEffect(shadowDepthEffect, false);
+                    e.HideBillboard = true;
+                    //e.Draw(shadowView,shadowProjection, ShadowLightPosition);
+                    e.DrawShadow(shadowView, shadowProjection, ShadowLightPosition);
+
+                    e.HideBillboard = false;
+                    // e.RestoreEffects();
+                }
+            }
+
+            if (stored != null)
+            {
+                this.device.BlendState = stored;
+            }
+
+            // Un-set the render targets
+            graphicsDevice.SetRenderTarget(null);
+        }
 
 
 
 
-        public override void Initialize()
+
+
+        
+
+
+        public void Initialize(int mapWidth, int mapHeigth)
         {
 
             base.Initialize();
@@ -230,6 +341,49 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
             cloudStaticMap = CreateStaticMap(256);
 
             fullScreenVertices = SetUpFullscreenVertices();
+
+                                        // LR    UD   roll
+            SunLight.SetLightDirection(1.0f, 2.5f, 0.0f);
+            SunLight.Color = Color.White;
+            SunLight.Power = 0.7f;
+
+            //LightDirection = new Vector3(1, 1, 1);
+       //     LightDirection = new Vector3(-0.3333333f, 0.6666667f, 0.6666667f);
+     //       LightDirection = new Vector3(0.5f, -0.4f, 0.6f);
+      //      LightDirection.Normalize();
+
+
+         //   this.ShadowLightPosition = new Vector3(0,550, 500);
+            this.ShadowLightPosition = new Vector3(mapWidth / 2, 900, -90);
+
+
+            //this.ShadowLightTarget = new Vector3(150, 150, 0);
+            this.ShadowLightTarget = new Vector3(mapWidth / 2, 100, mapHeigth / 4);
+            this.DoShadowMapping = true;
+            this.ShadowMult = 0.3f;
+
+       //     Vector3 sunPos = new Vector3(mapWidth / 2, 1000, -1000);
+
+          //  LightDirection = (sunPos - ShadowLightTarget);
+          //  LightDirection = new Vector3(LightDirection.X, -LightDirection.Y, LightDirection.Z);
+            
+
+        //    LightDirection = ShadowLightPosition - ShadowLightTarget;
+       //     LightDirection.Normalize();
+          //  LightDirection = LightDirection * 5.0f;
+
+
+            this.Lights = new List<PPPointLight>()
+{
+new PPPointLight(ShadowLightPosition, Color.Red * .85f,
+100),
+new PPPointLight(ShadowLightTarget, Color.Blue * .85f,
+100),
+new PPPointLight(new Vector3(450, 50, 450), Color.Green * .85f,
+100)
+, new PPPointLight(new Vector3(1000, 500, 1000), Color.White * .85f, 500)
+};
+         
         }
 
         private Camera PlayerCamera;
@@ -248,7 +402,7 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
         // Color FOGCOLOR = new Color(0.3f, 0.3f, 0.8f, 1.0f);
 
 
-        public Vector3 SunLightDirection { get; set; }
+     //   public Vector3 SunLightDirection { get; set; }
 
 
         public Effect effect { get; set; }
@@ -296,8 +450,6 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
             this.effect.Parameters["Projection"].SetValue(projectionMatrix);
 
             this.effect.Parameters["xTexture"].SetValue(this.Textures[0]);
-
-
             this.effect.CurrentTechnique = this.effect.Techniques["MultiTextured"];
             this.effect.Parameters["xTexture0"].SetValue(this.Textures[1]);
             this.effect.Parameters["xTexture1"].SetValue(this.Textures[2]);
@@ -307,15 +459,16 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
 
 
             this.effect.Parameters["xEnableLighting"].SetValue(true);
-            this.effect.Parameters["xAmbient"].SetValue(new Vector3(0.5f,0.5f,0.5f));
-            this.effect.Parameters["xDiffuseColor"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
+            this.effect.Parameters["xAmbient"].SetValue(new Vector3(AmbientLightLevel, AmbientLightLevel, AmbientLightLevel));
+            this.effect.Parameters["xDiffuseColor"].SetValue(SunLight.Color.ToVector3());
 
-            
 
-            this.effect.Parameters["xLightDirection"].SetValue(SunLightDirection);
-            this.effect.Parameters["xLightPos"].SetValue(new Vector3(500, 500, -500));
-            this.effect.Parameters["xLightPower"].SetValue(1.0f);
 
+            this.effect.Parameters["LightDirection"].SetValue(SunLight.GetInvertedLightDirection());
+            this.effect.Parameters["xLightPos"].SetValue(new Vector3(500, 500, 500));
+            this.effect.Parameters["xLightPower"].SetValue(SunLight.Power);
+
+            this.effect.Parameters["NormalTexture"].SetValue(normalTarg);
 
 
             //FOG
@@ -333,6 +486,24 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
                 this.effect.Parameters["viewportWidth"].SetValue(viewWidth);
             
                 this.effect.Parameters["viewportHeight"].SetValue(viewHeight);
+
+            // shadowmap:
+                if (this.effect.Parameters["DoShadowMapping"] != null)
+                    this.effect.Parameters["DoShadowMapping"].SetValue(DoShadowMapping);
+                
+                if (this.effect.Parameters["ShadowMap"] != null)
+                    this.effect.Parameters["ShadowMap"].SetValue(shadowDepthTarg);
+                if (this.effect.Parameters["ShadowView"] != null)
+                    this.effect.Parameters["ShadowView"].SetValue(shadowView);
+                if (this.effect.Parameters["ShadowProjection"] != null)
+                    this.effect.Parameters["ShadowProjection"].SetValue(shadowProjection);
+
+                if (this.effect.Parameters["ShadowLightPosition"] != null)
+                    this.effect.Parameters["ShadowLightPosition"].SetValue(ShadowLightPosition);
+                if (this.effect.Parameters["ShadowFarPlane"] != null)
+                    this.effect.Parameters["ShadowFarPlane"].SetValue(shadowFarPlane);
+                if (this.effect.Parameters["ShadowMult"] != null)
+                    this.effect.Parameters["ShadowMult"].SetValue(ShadowMult);
 
 
             this.effect.CurrentTechnique.Passes[0].Apply();
@@ -469,8 +640,8 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
 
             this.effect.Parameters["xEnableLighting"].SetValue(true);
             this.effect.Parameters["xAmbient"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
-            this.effect.Parameters["xDiffuseColor"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
-            this.effect.Parameters["xLightDirection"].SetValue(SunLightDirection);
+            this.effect.Parameters["xDiffuseColor"].SetValue(SunLight.Color.ToVector3());
+            this.effect.Parameters["LightDirection"].SetValue(SunLight.GetInvertedLightDirection());
             this.effect.Parameters["cameraPos"].SetValue(cameraPosition);
 
             effect.CurrentTechnique.Passes[0].Apply();
@@ -615,8 +786,8 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
                     currentEffect.Parameters["xTexture"].SetValue(this.cloudMap);
                     currentEffect.Parameters["xEnableLighting"].SetValue(false);
                     currentEffect.Parameters["xAmbient"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
-                    currentEffect.Parameters["xDiffuseColor"].SetValue(new Vector3(0.15f, 0.15f, 0.15f));
-                    currentEffect.Parameters["xLightDirection"].SetValue(SunLightDirection);
+                    currentEffect.Parameters["xDiffuseColor"].SetValue(SunLight.Color.ToVector3());
+                    currentEffect.Parameters["LightDirection"].SetValue(SunLight.GetInvertedLightDirection());
 
                     // FOG
 
@@ -674,5 +845,248 @@ new PPPointLight(new Vector3(450, 50, -450), Color.Green * .85f,
 
 
         #endregion
+
+
+
+
+
+        public void DrawSun(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
+        {
+            Matrix worldMatrix =
+                    Matrix.CreateScale(50.0f) * Matrix.CreateTranslation(ShadowLightPosition);
+
+            sun.Meshes[0].MeshParts[0].Effect.Parameters["World"].SetValue(worldMatrix);
+            sun.Meshes[0].MeshParts[0].Effect.Parameters["View"].SetValue(currentViewMatrix);
+            sun.Meshes[0].MeshParts[0].Effect.Parameters["Projection"].SetValue(projectionMatrix);
+
+            sun.Meshes[0].MeshParts[0].Effect.CurrentTechnique = sun.Meshes[0].MeshParts[0].Effect.Techniques["flatshaded"];
+
+
+            graphicsDevice.BlendState = BlendState.Opaque;
+            //graphicsDevice.DepthStencilState = DepthStencilState .None;
+            graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
+
+
+            sun.Meshes[0].MeshParts[0].Effect.CurrentTechnique.Passes[0].Apply();
+            foreach (EffectPass pass in sun.Meshes[0].MeshParts[0].Effect.CurrentTechnique.Passes)
+            {
+                sun.Meshes[0].Draw();
+            }
+
+            graphicsDevice.BlendState = BlendState.Opaque;
+            graphicsDevice.DepthStencilState = DepthStencilState.Default;
+        }
+
+        public void DrawNormal(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition, Vector3 Position, Matrix Normal)
+        {
+            int Size = 10;
+/*
+         //   Matrix worldMatrix = Matrix.Identity;
+            //Matrix worldMatrix = Matrix.CreateWorld(Position, Normal, Vector3.Up);
+            //Matrix worldMatrix = Matrix.CreateWorld()
+
+
+            //D3DXVECTOR3 toCam = camPos - spherePos;       == normal
+            //D3DXVECTOR3 fwdVector;
+            // D3DXVec3Normalize( &fwdVector, &toCam );
+            Vector3 fwdVector = new Vector3(Normal.X, Normal.Y, Normal.Z);
+            fwdVector.Normalize();
+
+            // D3DXVECTOR3 upVector( 0.0f, 1.0f, 0.0f );
+            Vector3 upVector = new Vector3(0.0f, 1.0f, 0.0f);
+
+            // D3DXVECTOR3 sideVector;
+            Vector3 sideVector;
+
+            // D3DXVec3CrossProduct( &sideVector, &upVector, &fwdVector );
+             sideVector = Vector3.Cross(upVector, fwdVector);
+
+             // D3DXVec3CrossProduct( &upVector, &sideVector, &fwdVector );
+             upVector = Vector3.Cross(sideVector, fwdVector);
+
+             // D3DXVec3Normalize( &upVector, &toCam );
+             upVector.Normalize();
+
+             // D3DXVec3Normalize( &sideVector, &toCam );
+             sideVector.Normalize();
+
+            /*
+             D3DXMATRIX orientation( sideVector.x, sideVector.y, sideVector.z, 0.0f,
+                         upVector.x,   upVector.y,   upVector.z,   0.0f,
+                         fwdVector.x,  fwdVector.y,  fwdVector.z,  0.0f,
+                         spherePos.x,  spherePos.y,  spherePos.z,  1.0f );
+            /
+
+           //  Matrix worldMatrix = Matrix.CreateWorld(Position, fwdVector, upVector);
+             Matrix wm = new Matrix(sideVector.X, sideVector.Y, sideVector.Z, 0.0f,
+                                                upVector.X, upVector.Y, upVector.Z, 0.0f,
+                                                fwdVector.X, fwdVector.Y, fwdVector.Z, 0.0f,
+                                                Position.X, Position.Y, Position.Z, 1.0f);
+                                                //Position.X, Position.Y, Position.Z, 1.0f);
+
+             Matrix worldMatrix = Matrix.CreateWorld(Position, fwdVector, upVector);
+            */
+
+
+            Matrix worldMatrix = Normal * Matrix.CreateTranslation(Position);
+
+
+
+
+            graphicsDevice.BlendState = BlendState.Opaque;
+            //graphicsDevice.DepthStencilState = DepthStencilState .None;
+            graphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
+
+
+            VertexPositionColored[] _vertices = new VertexPositionColored[36];
+
+            Position = Vector3.Zero;
+
+            // Calculate the position of the vertices on the top face.
+
+            Vector3 topLeftFront = Position + new Vector3(-0.1f, 2.0f, -0.1f) * Size;
+
+            Vector3 topLeftBack = Position + new Vector3(-0.1f, 2.0f, 0.1f) * Size;
+
+            Vector3 topRightFront = Position + new Vector3(0.1f, 2.0f, -0.1f) * Size;
+
+            Vector3 topRightBack = Position + new Vector3(0.1f, 2.0f, 0.1f) * Size;
+
+
+
+            // Calculate the position of the vertices on the bottom face.
+
+            Vector3 btmLeftFront = Position + new Vector3(-1.0f, 0.0f, -1.0f) * Size;
+
+            Vector3 btmLeftBack = Position + new Vector3(-1.0f, 0.0f, 1.0f) * Size;
+
+            Vector3 btmRightFront = Position + new Vector3(1.0f, 0.0f, -1.0f) * Size;
+
+            Vector3 btmRightBack = Position + new Vector3(1.0f, 0.0f, 1.0f) * Size;
+
+
+
+
+
+
+            // Add the vertices for the FRONT face.
+
+            _vertices[0] = new VertexPositionColored(topLeftFront, Color.Blue);
+
+            _vertices[1] = new VertexPositionColored(btmLeftFront, Color.Blue);
+
+            _vertices[2] = new VertexPositionColored(topRightFront, Color.Blue);
+
+            _vertices[3] = new VertexPositionColored(btmLeftFront, Color.Blue);
+
+            _vertices[4] = new VertexPositionColored(btmRightFront, Color.Blue);
+
+            _vertices[5] = new VertexPositionColored(topRightFront, Color.Blue);
+
+
+
+            // Add the vertices for the BACK face.
+
+            _vertices[6] = new VertexPositionColored(topLeftBack, Color.Blue);
+
+            _vertices[7] = new VertexPositionColored(topRightBack, Color.Blue);
+
+            _vertices[8] = new VertexPositionColored(btmLeftBack, Color.Blue);
+
+            _vertices[9] = new VertexPositionColored(btmLeftBack, Color.Blue);
+
+            _vertices[10] = new VertexPositionColored(topRightBack, Color.Blue);
+
+            _vertices[11] = new VertexPositionColored(btmRightBack, Color.Blue);
+
+
+
+            // Add the vertices for the TOP face.
+
+            _vertices[12] = new VertexPositionColored(topLeftFront, Color.Red);
+
+            _vertices[13] = new VertexPositionColored(topRightBack, Color.Red);
+
+            _vertices[14] = new VertexPositionColored(topLeftBack, Color.Red);
+
+            _vertices[15] = new VertexPositionColored(topLeftFront, Color.Red);
+
+            _vertices[16] = new VertexPositionColored(topRightFront, Color.Red);
+
+            _vertices[17] = new VertexPositionColored(topRightBack, Color.Red);
+
+
+
+            // Add the vertices for the BOTTOM face. 
+
+            _vertices[18] = new VertexPositionColored(btmLeftFront, Color.Blue);
+
+            _vertices[19] = new VertexPositionColored(btmLeftBack, Color.Blue);
+
+            _vertices[20] = new VertexPositionColored(btmRightBack, Color.Blue);
+
+            _vertices[21] = new VertexPositionColored(btmLeftFront, Color.Blue);
+
+            _vertices[22] = new VertexPositionColored(btmRightBack, Color.Blue);
+
+            _vertices[23] = new VertexPositionColored(btmRightFront, Color.Blue);
+
+
+
+            // Add the vertices for the LEFT face.
+
+            _vertices[24] = new VertexPositionColored(topLeftFront, Color.Blue);
+
+            _vertices[25] = new VertexPositionColored(btmLeftBack, Color.Blue);
+
+            _vertices[26] = new VertexPositionColored(btmLeftFront, Color.Blue);
+
+            _vertices[27] = new VertexPositionColored(topLeftBack, Color.Blue);
+
+            _vertices[28] = new VertexPositionColored(btmLeftBack, Color.Blue);
+
+            _vertices[29] = new VertexPositionColored(topLeftFront, Color.Blue);
+
+
+
+            // Add the vertices for the RIGHT face. 
+
+            _vertices[30] = new VertexPositionColored(topRightFront, Color.Blue);
+
+            _vertices[31] = new VertexPositionColored(btmRightFront, Color.Blue);
+
+            _vertices[32] = new VertexPositionColored(btmRightBack, Color.Blue);
+
+            _vertices[33] = new VertexPositionColored(topRightBack, Color.Blue);
+
+            _vertices[34] = new VertexPositionColored(topRightFront, Color.Blue);
+
+            _vertices[35] = new VertexPositionColored(btmRightBack, Color.Blue);
+
+
+
+
+
+
+
+
+
+            this.effect.CurrentTechnique = this.effect.Techniques["flatshaded"];
+            this.effect.Parameters["World"].SetValue(worldMatrix);
+            this.effect.Parameters["View"].SetValue(currentViewMatrix);
+            this.effect.Parameters["Projection"].SetValue(projectionMatrix);
+
+            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+
+                device.DrawUserPrimitives(PrimitiveType.TriangleList, _vertices, 0, 12, VertexPositionColor.VertexDeclaration);
+            }
+
+          
+
+            graphicsDevice.BlendState = BlendState.Opaque;
+            graphicsDevice.DepthStencilState = DepthStencilState.Default;
+        }
     }
 }

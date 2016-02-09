@@ -39,7 +39,7 @@ namespace Simgame2
             _DrawDistance = 300.0f;
             this.viewMatrix = Matrix.CreateLookAt(new Vector3(0, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 0, -1));     /// here
             UpdateProjectionMatrix();
-            MoveCamera(new Vector3(500, 25, -500));
+            MoveCamera(new Vector3(1600, 25, 500));
             this.cameraHeight = CameraHeightOffset;
 
         }
@@ -47,11 +47,14 @@ namespace Simgame2
         private void UpdateProjectionMatrix()
         {
             projectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, this.AspectRatio, 1.0f, DrawDistance);
-            BigProjectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, this.AspectRatio, 1.0f, DrawDistance*100);
+            BigProjectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, this.AspectRatio, 1.0f, DrawDistance*10);
         }
 
-        
 
+        public BoundingFrustum GetFrustrum()
+        {
+            return new BoundingFrustum(this.viewMatrix * this.projectionMatrix);
+        }
         
 
         public void MoveCamera(Vector3 newLocation)
@@ -71,14 +74,29 @@ namespace Simgame2
             float camZ = GetCameraPostion().Z;
 
             if (camX < 0) { camX = 0; }
-            if (camX > (worldMap.getMapWidth())) { camX = (worldMap.getMapWidth()); }
-
+            //if (camX > (worldMap.getMapWidth())) { camX = (worldMap.getMapWidth()); }
+            if (camX > (LODMap.getMapWidth())) { camX = (LODMap.getMapWidth()); }
+            
+/*
             if (camZ > 0) { camZ = 0; }
-            if (camZ < -((worldMap.getMapHeight()) - 1)) { camZ = -((worldMap.getMapHeight()) - 1); }
+            //if (camZ < -((worldMap.getMapHeight()) - 1)) { camZ = -((worldMap.getMapHeight()) - 1); }
+            if (camZ < -((LODMap.getMapHeight()) - 1)) { camZ = -((LODMap.getMapHeight()) - 1); }
+            */
+
+            if (camZ < 0) { camZ = 0; }
+            if (camZ > ((LODMap.getMapHeight()) - 1)) { camZ = ((LODMap.getMapHeight()) - 1); }
 
             MoveCamera(new Vector3(camX, (float)cameraHeight, camZ));
             UpdateViewMatrix();
         }
+
+        public Vector3 GetPointBehindCamera(float distance)
+        {
+            Matrix cameraRotation = Matrix.CreateRotationX(0) * Matrix.CreateRotationY(leftrightRot);
+            Vector3 rotatedVector = Vector3.Transform(new Vector3(0, 0, 1), cameraRotation);
+            return (GetCameraPostion() + distance * rotatedVector);
+        }
+
 
 
         public void UpdateViewMatrix()
@@ -98,20 +116,34 @@ namespace Simgame2
             this.viewMatrix = Matrix.CreateLookAt(this.GetCameraPostion(), cameraFinalTarget, cameraRotatedUpVector);
 
 
+
+            
+            Vector3 rotatedVector = Vector3.Transform(new Vector3(0,-1,0), cameraRotation);
+        //    this.viewMatrixBackShifted = Matrix.CreateLookAt(this.GetCameraPostion() + 100 * rotatedVector, cameraFinalTarget, cameraRotatedUpVector);
+            this.viewMatrixBackShifted = Matrix.CreateLookAt(this.GetPointBehindCamera(100), cameraFinalTarget, cameraRotatedUpVector);
+
             Vector3 reflCameraPosition = this.GetCameraPostion();
-            reflCameraPosition.Y = -this.GetCameraPostion().Y + (WorldMap.waterHeight * 2);
+            //flCameraPosition.Y = -this.GetCameraPostion().Y + (WorldMap.waterHeight * 2);
+            reflCameraPosition.Y = -this.GetCameraPostion().Y + (LODTerrain.LODTerrain.waterHeight * 2);
             Vector3 reflTargetPos = cameraFinalTarget;
-            reflTargetPos.Y = -cameraFinalTarget.Y + (WorldMap.waterHeight * 2);
+            //reflTargetPos.Y = -cameraFinalTarget.Y + (WorldMap.waterHeight * 2);
+            reflTargetPos.Y = -cameraFinalTarget.Y + (LODTerrain.LODTerrain.waterHeight * 2);
 
 
             Vector3 forwardVector = reflTargetPos - reflCameraPosition;
             sideVector = Vector3.Transform(new Vector3(1, 0, 0), cameraRotation);
             Vector3 reflectionCamUp = Vector3.Cross(sideVector, forwardVector);
-            worldMap.GetRenderer().reflectionViewMatrix = Matrix.CreateLookAt(reflCameraPosition, reflTargetPos, reflectionCamUp);
+            //worldMap.GetRenderer().reflectionViewMatrix = Matrix.CreateLookAt(reflCameraPosition, reflTargetPos, reflectionCamUp);
+            LODMap.GetRenderer().reflectionViewMatrix = Matrix.CreateLookAt(reflCameraPosition, reflTargetPos, reflectionCamUp);
+
+            
+
+        }
 
 
-
-
+        public void ForceViewMatrix(Vector3 position, Vector3 target, Vector3 upVector)
+        {
+            this.viewMatrix = Matrix.CreateLookAt(position, target, upVector);
         }
 
         public Vector3 LookAt;
@@ -121,12 +153,17 @@ namespace Simgame2
         public void AdjustCameraAltitude(GameTime gameTime)
         {
             // keeps camera at a set height above the terrain.
-            double intendedCameraHeight = (worldMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, -this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
+            //double intendedCameraHeight = (worldMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, -this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
+            double intendedCameraHeight = (LODMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
+            
+            
             // int intendedCameraHeight = worldMap.getAltitude(cameraPosition.X, cameraPosition.Z) + CameraHeightOffset;
 
-            if (intendedCameraHeight < (WorldMap.waterHeight + CameraHeightOffset))
+            //if (intendedCameraHeight < (WorldMap.waterHeight + CameraHeightOffset))
+            if (intendedCameraHeight < (LODTerrain.LODTerrain.waterHeight + CameraHeightOffset))
             {
-                intendedCameraHeight = WorldMap.waterHeight + CameraHeightOffset;
+             //   intendedCameraHeight = WorldMap.waterHeight + CameraHeightOffset;
+                intendedCameraHeight = LODTerrain.LODTerrain.waterHeight + CameraHeightOffset;
             }
 
 
@@ -230,7 +267,7 @@ namespace Simgame2
 
 
         public Matrix viewMatrix { get; set; }
-
+        public Matrix viewMatrixBackShifted{ get; set; }
 
         private Vector3 cameraPosition;
         public float leftrightRot = 4 * MathHelper.Pi;
@@ -245,12 +282,14 @@ namespace Simgame2
 
 
         
-        public const float moveSpeed = 160.0f; // 80.0f;
+        public const float moveSpeed = 250.0f; // 80.0f;
         public const float riseSpeed = 160.0f;
         public const float dropSpeed = 30.0f;
         public const float rotationSpeed = 0.3f;
 
-        public WorldMap worldMap { get; set; }
+  //      public WorldMap worldMap { get; set; }
+        public LODTerrain.LODTerrain LODMap { get; set; }
+
 
         //private WorldMap worldMap;
 

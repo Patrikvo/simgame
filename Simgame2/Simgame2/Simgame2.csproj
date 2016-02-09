@@ -83,6 +83,7 @@
     <Compile Include="Entity.cs" />
     <Compile Include="EntityBuilding.cs" />
     <Compile Include="EntityFactory.cs" />
+    <Compile Include="GameStates\DebugState.cs" />
     <Compile Include="GameStates\FreeLook.cs" />
     <Compile Include="GameStates\GameState.cs" />
     <Compile Include="GameStates\MousePointerLook.cs" />
@@ -97,8 +98,9 @@
     <Compile Include="LODTerrain\TreeVertexCollection.cs" />
     <Compile Include="Noise.cs" />
     <Compile Include="PathFinder.cs" />
-    <Compile Include="PPPointLight.cs" />
-    <Compile Include="PrelightingRenderer.cs" />
+    <Compile Include="Renderer\MainLightSource.cs" />
+    <Compile Include="Renderer\PPPointLight.cs" />
+    <Compile Include="Renderer\PrelightingRenderer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Game1.cs" />
@@ -108,7 +110,6 @@
     <Compile Include="Simulation\Simulator.cs" />
     <Compile Include="TextureGenerator.cs" />
     <Compile Include="WorldGenerator.cs" />
-    <Compile Include="WorldMap.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />

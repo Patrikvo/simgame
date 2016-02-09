@@ -105,16 +105,19 @@ namespace Simgame2.Simulation
         {
             float distance = float.MaxValue;
             Vector3 TargetLocation = Vector3.Zero;
-            for (int i = 0; i < this.game.worldMap.entities.Count; i++)
+            for (int i = 0; i < this.game.LODMap.entities.Count; i++)
+            //for (int i = 0; i < this.game.worldMap.entities.Count; i++)
             {
-                if (this.game.worldMap.entities[i].Type == targetType && this.game.worldMap.entities[i].IsGhost == false)
+                if (this.game.LODMap.entities[i].Type == targetType && this.game.LODMap.entities[i].IsGhost == false)
+                //if (this.game.worldMap.entities[i].Type == targetType && this.game.worldMap.entities[i].IsGhost == false)
                 {
-                    float dist = Vector3.Distance(unit.GetLocation(), this.game.worldMap.entities[i].location);
-
+                    //float dist = Vector3.Distance(unit.GetLocation(), this.game.worldMap.entities[i].location);
+                    float dist = Vector3.Distance(unit.GetLocation(), this.game.LODMap.entities[i].location);
                     if (dist < distance)
                     {
                         distance = dist;
-                        TargetLocation = this.game.worldMap.entities[i].location;
+                        //TargetLocation = this.game.worldMap.entities[i].location;
+                        TargetLocation = this.game.LODMap.entities[i].location;
 
                     }
                 }

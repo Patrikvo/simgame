@@ -66,7 +66,8 @@ namespace Simgame2.GameStates
             game.selBuilding.rotation.Y = (float)(game.selBuilding.rotation.Y + (rotAmout * Math.PI / 180) % 2* Math.PI);
 
 
-            game.selBuilding.PlaceBuilding(game.worldMap, false);
+            //game.selBuilding.PlaceBuilding(game.worldMap, false);
+            game.selBuilding.PlaceBuilding(game.LODMap, false);
 
             game.selBuilding.UpdateBoundingBox();
 
@@ -74,7 +75,8 @@ namespace Simgame2.GameStates
             
             
             // does the building collide with other buildings?
-            game.selBuilding.CanPlace = !game.worldMap.Collides(game.selBuilding.boundingBox);
+            //game.selBuilding.CanPlace = !game.worldMap.Collides(game.selBuilding.boundingBox);
+            game.selBuilding.CanPlace = !game.LODMap.Collides(game.selBuilding.boundingBox);
             
             // are we placing in on water?
             if (game.selBuilding.getAltitude() < 1)
@@ -95,10 +97,12 @@ namespace Simgame2.GameStates
                 mouseLeftButtonDown = false;
                 if (game.selBuilding.CanPlace)
                 {
-                    game.selBuilding.RemoveBuilding(game.worldMap);
+                    //game.selBuilding.RemoveBuilding(game.worldMap);
+                    game.selBuilding.RemoveBuilding(game.LODMap);
                     game.selBuilding.IsTransparant = false;
                     game.selBuilding.IsGhost = false;
-                    game.selBuilding.PlaceBuilding(game.worldMap, true);
+                    //game.selBuilding.PlaceBuilding(game.worldMap, true);
+                    game.selBuilding.PlaceBuilding(game.LODMap, true);
                     game.simulator.AddEntity(game.selBuilding.GetSimEntity());
                     game.simulator.MapModified = true;
 
@@ -128,7 +132,8 @@ namespace Simgame2.GameStates
             base.EnterState();
             if (game.selBuilding != null)
             {
-                game.selBuilding.RemoveBuilding(game.worldMap);
+                //game.selBuilding.RemoveBuilding(game.worldMap);
+                game.selBuilding.RemoveBuilding(game.LODMap);
             }
          //   game.selBuilding = null;
             game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
@@ -141,7 +146,8 @@ namespace Simgame2.GameStates
             base.ExitState();
             if (game.selBuilding != null)
             {
-                game.selBuilding.RemoveBuilding(game.worldMap);
+                //game.selBuilding.RemoveBuilding(game.worldMap);
+                game.selBuilding.RemoveBuilding(game.LODMap);
             }
         }
 

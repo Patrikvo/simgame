@@ -5,7 +5,7 @@ using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 
-namespace Simgame2
+namespace Simgame2.Renderer
 {
     public class PPPointLight
     {

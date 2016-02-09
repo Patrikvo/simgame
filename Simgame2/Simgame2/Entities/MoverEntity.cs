@@ -34,10 +34,14 @@ namespace Simgame2.Entities
             if (this.movement.moverSim.MovementState == Movement.MoverSim.UnitMovementState.MOVING)
             {
                 this.location = this.location + (this.movement.Velocity * (this.movement.MaxSpeed * gameTime.ElapsedGameTime.Milliseconds / 1000));
-                float height = this.worldMap.getCellHeightFromWorldCoor(location.X, -location.Z);
-                if (height < WorldMap.waterHeight)
+                //float height = this.worldMap.getCellHeightFromWorldCoor(location.X, -location.Z);
+                float height = this.LODMap.getCellHeightFromWorldCoor(location.X, location.Z);
+                
+                if (height < LODTerrain.LODTerrain.waterHeight)
+                //if (height < WorldMap.waterHeight)
                 {
-                    height = WorldMap.waterHeight;
+                    //height = WorldMap.waterHeight;
+                    height = LODTerrain.LODTerrain.waterHeight;
                 }
 
 
@@ -80,15 +84,19 @@ namespace Simgame2.Entities
         {
             float distance = float.MaxValue;
 
-            for (int i = 0; i < this.worldMap.entities.Count; i++)
+            for (int i = 0; i < this.LODMap.entities.Count; i++)
+            //for (int i = 0; i < this.worldMap.entities.Count; i++)
             {
-                if (this.worldMap.entities[i].Type == target)
+                if (this.LODMap.entities[i].Type == target)
+                //if (this.worldMap.entities[i].Type == target)
                 {
-                    float dist = this.DistanceTo(this.worldMap.entities[i]);
+                    float dist = this.DistanceTo(this.LODMap.entities[i]);
+                    //float dist = this.DistanceTo(this.worldMap.entities[i]);
                     if (dist < distance)
                     {
                         distance = dist;
-                        this.movement.TargetLocation = this.worldMap.entities[i].location;
+                        //this.movement.TargetLocation = this.worldMap.entities[i].location;
+                        this.movement.TargetLocation = this.LODMap.entities[i].location;
                         
                     }
                 }

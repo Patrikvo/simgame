@@ -144,10 +144,10 @@ namespace Simgame2
             }
 
 
-            if (Path == null)
-            {
-                int a = 0;
-            }
+          //  if (Path == null)
+         //   {
+          //      int a = 0;
+          //  }
         }
 
 

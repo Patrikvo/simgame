@@ -14,7 +14,7 @@ namespace Simgame2.LODTerrain
         IndexBuffer[] _IndexBuffers;
         GraphicsDevice _device;
  
-        internal BufferManager(VertexMultitextured[] vertices, GraphicsDevice device)
+        internal BufferManager(VertexMultitextured[] vertices, GraphicsDevice device, int indexBufferSize)
         {
             _device = device;
  
@@ -23,8 +23,8 @@ namespace Simgame2.LODTerrain
  
             _IndexBuffers = new IndexBuffer[]
                     {
-                            new IndexBuffer(_device, IndexElementSize.ThirtyTwoBits, 100000, BufferUsage.WriteOnly),
-                            new IndexBuffer(_device, IndexElementSize.ThirtyTwoBits, 100000, BufferUsage.WriteOnly)
+                            new IndexBuffer(_device, IndexElementSize.ThirtyTwoBits, indexBufferSize, BufferUsage.WriteOnly),   // 100000
+                            new IndexBuffer(_device, IndexElementSize.ThirtyTwoBits, indexBufferSize, BufferUsage.WriteOnly)
                     };
  
         }

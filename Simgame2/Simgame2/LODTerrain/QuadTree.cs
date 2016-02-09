@@ -11,13 +11,17 @@ namespace Simgame2.LODTerrain
     {
         public QuadTree(Vector4 mapSize, GraphicsDevice device)
         {
+         //   this.Cull = false;
+            this.MinimumDepth = 8;
+
+            int bufferSize = (int)((mapSize.X + 1) * (mapSize.Y + 1)) * 3;
             Device = device;
           //  _position = position;
           //  _topNodeSize =  heightMap.Width - 1;
             _topNodeSize = (int)mapSize.X - 1;
 
             _vertices = new TreeVertexCollection( mapSize);
-            _buffers = new BufferManager(_vertices.Vertices, device);
+            _buffers = new BufferManager(_vertices.Vertices, device, bufferSize);
             _rootNode = new QuadNode(NodeType.FullNode, _topNodeSize, 1, null, this, 0);
          //   View = viewMatrix;
          //   Projection = projectionMatrix;
@@ -26,29 +30,45 @@ namespace Simgame2.LODTerrain
 
             //Construct an array large enough to hold all of the indices we'll need.
           //  Indices = new int[((heightMap.Width + 1) * (heightMap.Height + 1)) * 3];
-            Indices = new int[(int)((mapSize.X + 1) * (mapSize.Y + 1)) * 3];
+            //Indices = new int[(int)((mapSize.X + 1) * (mapSize.Y + 1)) * 3];
+            Indices = new int[bufferSize];
         }
 
 
+        float LastCameraLeftRightRot = 0;
+        float LastCameraUpDownRot = 0;
+
         public void Update(GameTime gameTime, Camera camera)
         {
-         //   this.ViewFrustrum = viewFrustrum;
-            this.ViewFrustrum = new BoundingFrustum(camera.viewMatrix * camera.projectionMatrix);
+        
 
-            //Only update if the camera position has changed
-            if (camera.GetCameraPostion() == _lastCameraPosition)
+            //Only update if the camera position or rotation has changed
+            if (camera.GetCameraPostion() == _lastCameraPosition &&
+                LastCameraLeftRightRot == camera.leftrightRot &&
+                LastCameraUpDownRot == camera.updownRot)
+            {
                 return;
+            }
+
+            //   this.ViewFrustrum = viewFrustrum;
+            //this.ViewFrustrum = new BoundingFrustum(camera.viewMatrix * camera.projectionMatrix);
+            this.ViewFrustrum = new BoundingFrustum(camera.viewMatrixBackShifted * camera.BigProjectionMatrix);
 
       //      Effect.View = View;
       //      Effect.Projection = Projection;
 
             _lastCameraPosition = camera.GetCameraPostion();
+            LastCameraLeftRightRot = camera.leftrightRot;
+            LastCameraUpDownRot = camera.updownRot;
+
             IndexCount = 0;
 
-            _rootNode.EnforceMinimumDepth();
             _rootNode.Merge();
+            _rootNode.EnforceMinimumDepth();
+            
 
-            _activeNode = _rootNode.DeepestNodeWithPoint(camera.GetCameraPostion());
+          //  _activeNode = _rootNode.DeepestNodeWithPoint(camera.GetCameraPostion());
+            _activeNode = _rootNode.DeepestNodeWithPoint(camera.GetPointBehindCamera(100));
 
             if (_activeNode != null)
             {
@@ -62,9 +82,9 @@ namespace Simgame2.LODTerrain
         }
 
 
-        public void Draw(GameTime gameTime)
+        public void Draw(GameTime gameTime, GraphicsDevice device)
         {
- /*           device.SetVertexBuffer(_buffers.VertexBuffer);
+         /*   device.SetVertexBuffer(_buffers.VertexBuffer);
             device.Indices = _buffers.IndexBuffer;
 
             foreach (EffectPass pass in Effect.CurrentTechnique.Passes)
@@ -72,7 +92,7 @@ namespace Simgame2.LODTerrain
                 pass.Apply();
                 device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, _vertices.Vertices.Length, 0, IndexCount / 3);
             }
-            */
+           */ 
 
         }
 

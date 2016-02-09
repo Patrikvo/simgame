@@ -43,24 +43,26 @@ namespace Simgame2.GameStates
 
             game.entityFactory.Update(gameTime);
 
-            this.game.worldMap.Update(gameTime);
+            //this.game.worldMap.Update(gameTime);
+            this.game.LODMap.Update(gameTime);
 
             // place building code
             if (game.selBuilding != null)
             {
-                game.selBuilding.RemoveBuilding(game.worldMap);
+              //  game.selBuilding.RemoveBuilding(game.worldMap);
+                game.selBuilding.RemoveBuilding(game.LODMap);
             }
 
             float timeDifference = (float)gameTime.ElapsedGameTime.TotalMilliseconds / 1000.0f;
             Vector3 moveVector = new Vector3(0, 0, 0);
 
-            if (keyState.IsKeyDown(Keys.Up) || keyState.IsKeyDown(Keys.W))
+            if (keyState.IsKeyDown(Keys.Up))
                 moveVector += new Vector3(0, 0, -1);
-            if (keyState.IsKeyDown(Keys.Down) || keyState.IsKeyDown(Keys.S))
+            if (keyState.IsKeyDown(Keys.Down))
                 moveVector += new Vector3(0, 0, 1);
-            if (keyState.IsKeyDown(Keys.Right) || keyState.IsKeyDown(Keys.D))
+            if (keyState.IsKeyDown(Keys.Right))
                 moveVector += new Vector3(1, 0, 0);
-            if (keyState.IsKeyDown(Keys.Left) || keyState.IsKeyDown(Keys.A))
+            if (keyState.IsKeyDown(Keys.Left))
                 moveVector += new Vector3(-1, 0, 0);
 
 
@@ -110,7 +112,8 @@ namespace Simgame2.GameStates
             if (keyState.IsKeyUp(Keys.Insert) && ButtonInsertDown == true)
             {
                 Entities.MoverEntity mover = this.game.entityFactory.CreateMover(game.PlayerCamera.GetCameraPostion());
-                this.game.worldMap.AddEntity(mover);
+                //this.game.worldMap.AddEntity(mover);
+                this.game.LODMap.AddEntity(mover);
                 this.game.simulator.AddEntity(mover.movement.GetSimEntity());
 
 
@@ -124,7 +127,7 @@ namespace Simgame2.GameStates
             }
             if (keyState.IsKeyUp(Keys.S) && ButtonSDown == true)
             {
-                this.game.worldMap.SaveMap(@"c:\temp\map.dat");
+       //         this.game.worldMap.SaveMap(@"c:\temp\map.dat");
                 ButtonSDown = false;
             }
 
@@ -135,7 +138,7 @@ namespace Simgame2.GameStates
             }
             if (keyState.IsKeyUp(Keys.L) && ButtonLDown == true)
             {
-                this.game.worldMap.LoadMap(@"c:\temp\map.dat");
+     //           this.game.worldMap.LoadMap(@"c:\temp\map.dat");
                 ButtonLDown = false;
             }
 
@@ -145,7 +148,8 @@ namespace Simgame2.GameStates
             }
             if (keyState.IsKeyUp(Keys.N) && ButtonNDown == true)
             {
-                this.game.worldMap.CreateNewMap(this.game.worldMap.mapNumCellsPerRow, this.game.worldMap.mapNumCellPerColumn);
+                //this.game.worldMap.CreateNewMap(this.game.worldMap.mapNumCellsPerRow, this.game.worldMap.mapNumCellPerColumn);
+                this.game.LODMap.CreateNewMap(this.game.LODMap.mapNumCellsPerRow, this.game.LODMap.mapNumCellPerColumn, this.game.device);
                 ButtonNDown = false;
             }
 

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Simgame2.Renderer; 
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
@@ -17,16 +18,21 @@ namespace Simgame2.LODTerrain
 {
     public class LODTerrain
     {
+
+
+        Game game;
+
         public LODTerrain(Game1 game, int mapNumCellsPerRow, int mapNumCellPerColumn, Effect effect, GraphicsDevice device)
         {
-            
 
 
+            this.game = game;
 
             playerLight = new PPPointLight(new Vector3(0, 0, 0), Color.White* 0.50f, 100);
             this.playerCamera = game.PlayerCamera;
 
             modelEffect = game.Content.Load<Effect>("PrelightEffects");
+        //    modelEffect = game.Content.Load<Effect>("PPModel");
 
             
 
@@ -37,7 +43,7 @@ namespace Simgame2.LODTerrain
 
             prelightRender = new PrelightingRenderer(game, effect, device, entities);
 
-            prelightRender.Lights.Add(playerLight);
+       //     prelightRender.Lights.Add(playerLight);
 
 
             this.Initialize();
@@ -45,9 +51,9 @@ namespace Simgame2.LODTerrain
 
         public void Initialize()
         {
-            prelightRender.Initialize();
+            prelightRender.Initialize(this.mapNumCellsPerRow * LODTerrain.mapCellScale, this.mapNumCellPerColumn * LODTerrain.mapCellScale);
 
-            prelightRender.SetUpWaterVertices(1000, 1000, mapCellScale, waterHeight);
+            prelightRender.SetUpWaterVertices(10000, 10000, mapCellScale, waterHeight);
         }
 
 
@@ -61,8 +67,9 @@ namespace Simgame2.LODTerrain
   //          this.textureMap = new Vector4[mapNumCellsPerRow * mapNumCellPerColumn];
     //        this.sector = new int[mapNumCellsPerRow * mapNumCellPerColumn];
 
+            //_quadTree = new QuadTree(new Vector4(mapNumCellsPerRow, mapNumCellPerColumn, this.minHeight, this.maxHeight), device);
             _quadTree = new QuadTree(new Vector4(mapNumCellsPerRow, mapNumCellPerColumn, this.minHeight, this.maxHeight), device);
-            _quadTree.MinimumDepth = 0;
+      //      _quadTree.MinimumDepth = 0;
 
     //        generateMap();
 
@@ -87,8 +94,10 @@ namespace Simgame2.LODTerrain
 
             float time = (float)gameTime.TotalGameTime.TotalMilliseconds / 100.0f;
 
-            BoundingFrustum frustum = new BoundingFrustum(PlayerCamera.viewMatrix * PlayerCamera.projectionMatrix);
-            this.frustum = frustum;
+        //    BoundingFrustum frustum = new BoundingFrustum(PlayerCamera.viewMatrix * PlayerCamera.projectionMatrix);
+         //   this.frustum = frustum;
+
+            this.frustum = playerCamera.GetFrustrum();
 
             prelightRender.terrainVertexBuffer = _quadTree.GetVertexBuffer();
             prelightRender.terrainIndexBuffer = _quadTree.GetIndexBuffer();
@@ -104,6 +113,9 @@ namespace Simgame2.LODTerrain
 
             this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
             prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
+
+            if (prelightRender.DoShadowMapping) { prelightRender.drawShadowDepthMap(); }
+            
 
 
             // skybox
@@ -130,11 +142,22 @@ namespace Simgame2.LODTerrain
             }
 
 
+            //prelightRender.DrawSun(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion());
+        //    prelightRender.DrawSun(playerCamera.viewMatrix, playerCamera.BigProjectionMatrix, playerCamera.GetCameraPostion());
+
+
+            prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1600, 50, 500), prelightRender.SunLight.GetRotationMatrix());
+          //  prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1500, 100, 500), new Vector3(0,0,1));
+            //prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1450, 100, 500), new Vector3(0, 0, -1));
+
+
+        //    prelightRender.DrawTriangle(playerCamera.viewMatrix, playerCamera.BigProjectionMatrix, playerCamera.GetCameraPostion());
+            
         //    ((Game1)base.Game).debugImg = MiniMap(PlayerCamera.GetCameraPostion());
             //  ((Game1)base.Game).debugImg = prelightRender.lightTarg;
             //  ((Game1)base.Game).debugImg = prelightRender.depthTarg;
-
-
+              ((Game1)game).debugImg = prelightRender.normalTarg;
+            // shadowDepthTarg
 
         }
 
@@ -145,8 +168,11 @@ namespace Simgame2.LODTerrain
 
          //   _quadTree.View = _camera.View;
           //  _quadTree.Projection = _camera.Projection;
-         //   _quadTree.CameraPosition = _camera.Position;
+        //    _quadTree.CameraPosition = _camera.Position;
             _quadTree.Update(gameTime, playerCamera);
+
+
+      //      prelightRender.LightDirection = prelightRender.LightDirection + (Vector3.Up*0.001f);
 
         }
 
@@ -316,7 +342,7 @@ namespace Simgame2.LODTerrain
             int x = (int)Math.Floor(wx / mapCellScale);
             int y = (int)Math.Floor(wy / mapCellScale);
 
-            return getCell(x, y) * mapHeightScale;
+            return getCell(x, y); // *mapHeightScale;
         }
 
         public int getExactHeightFromWorldCoor(float wx, float wz)
@@ -326,9 +352,9 @@ namespace Simgame2.LODTerrain
             int x = (int)Math.Floor(wx / mapCellScale);
             int y = (int)Math.Floor(wy / mapCellScale);
 
-            int h1 = getCell(x, y) * mapHeightScale;
-            int h2 = getCell(x, y + 1) * mapHeightScale;
-            int h3 = getCell(x + 1, y + 1) * mapHeightScale;
+            int h1 = getCell(x, y); // *mapHeightScale;
+            int h2 = getCell(x, y + 1); // *mapHeightScale;
+            int h3 = getCell(x + 1, y + 1); // *mapHeightScale;
 
             float dx = (wx / mapCellScale) - x;
             float dy = (wy / mapCellScale) - y;
@@ -391,7 +417,7 @@ namespace Simgame2.LODTerrain
                 }
             }
 
-            return altitude * mapHeightScale;
+            return altitude; // *mapHeightScale;
         }
 
 
@@ -401,7 +427,8 @@ namespace Simgame2.LODTerrain
         public ResourceCell GetResourceFromWorldCoor(float wx, float wy)
         {
             Vector2 add = getCellAdressFromWorldCoor(wx, wy);
-            return this.resources[this.sector[getCellAdress((int)add.X, (int)add.Y)]];
+
+            return this._quadTree.Vertices.resources[this._quadTree.Vertices.sector[getCellAdress((int)add.X, (int)add.Y)]];
         }
 
 
@@ -414,20 +441,23 @@ namespace Simgame2.LODTerrain
                 return 0;
             }
 
-            return this.heightMap[getCellAdress(x, y)];
+            //return this.heightMap[getCellAdress(x, y)];
+            return (int)this._quadTree.Vertices.Vertices[getCellAdress(x, y)].Position.Y;
         }
 
         public void setCell(int x, int y, int value)
         {
-            this.heightMap[getCellAdress(x, y)] = value;
-            if (globalVertices != null)
-            {
-                globalVertices[getCellAdress(x, y)].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
-            }
+            this._quadTree.Vertices.Vertices[getCellAdress(x, y)].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
+
+            //this.heightMap[getCellAdress(x, y)] = value;
+       //     if (globalVertices != null)
+        //    {
+         //       globalVertices[getCellAdress(x, y)].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
+          //  }
         }
 
 
-        public void setCell(int x, int y, int value, float tex_x, float tex_y, float tex_z, float tex_w)
+    /*    public void setCell(int x, int y, int value, float tex_x, float tex_y, float tex_z, float tex_w)
         {
             setCell(x, y, value);
             this.textureMap[getCellAdress(x, y)] = new Vector4(tex_x, tex_y, tex_z, tex_w);
@@ -437,15 +467,17 @@ namespace Simgame2.LODTerrain
         {
             setCell(x, y, value);
             this.textureMap[getCellAdress(x, y)] = new Vector4(tex_x, tex_y, tex_z, tex_w);
-            this.sector[getCellAdress(x, y)] = sector;
-        }
 
+            this._quadTree.Vertices.sector[getCellAdress(x, y)] = sector;
+            //this.sector[getCellAdress(x, y)] = sector;
+        }
+*/
         public void SetResources(ResourceCell[] resources)
         {
-            this.resources = resources;
+            this._quadTree.Vertices.resources = resources;
         }
 
-
+/*
         private Vector4 getCellTexWeights(int x, int y)
         {
             if (x < 0 || y < 0 || x >= this.mapNumCellsPerRow || y >= this.mapNumCellPerColumn)
@@ -454,7 +486,7 @@ namespace Simgame2.LODTerrain
             }
 
             return this.textureMap[getCellAdress(x, y)];
-        }
+        }*/
 
 
         private Vector3 getPlaneNormalFromWorldCoor(float wx, float wz)
@@ -463,7 +495,7 @@ namespace Simgame2.LODTerrain
 
             int x = (int)Math.Floor(wx / mapCellScale);
             int y = (int)Math.Floor(wy / mapCellScale);
-
+            
             return PlaneNormals[getCellAdress(x, y)];
         }
 
@@ -471,7 +503,8 @@ namespace Simgame2.LODTerrain
         public double GetCellTravelResistance(int x, int y)
         {
             int adress = getCellAdress(x, y);
-            return cellTravelResistance[adress];
+            return 1;   // TODO fix this
+            //return cellTravelResistance[adress];
         }
 
 
@@ -492,17 +525,27 @@ namespace Simgame2.LODTerrain
 
 
 
+        public string GetStats()
+        {
+            int maxVertices = mapNumCellsPerRow * mapNumCellPerColumn * 2;
+            int maxIndices = maxVertices * 3;
+            //  return "vertices: " + renderer.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + renderer.terrainIndexBuffer.IndexCount + "/" + maxVertices +
+            return "vertices: " + prelightRender.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + prelightRender.terrainIndexBuffer.IndexCount + "/" + maxVertices +
+               Environment.NewLine + " - entities: " + enitiesDrawn + "/" + entities.Count + " - lights: " + prelightRender.DrawnLights + "/" + prelightRender.Lights.Count;
+        }
+
+
 
         private QuadTree _quadTree;
 
         
 
         public const int mapCellScale = 5;
-        public const int mapHeightScale = 2;
+        public const int mapHeightScale = 2; // 2;
         public const float waterHeight = 2.75f * (float)mapHeightScale;
         public const int textureSize = 512;
-        private int maxHeight = 10;
-        private int minHeight = -10;// 2; //-10;
+        private int maxHeight = 20;
+        private int minHeight = -1; //-10;
 
 
         public int mapNumCellsPerRow { get; set; }
@@ -511,13 +554,13 @@ namespace Simgame2.LODTerrain
         public int getMapWidth() { return this.mapNumCellsPerRow * LODTerrain.mapCellScale; }
         public int getMapHeight() { return this.mapNumCellPerColumn * LODTerrain.mapCellScale; }
 
-        private int[] heightMap;
-        private Vector4[] textureMap;
+   //     private int[] heightMap;
+  //      private Vector4[] textureMap;
 
         private double[] cellTravelResistance;
 
-        private int[] sector;
-        private ResourceCell[] resources;
+     //   private int[] sector;
+ //       private ResourceCell[] resources;
 
 
 
@@ -543,7 +586,10 @@ namespace Simgame2.LODTerrain
         public int[] pointAltitude;
 
         private Vector3[] PlaneNormals;
-        VertexMultitextured[] globalVertices;
+     //   VertexMultitextured[] globalVertices;
+
+        // selection
+        public Texture2D selectionTexture;
 
     }
 }
@@ -562,14 +608,7 @@ namespace Simgame2.LODTerrain
         
 
 
-        public string GetStats()
-        {
-            int maxVertices = mapNumCellsPerRow * mapNumCellPerColumn * 2;
-            int maxIndices = maxVertices * 3;
-          //  return "vertices: " + renderer.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + renderer.terrainIndexBuffer.IndexCount + "/" + maxVertices +
-            return "vertices: " + prelightRender.terrainVertexBuffer.VertexCount + "/" + maxVertices + " - indices: " + prelightRender.terrainIndexBuffer.IndexCount + "/" + maxVertices +
-               Environment.NewLine + " - entities: " + enitiesDrawn + "/" + entities.Count + " - lights: " + prelightRender.DrawnLights + "/" + prelightRender.Lights.Count;
-        }
+        
 
 
 
@@ -1004,8 +1043,7 @@ namespace Simgame2.LODTerrain
         
       
 
-        // selection
-        public Texture2D selectionTexture;
+       
 
 
 

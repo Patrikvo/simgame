@@ -83,8 +83,8 @@ namespace Simgame2.Buildings
                     }
 
                     currentEffect.Parameters["xEnableLighting"].SetValue(true);
-                    currentEffect.Parameters["xAmbient"].SetValue(0.4f);
-                    currentEffect.Parameters["xLightDirection"].SetValue(new Vector3(-0.5f, -1, -0.5f));
+                    currentEffect.Parameters["xAmbient"].SetValue(game.LODMap.GetRenderer().AmbientLightLevel);
+                    currentEffect.Parameters["LightDirection"].SetValue(game.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
 
                     currentEffect.Parameters["cameraPos"].SetValue(cameraPosition);
                     currentEffect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());

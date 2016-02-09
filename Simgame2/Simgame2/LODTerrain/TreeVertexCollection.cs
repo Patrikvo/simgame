@@ -22,8 +22,8 @@ namespace Simgame2.LODTerrain
         int _vertexCount;
      //   int _scale;
 
-        private int[] sector;
-        private ResourceCell[] resources;
+        public int[] sector;
+        public ResourceCell[] resources;
 
         public VertexMultitextured this[int index]
         {
@@ -50,12 +50,24 @@ namespace Simgame2.LODTerrain
 
             //Our method to  calculate the normals for all vertices
             CalculateAllNormals();
+
+            
+
         }
 
 
         private void BuildVertices(Vector4 mapSize)
-        { 
-           WorldGenerator.generateRegionMapLOD(this.Vertices, this.sector, this.resources, (int)mapSize.X, (int)mapSize.Y, (int)mapSize.Z, (int)mapSize.W);
+        {
+
+            System.Diagnostics.Stopwatch sw = new System.Diagnostics.Stopwatch();
+
+
+            sw.Start();
+           WorldGenerator.generateRegionMapLOD(out this.Vertices, out this.sector, out this.resources, (int)mapSize.X, (int)mapSize.Y, (int)mapSize.Z, (int)mapSize.W);
+           sw.Stop();
+           Console.WriteLine("map generation took: " + sw.ElapsedMilliseconds.ToString() + " ms");
+            
+
 
             /*
 

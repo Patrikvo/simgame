@@ -11,28 +11,16 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    /*
-    public struct VertexPositionNormalColored : IVertexType
+    
+    public struct VertexPositionColored : IVertexType
     {
         public Vector3 Position;
         public Color Color1;
-        public Color Color2;
-        public Vector3 Normal;
 
-        public VertexPositionNormalColored(Vector3 position, Color color1, Color color2, Vector3 normal)
+        public VertexPositionColored(Vector3 position, Color color1)
         {
             this.Position = position;
             this.Color1 = color1;
-            this.Color2 = color2;
-            this.Normal = normal;
-        }
-
-        public VertexPositionNormalColored(Vector3 position, Color color1, Color color2)
-        {
-            this.Position = position;
-            this.Color1 = color1;
-            this.Color2 = color2;
-            this.Normal = new Vector3(0f, 0f, 0f);
         }
 
         public static int SizeInBytes = 7 * 4;
@@ -40,15 +28,13 @@ namespace Simgame2
         public readonly static VertexDeclaration VertexDeclaration = new VertexDeclaration
         (
             new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
-            new VertexElement(sizeof(float) * 3, VertexElementFormat.Color, VertexElementUsage.Color, 0),
-            new VertexElement(sizeof(float) * 4, VertexElementFormat.Color, VertexElementUsage.Color, 1),
-            new VertexElement(sizeof(float) * 5, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0)
+            new VertexElement(sizeof(float) * 3, VertexElementFormat.Color, VertexElementUsage.Color, 0)
         );
 
 
         VertexDeclaration IVertexType.VertexDeclaration { get { return VertexDeclaration; } }
 
-    }*/
+    }
 
     public struct VertexMultitextured : IVertexType
     {
@@ -88,7 +74,7 @@ namespace Simgame2
     public class Game1 : Microsoft.Xna.Framework.Game
     {
         //private const int mapNumCellsPerSide = 320; // 20 40 80 160 320 640 1280
-        private const int mapNumCellsPerSide = 321; // 20 40 80 160 320 640 1280
+        private const int mapNumCellsPerSide = 641; // 20 40 80 160 320 640 
 
         // Rendering objects
         private GraphicsDeviceManager graphics;
@@ -108,7 +94,7 @@ namespace Simgame2
 
 
         // Game Objects
-        public WorldMap worldMap;
+     //   public WorldMap worldMap;
         public LODTerrain.LODTerrain LODMap;
         public TextureGenerator textureGenerator;
 
@@ -117,6 +103,7 @@ namespace Simgame2
         public GameStates.FreeLook FreeLookState;
         public GameStates.MousePointerLook MousePointerLookState;
         public GameStates.PlaceBuilding PlaceBuildingState;
+        public GameStates.DebugState debugState;
 
 
         public Simulation.Simulator simulator;
@@ -140,7 +127,7 @@ private bool doneLoading = false;
             FreeLookState = new GameStates.FreeLook(this);
             MousePointerLookState = new GameStates.MousePointerLook(this);
             PlaceBuildingState = new GameStates.PlaceBuilding(this);
-
+            debugState = new GameStates.DebugState(this);
             
         }
 
@@ -152,7 +139,13 @@ private bool doneLoading = false;
             graphics.IsFullScreen = false;
             graphics.ApplyChanges();
             HUD_overlay = new GUI(this);
+
+
+            _rsWire.CullMode = CullMode.CullCounterClockwiseFace;
+            _rsWire.FillMode = FillMode.WireFrame;
+
             
+
             base.Initialize();
         }
 
@@ -172,11 +165,14 @@ private bool doneLoading = false;
 
 
             PlayerCamera = new Camera(device.Viewport.AspectRatio);
-            worldMap = new WorldMap(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
-            
-            PlayerCamera.worldMap = worldMap;
+            //worldMap = new WorldMap(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
+            LODMap = new LODTerrain.LODTerrain(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
 
-            PlayerCamera.DrawDistance = 600.0f; // 300.0f;
+            //PlayerCamera.worldMap = worldMap;
+            PlayerCamera.LODMap = LODMap;
+
+            //PlayerCamera.DrawDistance = 1200.0f; // 300.0f;
+            PlayerCamera.DrawDistance = 1200.0f; // 300.0f;
 
             HUD_overlay.PreloadImages(this.Content);
 
@@ -190,27 +186,41 @@ private bool doneLoading = false;
             Texture2D texture = textureGenerator.GenerateGroundTexture(new Color(120, 62, 62, 1), new Vector3(20, 20, 20), 512);
 
 
-            worldMap.GetRenderer().waterBumpMap = Content.Load<Texture2D>("waterbump");
+            //worldMap.GetRenderer().waterBumpMap = Content.Load<Texture2D>("waterbump");
+            LODMap.GetRenderer().waterBumpMap = Content.Load<Texture2D>("waterbump");
 
-            worldMap.GetRenderer().Textures = new Texture2D[5];
+      /*      worldMap.GetRenderer().Textures = new Texture2D[5];
             worldMap.GetRenderer().Textures[0] = Content.Load<Texture2D>("Textures\\tex1");
             worldMap.GetRenderer().Textures[1] = Content.Load<Texture2D>("Textures\\tex0");
             worldMap.GetRenderer().Textures[2] = Content.Load<Texture2D>("Textures\\tex2");
             worldMap.GetRenderer().Textures[3] = Content.Load<Texture2D>("Textures\\tex3");
-            worldMap.GetRenderer().Textures[4] = Content.Load<Texture2D>("Textures\\tex1");
+            worldMap.GetRenderer().Textures[4] = Content.Load<Texture2D>("Textures\\tex1");*/
+
+            LODMap.GetRenderer().Textures = new Texture2D[5];
+            LODMap.GetRenderer().Textures[0] = Content.Load<Texture2D>("Textures\\tex1");
+            LODMap.GetRenderer().Textures[1] = Content.Load<Texture2D>("Textures\\tex0");
+            LODMap.GetRenderer().Textures[2] = Content.Load<Texture2D>("Textures\\tex2");
+            LODMap.GetRenderer().Textures[3] = Content.Load<Texture2D>("Textures\\tex3");
+            LODMap.GetRenderer().Textures[4] = Content.Load<Texture2D>("Textures\\tex1");
 
 
-            worldMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, 5); //WorldMap.mapCellScale);
+
+
+            //worldMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, 5); //WorldMap.mapCellScale);
+            LODMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, 5); //WorldMap.mapCellScale);
+
 
             // skydome
-            worldMap.GetRenderer().LoadSkyDome(Content.Load<Model>("dome"));
+        //    worldMap.GetRenderer().LoadSkyDome(Content.Load<Model>("dome"));
+            LODMap.GetRenderer().LoadSkyDome(Content.Load<Model>("dome"));
 
 
             PlayerCamera.UpdateViewMatrix();
 
 
 
-            entityFactory = EntityFactory.CreateFactory(this, this.worldMap, PlayerCamera.projectionMatrix);
+            //entityFactory = EntityFactory.CreateFactory(this, this.worldMap, PlayerCamera.projectionMatrix);
+            entityFactory = EntityFactory.CreateFactory(this, this.LODMap, PlayerCamera.projectionMatrix);
 
   
             doneLoading = true;
@@ -261,9 +271,19 @@ private bool doneLoading = false;
         Vector2 pos3 = new Vector2(20, 100);
         Rectangle rect = new Rectangle(20, 50, 400, 400);
 
+        RasterizerState _rsWire = new RasterizerState();
+
         System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         protected override void Draw(GameTime gameTime)
         {
+            
+
+       //     GraphicsDevice.RasterizerState = _rsWire;
+
+
+
+
+
             if (!doneLoading) { return; }
 
             if (gameTime.ElapsedGameTime.Milliseconds != 0)
@@ -285,8 +305,9 @@ private bool doneLoading = false;
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
 
 
-            worldMap.Draw(PlayerCamera, gameTime);
-            
+            //worldMap.Draw(PlayerCamera, gameTime);
+            LODMap.Draw(PlayerCamera, gameTime);
+
 
             if (stopwatch.ElapsedMilliseconds != 0)
             {
@@ -305,7 +326,8 @@ private bool doneLoading = false;
             spriteBatch = new SpriteBatch(this.device);
             spriteBatch.Begin();
             
-            spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + worldMap.GetStats(), pos,Color.White);
+            //spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + worldMap.GetStats(), pos,Color.White);
+            spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + LODMap.GetStats(), pos, Color.White);
             spriteBatch.DrawString(font, "(" + this.PlayerCamera.GetCameraPostion().X + ", " + this.PlayerCamera.GetCameraPostion().Y + ", " + this.PlayerCamera.GetCameraPostion().Z + ")" + " - state " + DebugState() + 
             " drawtime: " + drawtime.ToString() + " ms", pos2, Color.White);
 
@@ -321,10 +343,10 @@ private bool doneLoading = false;
                 HUD_overlay.Draw(gameTime, this.device);
             }
 
-            if (drawtime > 20)
-            {
-                int a = 0;
-            }
+       //     if (drawtime > 20)
+        //    {
+         //       int a = 0;
+          //  }
 
 
             base.Draw(gameTime);

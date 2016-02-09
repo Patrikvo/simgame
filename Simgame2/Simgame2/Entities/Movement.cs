@@ -96,10 +96,15 @@ namespace Simgame2.Entities
         public void OrientateConformTerrain()
         {
 
-
+            /*
             int h1 = this.ParentEntity.worldMap.getExactHeightFromWorldCoor(this.ParentEntity.corners[7].X, -this.ParentEntity.corners[7].Z);
             int h2 = this.ParentEntity.worldMap.getExactHeightFromWorldCoor(this.ParentEntity.corners[3].X, -this.ParentEntity.corners[3].Z);
             int h3 = this.ParentEntity.worldMap.getExactHeightFromWorldCoor(this.ParentEntity.corners[2].X, -this.ParentEntity.corners[2].Z);
+            */
+
+            int h1 = this.ParentEntity.LODMap.getExactHeightFromWorldCoor(this.ParentEntity.corners[7].X, this.ParentEntity.corners[7].Z);
+            int h2 = this.ParentEntity.LODMap.getExactHeightFromWorldCoor(this.ParentEntity.corners[3].X, this.ParentEntity.corners[3].Z);
+            int h3 = this.ParentEntity.LODMap.getExactHeightFromWorldCoor(this.ParentEntity.corners[2].X, this.ParentEntity.corners[2].Z);
 
             float l12 = Vector3.Distance(this.ParentEntity.corners[7], this.ParentEntity.corners[3]);
             float l23 = Vector3.Distance(this.ParentEntity.corners[3], this.ParentEntity.corners[2]);
@@ -108,7 +113,7 @@ namespace Simgame2.Entities
             float angle2 = (float)Math.Atan(Math.Abs((h2 - h3)) / (l23 * Math.Sqrt(2)));
 
 
-            this.ParentEntity.rotation = new Vector3(-angle1, this.Rotation.Y, -angle2);
+            this.ParentEntity.rotation = new Vector3(angle1, this.Rotation.Y, angle2);
             
             
 
@@ -187,10 +192,15 @@ namespace Simgame2.Entities
             public Vector3 GetLocation() { return this.mover.ParentEntity.location; }
             public void SetTarget(Vector3 targetLoc)
             {
-                Vector2 loc = mover.ParentEntity.worldMap.getCellAdressFromWorldCoor(GetLocation().X, -GetLocation().Z);
-                Vector2 goalLoc = mover.ParentEntity.worldMap.getCellAdressFromWorldCoor(targetLoc.X, -targetLoc.Z);
+                //Vector2 loc = mover.ParentEntity.worldMap.getCellAdressFromWorldCoor(GetLocation().X, -GetLocation().Z);
+                Vector2 loc = mover.ParentEntity.LODMap.getCellAdressFromWorldCoor(GetLocation().X, GetLocation().Z);
 
-                pathfinder = new PathFinder(mover.ParentEntity.worldMap.GetCellTravelResistance, mover.ParentEntity.worldMap.mapNumCellsPerRow, mover.ParentEntity.worldMap.mapNumCellPerColumn,
+
+                //Vector2 goalLoc = mover.ParentEntity.worldMap.getCellAdressFromWorldCoor(targetLoc.X, -targetLoc.Z);
+                Vector2 goalLoc = mover.ParentEntity.LODMap.getCellAdressFromWorldCoor(targetLoc.X, targetLoc.Z);
+
+                //pathfinder = new PathFinder(mover.ParentEntity.worldMap.GetCellTravelResistance, mover.ParentEntity.worldMap.mapNumCellsPerRow, mover.ParentEntity.worldMap.mapNumCellPerColumn,
+                pathfinder = new PathFinder(mover.ParentEntity.LODMap.GetCellTravelResistance, mover.ParentEntity.LODMap.mapNumCellsPerRow, mover.ParentEntity.LODMap.mapNumCellPerColumn,
                     (int)loc.X, (int)loc.Y, (int)goalLoc.X, (int)goalLoc.Y);
 
                 if (pathfinder.Path != null)
@@ -204,7 +214,7 @@ namespace Simgame2.Entities
 
                     }
                     CurrentPathStep = 0;
-                    this.mover.TargetLocation = new Vector3(Path[CurrentPathStep].X * 5, 12, -Path[CurrentPathStep].Y * 5);
+                    this.mover.TargetLocation = new Vector3(Path[CurrentPathStep].X * 5, 12, Path[CurrentPathStep].Y * 5);
                     ReachedGoal = false;
                 }
                 else
@@ -219,7 +229,7 @@ namespace Simgame2.Entities
 
             public bool UpdatePath()
             {
-                if (DistanceToTarget() < Entities.Movement.MoverSim.StopDistance)
+                if (DistanceToTarget() < MoverSim.StopDistance)
                 {
                     CurrentPathStep++;
                     if (CurrentPathStep >= this.Path.Length)
@@ -230,7 +240,7 @@ namespace Simgame2.Entities
                     }
                     else
                     {
-                        this.mover.TargetLocation = new Vector3(Path[CurrentPathStep].X * 5, 12, -Path[CurrentPathStep].Y * 5);
+                        this.mover.TargetLocation = new Vector3(Path[CurrentPathStep].X * 5, 12, Path[CurrentPathStep].Y * 5);
                     }
                 }
 
