@@ -153,10 +153,15 @@ namespace Simgame2.GameStates
                 ButtonNDown = false;
             }
 
+
+            
+
+            
+
         }
 
 
-
+        
 
 
         public virtual void EnterState() { }
@@ -181,6 +186,7 @@ namespace Simgame2.GameStates
         protected bool ButtonSDown = false;
         protected bool ButtonLDown = false;
         protected bool ButtonNDown = false;
+
 
         protected Game1 game;
     }

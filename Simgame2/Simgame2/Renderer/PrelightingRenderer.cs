@@ -21,16 +21,16 @@ namespace Simgame2.Renderer
         //shadow map
 
         // Position and target of the shadowing light
-        public Vector3 ShadowLightPosition { get; set; }
-        public Vector3 ShadowLightTarget { get; set; }
+     //   public Vector3 ShadowLightPosition { get; set; }
+     //   public Vector3 ShadowLightTarget { get; set; }
 
         // Shadow depth target and depth-texture effect
         public RenderTarget2D shadowDepthTarg;
         Effect shadowDepthEffect;
 
         // Depth texture parameters
-        int shadowMapSize = 2048;
-        int shadowFarPlane = 750;
+        int shadowMapSize = 4096; // 2048;
+        public int shadowFarPlane = 750;
 
         // Shadow light view and projection
         Matrix shadowView, shadowProjection;
@@ -38,8 +38,8 @@ namespace Simgame2.Renderer
         // Shadow properties
         public bool DoShadowMapping { get; set; }
         public float ShadowMult { get; set; }
-
-
+        public float ShadowBias { get; set; }
+        public float NormalBias { get; set; }
 
         // Normal, depth, and light map render targets
         public RenderTarget2D depthTarg;
@@ -83,8 +83,9 @@ namespace Simgame2.Renderer
             viewWidth = device.Viewport.Width;
             viewHeight = device.Viewport.Height;
             this.game = (Game1)game;
-
-            
+            this.PlayerCamera = ((Game1)game).PlayerCamera;
+            this.device = device;
+            AmbientLightLevel = 0.2f;
 
             // Create the three render targets
             depthTarg = new RenderTarget2D(device, viewWidth, viewHeight, false, SurfaceFormat.Single, DepthFormat.Depth24);
@@ -116,6 +117,7 @@ namespace Simgame2.Renderer
 
             
             //shadow map
+            this.shadowFarPlane = (int)PlayerCamera.DrawDistance;
             shadowDepthEffect.Parameters["FarPlane"].SetValue(shadowFarPlane);
 
             this.graphicsDevice = device;
@@ -124,14 +126,7 @@ namespace Simgame2.Renderer
 
             SunLight = new MainLightSource();
 
-
-
-            // original code: 
-            this.PlayerCamera = ((Game1)game).PlayerCamera;
-          //  this.effect = effect;
-            this.device = device;
-            AmbientLightLevel = 0.2f;
-      //      SunLightDirection = new Vector3(-0.5f, -1, -0.5f);
+          
         }
 
 
@@ -261,8 +256,8 @@ namespace Simgame2.Renderer
         {
             // Calculate view and projection matrices for the "light"
             // shadows are being calculated for
-            shadowView = Matrix.CreateLookAt(ShadowLightPosition, ShadowLightTarget, Vector3.Up);
-
+            shadowView = Matrix.CreateLookAt(PlayerCamera.GetCameraPostion() + SunLight.ShadowLightPosition, PlayerCamera.GetCameraPostion() + SunLight.ShadowLightTarget, Vector3.Up);
+            //shadowView = Matrix.CreateLookAt(SunLight.ShadowLightPosition, SunLight.ShadowLightTarget, Vector3.Up);
        
             shadowProjection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(90), 1, 1, shadowFarPlane);
 
@@ -274,10 +269,16 @@ namespace Simgame2.Renderer
 
             BlendState stored = this.device.BlendState;
             this.device.BlendState = BlendState.Opaque;
+            this.device.RasterizerState = RasterizerState.CullNone;
 
             this.shadowDepthEffect.Parameters["World"].SetValue(Matrix.Identity);
             this.shadowDepthEffect.Parameters["View"].SetValue(shadowView);
             this.shadowDepthEffect.Parameters["Projection"].SetValue(shadowProjection);
+            this.shadowDepthEffect.Parameters["LightViewProj"].SetValue(CreateLightViewProjectionMatrix());
+            this.shadowDepthEffect.Parameters["FarPlane"].SetValue(shadowFarPlane);
+            this.shadowDepthEffect.Parameters["LightPosition"].SetValue(SunLight.ShadowLightPosition);
+            // LightPosition
+
 
 
             this.shadowDepthEffect.CurrentTechnique.Passes[0].Apply();
@@ -303,7 +304,7 @@ namespace Simgame2.Renderer
                     e.SetModelEffect(shadowDepthEffect, false);
                     e.HideBillboard = true;
                     //e.Draw(shadowView,shadowProjection, ShadowLightPosition);
-                    e.DrawShadow(shadowView, shadowProjection, ShadowLightPosition);
+                    e.DrawShadow(shadowView, shadowProjection, SunLight.ShadowLightPosition);
 
                     e.HideBillboard = false;
                     // e.RestoreEffects();
@@ -347,42 +348,28 @@ namespace Simgame2.Renderer
             SunLight.Color = Color.White;
             SunLight.Power = 0.7f;
 
-            //LightDirection = new Vector3(1, 1, 1);
-       //     LightDirection = new Vector3(-0.3333333f, 0.6666667f, 0.6666667f);
-     //       LightDirection = new Vector3(0.5f, -0.4f, 0.6f);
-      //      LightDirection.Normalize();
 
 
-         //   this.ShadowLightPosition = new Vector3(0,550, 500);
-            this.ShadowLightPosition = new Vector3(mapWidth / 2, 900, -90);
+            this.SunLight.ShadowLightPosition = new Vector3(-500, 200, -500);
 
+ 
+            this.SunLight.ShadowLightTarget = new Vector3(500, 100, 500);
 
-            //this.ShadowLightTarget = new Vector3(150, 150, 0);
-            this.ShadowLightTarget = new Vector3(mapWidth / 2, 100, mapHeigth / 4);
             this.DoShadowMapping = true;
             this.ShadowMult = 0.3f;
+            this.ShadowBias = 1.0f / 200.0f;
 
-       //     Vector3 sunPos = new Vector3(mapWidth / 2, 1000, -1000);
 
-          //  LightDirection = (sunPos - ShadowLightTarget);
-          //  LightDirection = new Vector3(LightDirection.X, -LightDirection.Y, LightDirection.Z);
-            
-
-        //    LightDirection = ShadowLightPosition - ShadowLightTarget;
-       //     LightDirection.Normalize();
-          //  LightDirection = LightDirection * 5.0f;
+            this.NormalBias = 0.4f;
 
 
             this.Lights = new List<PPPointLight>()
-{
-new PPPointLight(ShadowLightPosition, Color.Red * .85f,
-100),
-new PPPointLight(ShadowLightTarget, Color.Blue * .85f,
-100),
-new PPPointLight(new Vector3(450, 50, 450), Color.Green * .85f,
-100)
-, new PPPointLight(new Vector3(1000, 500, 1000), Color.White * .85f, 500)
-};
+            {
+                new PPPointLight(SunLight.ShadowLightPosition, Color.Red * .85f, 100),
+                new PPPointLight(SunLight.ShadowLightTarget, Color.Blue * .85f, 100),
+                new PPPointLight(new Vector3(450, 50, 450), Color.Green * .85f, 100), 
+                new PPPointLight(new Vector3(1000, 500, 1000), Color.White * .85f, 500)
+            };
          
         }
 
@@ -430,6 +417,102 @@ new PPPointLight(new Vector3(450, 50, 450), Color.Green * .85f,
             if (AmbientLightLevel < 0.1) { AmbientLightLevel = 0.1f; }
         }
 
+
+
+        public Matrix CreateLightViewProjectionMatrix()
+        {
+            /*
+            // Matrix with that will rotate in points the direction of the light
+            Matrix lightRotation = Matrix.CreateLookAt(Vector3.Zero,
+                                                       -SunLight.GetLightDirection(),
+                                                       Vector3.Up);
+            
+            // Get the corners of the frustum
+            Vector3[] frustumCorners = PlayerCamera.GetFrustrum().GetCorners();
+
+            // Transform the positions of the corners into the direction of the light
+            for (int i = 0; i < frustumCorners.Length; i++)
+            {
+                frustumCorners[i] = Vector3.Transform(frustumCorners[i], lightRotation);
+            }
+
+            // Find the smallest box around the points
+            BoundingBox lightBox = BoundingBox.CreateFromPoints(frustumCorners);
+
+            Vector3 boxSize = lightBox.Max - lightBox.Min;
+            Vector3 halfBoxSize = boxSize * 0.5f;
+
+            // The position of the light should be in the center of the back
+            // pannel of the box. 
+            Vector3 lightPosition = lightBox.Min + halfBoxSize;
+            lightPosition.Z = lightBox.Min.Z;
+
+            // We need the position back in world coordinates so we transform 
+            // the light position by the inverse of the lights rotation
+            lightPosition = Vector3.Transform(lightPosition,
+                                              Matrix.Invert(lightRotation));
+
+
+
+            
+
+            // Create the view matrix for the light
+            Matrix lightView = Matrix.CreateLookAt(lightPosition,
+                                                   lightPosition - SunLight.GetLightDirection(),
+                                                   Vector3.Up);
+
+
+
+            // Create the projection matrix for the light
+            // The projection is orthographic since we are using a directional light
+            Matrix lightProjection = Matrix.CreateOrthographic(boxSize.X, boxSize.Y,
+                                                               -boxSize.Z, boxSize.Z);
+            */
+            // ////////////////////////
+
+            //BoundingSphere sphere = BoundingSphere.CreateFromFrustum(PlayerCamera.GetFrustrum());
+            BoundingSphere sphere = new BoundingSphere(PlayerCamera.GetCameraPostion(), shadowFarPlane);
+
+            float ExtraBackup = 100.0f;
+            const float NearClip = 1.0f;
+
+            float backupDist = ExtraBackup + NearClip + sphere.Radius;
+            Vector3 shadowCamPos = sphere.Center + (SunLight.GetInvertedLightDirection() * backupDist);
+            Matrix shadowViewMatrix = Matrix.CreateLookAt(shadowCamPos, sphere.Center, Vector3.Up);
+
+            float bounds = sphere.Radius * 2.0f;
+            float farClip = ExtraBackup + sphere.Radius *2;
+            Matrix shadowProjMatrix = Matrix.CreateOrthographic(bounds, bounds, NearClip, farClip);
+
+            Matrix shadowMatrix = shadowViewMatrix * shadowProjMatrix;
+
+
+          
+            Vector3 shadowOrigin = Vector3.Transform(Vector3.Zero, shadowMatrix);
+            shadowOrigin *= (shadowMapSize / 2.0f);
+            Vector3 roundedOrigin = new Vector3((float)Math.Round(shadowOrigin.X), (float)Math.Round(shadowOrigin.Y), (float)Math.Round(shadowOrigin.Z));
+            Vector3 rounding = roundedOrigin - shadowOrigin;
+            rounding /= (shadowMapSize / 2.0f);
+
+            Matrix roundMatrix = Matrix.CreateTranslation(rounding.X, rounding.Y, rounding.Z);
+            shadowMatrix *= roundMatrix;
+
+
+
+
+            return shadowMatrix;
+
+
+            /*
+            lightView = Matrix.CreateLookAt(SunLight.ShadowLightPosition, SunLight.ShadowLightTarget, new Vector3(0, 1, 0));
+            lightProjection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver2, 1f, 5f, 100f);
+
+            return lightView * lightProjection;*/
+        }
+
+
+
+
         #region TERRAIN
         // //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -444,6 +527,8 @@ new PPPointLight(new Vector3(450, 50, 450), Color.Green * .85f,
 
         public void DrawTerrain(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
         {
+            this.device.SamplerStates[1] = SamplerState.PointClamp;
+
             Matrix worldMatrix = Matrix.Identity;
             this.effect.Parameters["World"].SetValue(worldMatrix);
             this.effect.Parameters["View"].SetValue(currentViewMatrix);
@@ -499,11 +584,19 @@ new PPPointLight(new Vector3(450, 50, 450), Color.Green * .85f,
                     this.effect.Parameters["ShadowProjection"].SetValue(shadowProjection);
 
                 if (this.effect.Parameters["ShadowLightPosition"] != null)
-                    this.effect.Parameters["ShadowLightPosition"].SetValue(ShadowLightPosition);
+                    this.effect.Parameters["ShadowLightPosition"].SetValue(SunLight.ShadowLightPosition);
                 if (this.effect.Parameters["ShadowFarPlane"] != null)
                     this.effect.Parameters["ShadowFarPlane"].SetValue(shadowFarPlane);
                 if (this.effect.Parameters["ShadowMult"] != null)
                     this.effect.Parameters["ShadowMult"].SetValue(ShadowMult);
+                if (this.effect.Parameters["ShadowBias"] != null)
+                    this.effect.Parameters["ShadowBias"].SetValue(ShadowBias);
+                if (this.effect.Parameters["NormalBias"] != null)
+                    this.effect.Parameters["NormalBias"].SetValue(this.NormalBias);
+
+            
+
+                effect.Parameters["LightViewProj"].SetValue(CreateLightViewProjectionMatrix());
 
 
             this.effect.CurrentTechnique.Passes[0].Apply();
@@ -853,7 +946,7 @@ new PPPointLight(new Vector3(450, 50, 450), Color.Green * .85f,
         public void DrawSun(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
         {
             Matrix worldMatrix =
-                    Matrix.CreateScale(50.0f) * Matrix.CreateTranslation(ShadowLightPosition);
+                    Matrix.CreateScale(50.0f) * Matrix.CreateTranslation(SunLight.ShadowLightPosition);
 
             sun.Meshes[0].MeshParts[0].Effect.Parameters["World"].SetValue(worldMatrix);
             sun.Meshes[0].MeshParts[0].Effect.Parameters["View"].SetValue(currentViewMatrix);

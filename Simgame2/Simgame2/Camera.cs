@@ -31,12 +31,12 @@ namespace Simgame2
         }
 
 
-        private float AspectRatio;
+        public float AspectRatio;
 
         public Camera(float AspectRatio)
         {
             this.AspectRatio = AspectRatio;
-            _DrawDistance = 300.0f;
+            _DrawDistance = 1200.0f;
             this.viewMatrix = Matrix.CreateLookAt(new Vector3(0, 1, 0), new Vector3(0, 0, 0), new Vector3(0, 0, -1));     /// here
             UpdateProjectionMatrix();
             MoveCamera(new Vector3(1600, 25, 500));

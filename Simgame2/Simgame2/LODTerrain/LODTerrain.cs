@@ -12,7 +12,6 @@ using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
 
-// TODO replace worldmap with LODTerrain
 
 namespace Simgame2.LODTerrain
 {

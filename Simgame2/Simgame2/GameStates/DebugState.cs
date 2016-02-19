@@ -143,7 +143,7 @@ namespace Simgame2.GameStates
             button_PageUp_pressed = false;
             button_PageDown_pressed = false;
             button_D_pressed = false;
-            game.PlayerCamera.ForceViewMatrix(game.LODMap.GetRenderer().ShadowLightPosition, game.LODMap.GetRenderer().ShadowLightTarget, Vector3.Up);
+            game.PlayerCamera.ForceViewMatrix(game.LODMap.GetRenderer().SunLight.ShadowLightPosition, game.LODMap.GetRenderer().SunLight.ShadowLightTarget, Vector3.Up);
             button_D_Reseted = false;
         }
 

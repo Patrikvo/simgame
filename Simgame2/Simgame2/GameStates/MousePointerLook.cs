@@ -106,6 +106,32 @@ namespace Simgame2.GameStates
                 
             }
 
+
+            if (keyState.IsKeyDown(Keys.D))
+            {
+                ButtonDDown = true;
+            }
+            if (keyState.IsKeyUp(Keys.D) && ButtonDDown == true)
+            {
+                ButtonDDown = false;
+                if (this.formDebug == null)
+                {
+                    this.formDebug = new Tools.FormDebug(this.game);
+                    this.formDebug.Show();
+                }
+                else 
+                {
+                    this.formDebug.Visible = !this.formDebug.Visible;
+                }
+                
+            }
+
+
+            if (this.formDebug != null)
+            {
+                this.formDebug.Update();
+            }
+
         }
 
         public override void EnterState()
@@ -126,6 +152,10 @@ namespace Simgame2.GameStates
 
         public override string GetShortName() { return "M"; }
 
-        
+
+        protected bool ButtonDDown = false;
+
+
+        Tools.FormDebug formDebug;
     }
 }

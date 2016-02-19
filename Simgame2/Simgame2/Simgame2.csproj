@@ -66,6 +66,9 @@
     <Reference Include="Microsoft.Xna.Framework.GamerServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
     <Reference Include="mscorlib" />
     <Reference Include="System" />
+    <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Windows.Forms" />
     <Reference Include="System.Xml" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -78,6 +81,14 @@
     <Compile Include="Buildings\SolarPlant.cs" />
     <Compile Include="Buildings\WindTower.cs" />
     <Compile Include="Camera.cs" />
+    <Compile Include="DeferredRenderer\DeferredRenderer.cs" />
+    <Compile Include="DeferredRenderer\DirectionalLight.cs" />
+    <Compile Include="DeferredRenderer\ExampleLoader.cs" />
+    <Compile Include="DeferredRenderer\FullscreenQuad.cs" />
+    <Compile Include="DeferredRenderer\LightManager.cs" />
+    <Compile Include="DeferredRenderer\PointLight.cs" />
+    <Compile Include="DeferredRenderer\SpotLight.cs" />
+    <Compile Include="DeferredRenderer\SSAO.cs" />
     <Compile Include="Entities\Movement.cs" />
     <Compile Include="Entities\MoverEntity.cs" />
     <Compile Include="Entity.cs" />
@@ -109,6 +120,12 @@
     <Compile Include="Simulation\SimulationEntity.cs" />
     <Compile Include="Simulation\Simulator.cs" />
     <Compile Include="TextureGenerator.cs" />
+    <Compile Include="Tools\FormDebug.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="Tools\FormDebug.Designer.cs">
+      <DependentUpon>FormDebug.cs</DependentUpon>
+    </Compile>
     <Compile Include="WorldGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
@@ -145,6 +162,11 @@
       <ProductName>Windows Installer 4.5</ProductName>
       <Install>true</Install>
     </BootstrapperPackage>
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Tools\FormDebug.resx">
+      <DependentUpon>FormDebug.cs</DependentUpon>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\XNA Game Studio\Microsoft.Xna.GameStudio.targets" />

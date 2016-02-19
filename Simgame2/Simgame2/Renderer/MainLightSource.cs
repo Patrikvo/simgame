@@ -9,6 +9,12 @@ namespace Simgame2.Renderer
 {
     public class MainLightSource
     {
+        // Position and target of the shadowing light
+        public Vector3 ShadowLightPosition { get; set; }
+        public Vector3 ShadowLightTarget { get; set; }
+
+        
+
         public MainLightSource(): this(Color.White, 1.0f, 0.0f, 0.0f, 0.0f) {}
 
         public MainLightSource(Color color, float power, float yaw, float pitch, float roll)
@@ -40,9 +46,9 @@ namespace Simgame2.Renderer
 
 
         Vector3 LightDirection;
-        float Yaw;
-        float Pitch;
-        float Roll;
+        public float Yaw;
+        public float Pitch;
+        public float Roll;
         Matrix RotationMatrix;
     }
 }
