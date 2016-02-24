@@ -147,6 +147,8 @@ namespace Simgame2.Renderer
             BlendState stored = this.device.BlendState;
             this.device.BlendState = BlendState.Opaque;
 
+
+            // draw terrain
             this.depthNormalEffect.CurrentTechnique.Passes[0].Apply();
             foreach (EffectPass pass in this.depthNormalEffect.CurrentTechnique.Passes)
             {
@@ -511,6 +513,127 @@ namespace Simgame2.Renderer
         }
 
 
+
+        #region   MODEL
+
+
+        public void DrawModel(Model model, Texture2D[] textures, bool IsTransparant, bool CanPlace, Matrix WorldMatrix, Matrix ViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition, string Technique)
+        {
+
+            Matrix[] ModelTransforms = new Matrix[model.Bones.Count];
+            model.CopyAbsoluteBoneTransformsTo(ModelTransforms);
+
+            int meshCount = 0;
+            foreach (ModelMesh mesh in model.Meshes)
+            {
+                foreach (Effect currentEffect in mesh.Effects)
+                {
+                    currentEffect.CurrentTechnique = currentEffect.Techniques[Technique];
+
+                    currentEffect.Parameters["World"].SetValue(ModelTransforms[mesh.ParentBone.Index] * WorldMatrix);
+                    currentEffect.Parameters["View"].SetValue(ViewMatrix);
+                    currentEffect.Parameters["Projection"].SetValue(projectionMatrix);
+
+                    currentEffect.Parameters["xIsTransparant"].SetValue(IsTransparant);
+                    if (CanPlace)
+                    {
+                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(0.0f, 1.0f, 0.0f, 0.5f));
+                    }
+                    else
+                    {
+                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 0.0f, 0.0f, 0.5f));
+                    }
+
+                    currentEffect.Parameters["xTexture"].SetValue(textures[meshCount]);
+                    currentEffect.Parameters["xEnableLighting"].SetValue(true);
+                    currentEffect.Parameters["xAmbient"].SetValue(game.LODMap.GetRenderer().AmbientLightLevel);
+                    currentEffect.Parameters["LightDirection"].SetValue(game.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
+
+                    currentEffect.Parameters["cameraPos"].SetValue(cameraPosition);
+                    currentEffect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
+                    currentEffect.Parameters["FogNear"].SetValue(FOGNEAR);
+                    currentEffect.Parameters["FogFar"].SetValue(FOGFAR);
+
+                    currentEffect.Parameters["LightViewProj"].SetValue(this.CreateLightViewProjectionMatrix());
+
+
+                    this.effect.Parameters["LightTexture"].SetValue(lightTarg);
+
+                    this.effect.Parameters["viewportWidth"].SetValue(viewWidth);
+
+                    this.effect.Parameters["viewportHeight"].SetValue(viewHeight);
+
+                    // shadowmap:
+                    if (this.effect.Parameters["DoShadowMapping"] != null)
+                        this.effect.Parameters["DoShadowMapping"].SetValue(DoShadowMapping);
+
+                    if (this.effect.Parameters["ShadowMap"] != null)
+                        this.effect.Parameters["ShadowMap"].SetValue(shadowDepthTarg);
+                    if (this.effect.Parameters["ShadowView"] != null)
+                        this.effect.Parameters["ShadowView"].SetValue(shadowView);
+                    if (this.effect.Parameters["ShadowProjection"] != null)
+                        this.effect.Parameters["ShadowProjection"].SetValue(shadowProjection);
+
+                    if (this.effect.Parameters["ShadowLightPosition"] != null)
+                        this.effect.Parameters["ShadowLightPosition"].SetValue(SunLight.ShadowLightPosition);
+                    if (this.effect.Parameters["ShadowFarPlane"] != null)
+                        this.effect.Parameters["ShadowFarPlane"].SetValue(shadowFarPlane);
+                    if (this.effect.Parameters["ShadowMult"] != null)
+                        this.effect.Parameters["ShadowMult"].SetValue(ShadowMult);
+                    if (this.effect.Parameters["ShadowBias"] != null)
+                        this.effect.Parameters["ShadowBias"].SetValue(ShadowBias);
+                    if (this.effect.Parameters["NormalBias"] != null)
+                        this.effect.Parameters["NormalBias"].SetValue(this.NormalBias);
+
+
+
+
+
+                }
+                mesh.Draw();
+                meshCount++;
+            }
+            //           if (ShowBoundingBox)
+            //           {
+            //               DrawBoundingBox(currentViewMatrix, cameraPosition);
+            //           }
+
+        }
+
+
+
+        public void DrawShadow( Model model, Matrix WorldMatrix, Matrix ViewMatrix, Matrix projectionMatrix, string Technique)
+        {
+
+            Matrix[] ModelTransforms = new Matrix[model.Bones.Count];
+            model.CopyAbsoluteBoneTransformsTo(ModelTransforms);
+
+            int meshCount = 0;
+            foreach (ModelMesh mesh in model.Meshes)
+            {
+                foreach (Effect currentEffect in mesh.Effects)
+                {
+                    currentEffect.CurrentTechnique = currentEffect.Techniques[Technique];
+
+                    currentEffect.Parameters["World"].SetValue(ModelTransforms[mesh.ParentBone.Index] * WorldMatrix);
+                    currentEffect.Parameters["View"].SetValue(ViewMatrix);
+                    currentEffect.Parameters["Projection"].SetValue(projectionMatrix);
+
+                }
+                mesh.Draw();
+                meshCount++;
+            }
+
+        }
+
+
+
+
+
+
+
+
+        #endregion
 
 
         #region TERRAIN

@@ -48,17 +48,7 @@ namespace Simgame2.Tools
 
 
 
-            this.comboBoxRenderer.Items.Add(LODTerrain.LODTerrain.RENDERER.DEFERED.ToString());
-            this.comboBoxRenderer.Items.Add(LODTerrain.LODTerrain.RENDERER.PRELIT.ToString());
-
-            if (game.LODMap.ActiveRenderer == LODTerrain.LODTerrain.RENDERER.DEFERED)
-            {
-                this.comboBoxRenderer.SelectedItem = LODTerrain.LODTerrain.RENDERER.DEFERED.ToString();
-            }
-            else if (game.LODMap.ActiveRenderer == LODTerrain.LODTerrain.RENDERER.PRELIT)
-            {
-                this.comboBoxRenderer.SelectedItem = LODTerrain.LODTerrain.RENDERER.PRELIT.ToString();
-            }
+        
 
 
 
@@ -211,19 +201,7 @@ namespace Simgame2.Tools
             }
         }
 
-        private void comboBoxRenderer_SelectedIndexChanged(object sender, EventArgs e)
-        {
-            if (((string)this.comboBoxRenderer.SelectedItem) == LODTerrain.LODTerrain.RENDERER.DEFERED.ToString())
-            {
-                game.LODMap.ActiveRenderer = LODTerrain.LODTerrain.RENDERER.DEFERED;
-            }
-            else if (((string)this.comboBoxRenderer.SelectedItem) == LODTerrain.LODTerrain.RENDERER.PRELIT.ToString())
-            {
-                game.LODMap.ActiveRenderer = LODTerrain.LODTerrain.RENDERER.PRELIT;
-            }
-
-        }
-
+      
 
 
 

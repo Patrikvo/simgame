@@ -11,27 +11,13 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
-using Simgame2.DeferredRenderer;
 
 
 namespace Simgame2.LODTerrain
 {
     public class LODTerrain
     {
-        public enum RENDERER  {PRELIT, DEFERED}
-
-
-        public RENDERER ActiveRenderer;
-
-        //Light Manager
-        LightManager lightManager;
-
-        //Deffered Renderer
-        public DeferredRenderer.DeferredRenderer deferredRenderer;
-
-        //SSAO
-        SSAO ssao;
-
+     
 
         Game game;
 
@@ -39,7 +25,6 @@ namespace Simgame2.LODTerrain
 
         public LODTerrain(Game1 game, int mapNumCellsPerRow, int mapNumCellPerColumn, Effect effect, GraphicsDevice device)
         {
-            this.ActiveRenderer = RENDERER.PRELIT;
 
             this.game = game;
 
@@ -57,22 +42,7 @@ namespace Simgame2.LODTerrain
             prelightRender = new PrelightingRenderer(game, effect, device, entities);
 
 
-            //Create Deferred Renderer
-            deferredRenderer = new DeferredRenderer.DeferredRenderer(device, game.Content, device.Viewport.Width, device.Viewport.Height);
-
-            //Create SSAO
-    //        ssao = new SSAO(device, game.Content, device.Viewport.Width, device.Viewport.Height);
-
-            //Create Light Manager
-            lightManager = new LightManager(game.Content);
-
-            Scene = new RenderTarget2D(device, device.Viewport.Width, device.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
-
-            //Add a Directional Light
-           // lightManager.AddLight(new DeferredRenderer.DirectionalLight(Vector3.Down, Color.White, 0.5f));
-            lightManager.AddLight(new DeferredRenderer.DirectionalLight(new Vector3(0.5f,0.7f,0.5f), Color.White, 0.5f));
-
-            lightManager.AddLight(new DeferredRenderer.PointLight(device,new Vector3(1500.0f,100.0f,500.0f), 100.0f, Color.Green.ToVector4(), 0.7f, true, 4096));
+           
 
                 
 
@@ -96,8 +66,7 @@ namespace Simgame2.LODTerrain
             _quadTree = new QuadTree(new Vector4(mapNumCellsPerRow, mapNumCellPerColumn, this.minHeight, this.maxHeight), device);
         }
 
-        //Scene
-        RenderTarget2D Scene;
+
 
         public void Draw(Camera PlayerCamera, GameTime gameTime)
         {
@@ -109,75 +78,59 @@ namespace Simgame2.LODTerrain
 
             FindVisibleEnities();
 
-            if (this.ActiveRenderer == RENDERER.PRELIT)
+
+
+            prelightRender.terrainVertexBuffer = _quadTree.GetVertexBuffer();
+            prelightRender.terrainIndexBuffer = _quadTree.GetIndexBuffer();
+
+            // water
+            prelightRender.drawDepthNormalMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+            prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), this.frustum);
+
+            this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
+            prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
+
+            if (prelightRender.DoShadowMapping) { prelightRender.drawShadowDepthMap(); }
+
+
+
+            // skybox
+            prelightRender.GeneratePerlinNoise(time);
+
+            prelightRender.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
+
+            prelightRender.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+
+            prelightRender.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+            prelightRender.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
+
+            enitiesDrawn = 0;
+            foreach (Entity e in entities)
             {
-
-                prelightRender.terrainVertexBuffer = _quadTree.GetVertexBuffer();
-                prelightRender.terrainIndexBuffer = _quadTree.GetIndexBuffer();
-
-                // water
-                prelightRender.drawDepthNormalMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-                prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), this.frustum);
-
-                this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
-                prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
-
-                if (prelightRender.DoShadowMapping) { prelightRender.drawShadowDepthMap(); }
-
-
-
-                // skybox
-                prelightRender.GeneratePerlinNoise(time);
-
-                prelightRender.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
-
-                prelightRender.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-
-                prelightRender.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-                prelightRender.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
-
-                enitiesDrawn = 0;
-                foreach (Entity e in entities)
+                if (e.IsVisible)
                 {
-                    if (e.IsVisible)
-                    {
-                        enitiesDrawn++;
-                        //  e.ShowBoundingBox = true;
+                    enitiesDrawn++;
+                    //  e.ShowBoundingBox = true;
 
-                        e.SetModelEffect(modelEffect, false);
-                        e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
-                    }
+                    e.SetModelEffect(modelEffect, false);
+                    e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
                 }
-
-
-
-                prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1600, 50, 500), prelightRender.SunLight.GetRotationMatrix());
-                ((Game1)game).debugImg = prelightRender.normalTarg;
-
-
-                
-                
-
-
-
-
             }
-            else if (this.ActiveRenderer == RENDERER.DEFERED)
-            {
 
-                deferredRenderer.terrainVertexBuffer = _quadTree.GetVertexBuffer();
-                deferredRenderer.terrainIndexBuffer = _quadTree.GetIndexBuffer();
 
-                deferredRenderer.Draw(this.device, null, this.lightManager, playerCamera, null);
 
-       //         ssao.Draw(this.device, deferredRenderer.getGBuffer(), Scene, playerCamera, null);
+            prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1600, 50, 500), prelightRender.SunLight.GetRotationMatrix());
+            ((Game1)game).debugImg = prelightRender.normalTarg;
 
-                SpriteBatch b = new SpriteBatch(game.GraphicsDevice);
-                deferredRenderer.Debug(game.GraphicsDevice, b);
+
+                
                 
 
 
-            }
+
+
+            
+            
 
            
 

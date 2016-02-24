@@ -81,7 +81,6 @@ namespace Simgame2
 
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        //private const int mapNumCellsPerSide = 320; // 20 40 80 160 320 640 1280
         private const int mapNumCellsPerSide = 641; // 20 40 80 160 320 640 
 
         // Rendering objects
@@ -102,7 +101,6 @@ namespace Simgame2
 
 
         // Game Objects
-     //   public WorldMap worldMap;
         public LODTerrain.LODTerrain LODMap;
         public TextureGenerator textureGenerator;
 
@@ -121,10 +119,10 @@ namespace Simgame2
         public EntityBuilding selBuilding;
 
         
-       public EntityFactory entityFactory;
+        public EntityFactory entityFactory;
 
         public Vector3 markerLocation;
-private bool doneLoading = false;
+        private bool doneLoading = false;
 
         public Game1()
         {
@@ -173,13 +171,10 @@ private bool doneLoading = false;
 
 
             PlayerCamera = new Camera(device.Viewport.AspectRatio);
-            //worldMap = new WorldMap(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
             LODMap = new LODTerrain.LODTerrain(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
 
-            //PlayerCamera.worldMap = worldMap;
             PlayerCamera.LODMap = LODMap;
 
-            //PlayerCamera.DrawDistance = 1200.0f; // 300.0f;
             PlayerCamera.DrawDistance = 1200.0f; // 300.0f;
 
             HUD_overlay.PreloadImages(this.Content);
@@ -193,16 +188,7 @@ private bool doneLoading = false;
            // texture = textureGenerator.GenerateGroundTexture(new Color(124, 124, 124, 1), new Vector3(0,39,39), 512);
             Texture2D texture = textureGenerator.GenerateGroundTexture(new Color(120, 62, 62, 1), new Vector3(20, 20, 20), 512);
 
-
-            //worldMap.GetRenderer().waterBumpMap = Content.Load<Texture2D>("waterbump");
             LODMap.GetRenderer().waterBumpMap = Content.Load<Texture2D>("waterbump");
-
-      /*      worldMap.GetRenderer().Textures = new Texture2D[5];
-            worldMap.GetRenderer().Textures[0] = Content.Load<Texture2D>("Textures\\tex1");
-            worldMap.GetRenderer().Textures[1] = Content.Load<Texture2D>("Textures\\tex0");
-            worldMap.GetRenderer().Textures[2] = Content.Load<Texture2D>("Textures\\tex2");
-            worldMap.GetRenderer().Textures[3] = Content.Load<Texture2D>("Textures\\tex3");
-            worldMap.GetRenderer().Textures[4] = Content.Load<Texture2D>("Textures\\tex1");*/
 
             LODMap.GetRenderer().Textures = new Texture2D[5];
             LODMap.GetRenderer().Textures[0] = Content.Load<Texture2D>("Textures\\tex1");
@@ -211,31 +197,16 @@ private bool doneLoading = false;
             LODMap.GetRenderer().Textures[3] = Content.Load<Texture2D>("Textures\\tex3");
             LODMap.GetRenderer().Textures[4] = Content.Load<Texture2D>("Textures\\tex1");
 
-
-            LODMap.deferredRenderer.Textures = new Texture2D[5];
-            LODMap.deferredRenderer.Textures[0] = Content.Load<Texture2D>("Textures\\tex1");
-            LODMap.deferredRenderer.Textures[1] = Content.Load<Texture2D>("Textures\\tex0");
-            LODMap.deferredRenderer.Textures[2] = Content.Load<Texture2D>("Textures\\tex2");
-            LODMap.deferredRenderer.Textures[3] = Content.Load<Texture2D>("Textures\\tex3");
-            LODMap.deferredRenderer.Textures[4] = Content.Load<Texture2D>("Textures\\tex1");
-            
-
-
-
-            //worldMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, 5); //WorldMap.mapCellScale);
             LODMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, 5); //WorldMap.mapCellScale);
 
 
             // skydome
-        //    worldMap.GetRenderer().LoadSkyDome(Content.Load<Model>("dome"));
             LODMap.GetRenderer().LoadSkyDome(Content.Load<Model>("dome"));
 
 
             PlayerCamera.UpdateViewMatrix();
 
 
-
-            //entityFactory = EntityFactory.CreateFactory(this, this.worldMap, PlayerCamera.projectionMatrix);
             entityFactory = EntityFactory.CreateFactory(this, this.LODMap, PlayerCamera.projectionMatrix);
 
   
@@ -321,7 +292,6 @@ private bool doneLoading = false;
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
 
 
-            //worldMap.Draw(PlayerCamera, gameTime);
             LODMap.Draw(PlayerCamera, gameTime);
 
 
@@ -342,7 +312,6 @@ private bool doneLoading = false;
             spriteBatch = new SpriteBatch(this.device);
             spriteBatch.Begin();
             
-            //spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + worldMap.GetStats(), pos,Color.White);
             spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + LODMap.GetStats(), pos, Color.White);
             spriteBatch.DrawString(font, "(" + this.PlayerCamera.GetCameraPostion().X + ", " + this.PlayerCamera.GetCameraPostion().Y + ", " + this.PlayerCamera.GetCameraPostion().Z + ")" + " - state " + DebugState() + 
             " drawtime: " + drawtime.ToString() + " ms", pos2, Color.White);

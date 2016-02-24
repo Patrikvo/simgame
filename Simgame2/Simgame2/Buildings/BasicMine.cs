@@ -110,7 +110,6 @@ namespace Simgame2.Buildings
             return basicMineSim;
         }
 
-      //  public Effect effect { get; set; }
 
         public static Vector3 StandardScale = new Vector3(5, 5, 5);
         public static Vector3 StandardRotation = new Vector3(0, MathHelper.Pi, 0);
