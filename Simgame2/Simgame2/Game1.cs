@@ -42,27 +42,35 @@ namespace Simgame2
          Vector3 position,
          Vector3 normal,
          Vector4 textureCoordinate,
-         Vector4 texWeights
+         Vector4 texWeights,
+         Vector3 Tangent,
+         Vector3 Bitangent
             )
         {
             this.Position = position;
             this.Normal = normal;
             this.TextureCoordinate = textureCoordinate;
             this.TexWeights = texWeights;
+            this.Tangent = Tangent;
+            this.BiTangent = Bitangent;
         }
 
         public Vector3 Position;
         public Vector3 Normal;
         public Vector4 TextureCoordinate;
         public Vector4 TexWeights;
+        public Vector3 Tangent;
+        public Vector3 BiTangent; // : BINORMAL0;
 
-        public static int SizeInBytes = (3 + 3 + 4 + 4) * sizeof(float);
+        public static int SizeInBytes = (3 + 3 + 4 + 4+3) * sizeof(float);
         public readonly static VertexDeclaration VertexDeclaration = new VertexDeclaration
      (
          new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0 ),
          new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0 ),
          new VertexElement(sizeof(float) * 6, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 0 ),
-         new VertexElement(sizeof(float) * 10, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 1 )
+         new VertexElement(sizeof(float) * 10, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 1 ),
+         new VertexElement(sizeof(float) * 14, VertexElementFormat.Vector3, VertexElementUsage.Tangent, 0 ),
+         new VertexElement(sizeof(float) * 17, VertexElementFormat.Vector3, VertexElementUsage.Binormal, 0)
      );
 
         VertexDeclaration IVertexType.VertexDeclaration { get { return VertexDeclaration; } }
@@ -203,6 +211,14 @@ private bool doneLoading = false;
             LODMap.GetRenderer().Textures[3] = Content.Load<Texture2D>("Textures\\tex3");
             LODMap.GetRenderer().Textures[4] = Content.Load<Texture2D>("Textures\\tex1");
 
+
+            LODMap.deferredRenderer.Textures = new Texture2D[5];
+            LODMap.deferredRenderer.Textures[0] = Content.Load<Texture2D>("Textures\\tex1");
+            LODMap.deferredRenderer.Textures[1] = Content.Load<Texture2D>("Textures\\tex0");
+            LODMap.deferredRenderer.Textures[2] = Content.Load<Texture2D>("Textures\\tex2");
+            LODMap.deferredRenderer.Textures[3] = Content.Load<Texture2D>("Textures\\tex3");
+            LODMap.deferredRenderer.Textures[4] = Content.Load<Texture2D>("Textures\\tex1");
+            
 
 
 

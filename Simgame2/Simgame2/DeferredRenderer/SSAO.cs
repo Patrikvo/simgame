@@ -12,7 +12,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2.DeferredRenderer
 {
-    class SSAO
+    public class SSAO
     {
         //SSAO effect
         Effect ssao;
@@ -65,15 +65,15 @@ namespace Simgame2.DeferredRenderer
         public SSAO(GraphicsDevice GraphicsDevice, ContentManager Content, int Width, int Height)
         {
             //Load SSAO effect
-            ssao = Content.Load<Effect>("Effects/SSAO");
+            ssao = Content.Load<Effect>("Deferred/SSAO");
             ssao.CurrentTechnique = ssao.Techniques[0];
 
             //Load SSAO Blur effect
-            ssaoBlur = Content.Load<Effect>("Effects/SSAOBlur");
+            ssaoBlur = Content.Load<Effect>("Deferred/SSAOBlur");
             ssaoBlur.CurrentTechnique = ssaoBlur.Techniques[0];
 
             //Load SSAO composition effect
-            composer = Content.Load<Effect>("Effects/SSAOFinal");
+            composer = Content.Load<Effect>("Deferred/SSAOFinal");
             composer.CurrentTechnique = composer.Techniques[0];
 
             //Create SSAO Target

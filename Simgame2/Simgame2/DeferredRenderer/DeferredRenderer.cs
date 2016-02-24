@@ -14,7 +14,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2.DeferredRenderer
 {
-    class DeferredRenderer
+    public class DeferredRenderer
     {
         //Clear Shader
         Effect Clear;
@@ -42,6 +42,15 @@ namespace Simgame2.DeferredRenderer
         Model pointLightGeometry;
         //Spot Light Geometry
         Model spotLightGeometry;
+
+
+
+        // modifications
+        public VertexBuffer terrainVertexBuffer;
+        public IndexBuffer terrainIndexBuffer;
+        public Texture2D[] Textures;
+
+
 
         //Get GBuffer
         public RenderTargetBinding[] getGBuffer() { return GBufferTargets; }
@@ -164,6 +173,48 @@ namespace Simgame2.DeferredRenderer
         }
 
 
+        //GBuffer Creation
+        void MakeTerrainGBuffer(GraphicsDevice GraphicsDevice, Matrix currentViewMatrix, Matrix projectionMatrix)
+        {
+            Matrix worldMatrix = Matrix.Identity;
+            //Set Depth State
+            GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+            //Set up global GBuffer parameters
+            GBuffer.Parameters["View"].SetValue(currentViewMatrix);
+            GBuffer.Parameters["Projection"].SetValue(projectionMatrix);
+
+            // draw terrain
+            //Set Vertex Buffer
+            GraphicsDevice.SetVertexBuffer(this.terrainVertexBuffer);
+
+            //Set Index Buffer
+            GraphicsDevice.Indices = this.terrainIndexBuffer;
+
+            GBuffer.Parameters["World"].SetValue(worldMatrix);
+
+            //Set WorldIT 
+            GBuffer.Parameters["WorldViewIT"].SetValue(Matrix.Transpose(Matrix.Invert(worldMatrix * currentViewMatrix)));
+            //GBuffer.Parameters["WorldViewIT"].SetValue(Matrix.Transpose(Matrix.Invert(transforms[mesh.ParentBone.Index] * Camera.View)));
+            //Set Albedo Texture
+            GBuffer.Parameters["Texture"].SetValue(Textures[0]);
+
+            //Set Normal Texture GBuffer.Parameters["NormalMap"].SetValue(part.Effect.Parameters["NormalMap"].GetValueTexture2D());
+            //Set Specular Texture GBuffer.Parameters["SpecularMap"].SetValue(part.Effect.Parameters["SpecularMap"].GetValueTexture2D());
+            //Apply Effect
+            GBuffer.CurrentTechnique.Passes[0].Apply();
+
+            //Draw
+            int noVertices = this.terrainVertexBuffer.VertexCount;
+            int noTriangles = this.terrainIndexBuffer.IndexCount / 3;
+            GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, noVertices, 0, noTriangles);
+
+
+            //Set RenderTargets off
+            GraphicsDevice.SetRenderTargets(null);
+        }
+
+
         //Clear GBuffer
         void ClearGBuffer(GraphicsDevice GraphicsDevice)
         {
@@ -192,7 +243,8 @@ namespace Simgame2.DeferredRenderer
             ClearGBuffer(GraphicsDevice);
 
             //Make GBuffer
-            MakeGBuffer(GraphicsDevice, Models, Camera);
+        //    MakeGBuffer(GraphicsDevice, Models, Camera);
+            MakeTerrainGBuffer(GraphicsDevice, Camera.viewMatrix, Camera.projectionMatrix);
 
             //Make LightMap
             MakeLightMap(GraphicsDevice, Lights, Camera);
@@ -200,6 +252,11 @@ namespace Simgame2.DeferredRenderer
             //Make Final Rendered Scene
             MakeFinal(GraphicsDevice, Output);
         }
+
+
+
+
+
 
 
         //Debug

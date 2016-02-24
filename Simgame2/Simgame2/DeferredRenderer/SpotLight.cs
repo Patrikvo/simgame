@@ -13,7 +13,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2.DeferredRenderer
 {
-    class SpotLight
+    public class SpotLight
     {
 
         //Position

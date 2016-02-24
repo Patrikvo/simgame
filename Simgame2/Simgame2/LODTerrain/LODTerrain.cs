@@ -11,19 +11,35 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
+using Simgame2.DeferredRenderer;
 
 
 namespace Simgame2.LODTerrain
 {
     public class LODTerrain
     {
+        public enum RENDERER  {PRELIT, DEFERED}
+
+
+        public RENDERER ActiveRenderer;
+
+        //Light Manager
+        LightManager lightManager;
+
+        //Deffered Renderer
+        public DeferredRenderer.DeferredRenderer deferredRenderer;
+
+        //SSAO
+        SSAO ssao;
 
 
         Game game;
 
+        GraphicsDevice device;
+
         public LODTerrain(Game1 game, int mapNumCellsPerRow, int mapNumCellPerColumn, Effect effect, GraphicsDevice device)
         {
-
+            this.ActiveRenderer = RENDERER.PRELIT;
 
             this.game = game;
 
@@ -31,19 +47,34 @@ namespace Simgame2.LODTerrain
             this.playerCamera = game.PlayerCamera;
 
             modelEffect = game.Content.Load<Effect>("PrelightEffects");
-        //    modelEffect = game.Content.Load<Effect>("PPModel");
+           
+
+            CreateNewMap(mapNumCellsPerRow, mapNumCellPerColumn, device);
+            this.device = device;
+
 
             
-
-     //       if (LoadMap(@"c:\temp\map.dat") != true)
-      //      {
-                CreateNewMap(mapNumCellsPerRow, mapNumCellPerColumn, device);
-      //      }
-
             prelightRender = new PrelightingRenderer(game, effect, device, entities);
 
-       //     prelightRender.Lights.Add(playerLight);
 
+            //Create Deferred Renderer
+            deferredRenderer = new DeferredRenderer.DeferredRenderer(device, game.Content, device.Viewport.Width, device.Viewport.Height);
+
+            //Create SSAO
+    //        ssao = new SSAO(device, game.Content, device.Viewport.Width, device.Viewport.Height);
+
+            //Create Light Manager
+            lightManager = new LightManager(game.Content);
+
+            Scene = new RenderTarget2D(device, device.Viewport.Width, device.Viewport.Height, false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
+
+            //Add a Directional Light
+           // lightManager.AddLight(new DeferredRenderer.DirectionalLight(Vector3.Down, Color.White, 0.5f));
+            lightManager.AddLight(new DeferredRenderer.DirectionalLight(new Vector3(0.5f,0.7f,0.5f), Color.White, 0.5f));
+
+            lightManager.AddLight(new DeferredRenderer.PointLight(device,new Vector3(1500.0f,100.0f,500.0f), 100.0f, Color.Green.ToVector4(), 0.7f, true, 4096));
+
+                
 
             this.Initialize();
         }
@@ -62,117 +93,104 @@ namespace Simgame2.LODTerrain
             this.mapNumCellsPerRow = mapNumCellsPerRow;
             this.mapNumCellPerColumn = mapNumCellPerColumn;
 
-//            this.heightMap = new int[mapNumCellsPerRow * mapNumCellPerColumn];
-  //          this.textureMap = new Vector4[mapNumCellsPerRow * mapNumCellPerColumn];
-    //        this.sector = new int[mapNumCellsPerRow * mapNumCellPerColumn];
-
-            //_quadTree = new QuadTree(new Vector4(mapNumCellsPerRow, mapNumCellPerColumn, this.minHeight, this.maxHeight), device);
             _quadTree = new QuadTree(new Vector4(mapNumCellsPerRow, mapNumCellPerColumn, this.minHeight, this.maxHeight), device);
-      //      _quadTree.MinimumDepth = 0;
-
-    //        generateMap();
-
-     //       PrecalculateVertices();
-      //      GenerateMovementMap();
         }
 
-
-
-
-
-
-
-
-
-
-
+        //Scene
+        RenderTarget2D Scene;
 
         public void Draw(Camera PlayerCamera, GameTime gameTime)
         {
-            //_quadTree.Draw(gameTime);
-
             float time = (float)gameTime.TotalGameTime.TotalMilliseconds / 100.0f;
 
-        //    BoundingFrustum frustum = new BoundingFrustum(PlayerCamera.viewMatrix * PlayerCamera.projectionMatrix);
-         //   this.frustum = frustum;
 
             this.frustum = playerCamera.GetFrustrum();
 
-            prelightRender.terrainVertexBuffer = _quadTree.GetVertexBuffer();
-            prelightRender.terrainIndexBuffer = _quadTree.GetIndexBuffer();
 
-
-
-       //     GenerateView(PlayerCamera.GetCameraPostion());
             FindVisibleEnities();
 
-            // water
-            prelightRender.drawDepthNormalMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-            prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), this.frustum);
-
-            this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
-            prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
-
-            if (prelightRender.DoShadowMapping) { prelightRender.drawShadowDepthMap(); }
-            
-
-
-            // skybox
-            prelightRender.GeneratePerlinNoise(time);
-
-            prelightRender.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
-
-            prelightRender.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-
-            prelightRender.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
-            prelightRender.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
-
-            enitiesDrawn = 0;
-            foreach (Entity e in entities)
+            if (this.ActiveRenderer == RENDERER.PRELIT)
             {
-                if (e.IsVisible)
-                {
-                    enitiesDrawn++;
-                    //  e.ShowBoundingBox = true;
 
-                    e.SetModelEffect(modelEffect, false);
-                    e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
+                prelightRender.terrainVertexBuffer = _quadTree.GetVertexBuffer();
+                prelightRender.terrainIndexBuffer = _quadTree.GetIndexBuffer();
+
+                // water
+                prelightRender.drawDepthNormalMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+                prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), this.frustum);
+
+                this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
+                prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
+
+                if (prelightRender.DoShadowMapping) { prelightRender.drawShadowDepthMap(); }
+
+
+
+                // skybox
+                prelightRender.GeneratePerlinNoise(time);
+
+                prelightRender.device.Clear(ClearOptions.Target | ClearOptions.DepthBuffer, Color.White, 1.0f, 0);
+
+                prelightRender.DrawSkyDome(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+
+                prelightRender.DrawTerrain(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion());
+                prelightRender.DrawWater(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), time);
+
+                enitiesDrawn = 0;
+                foreach (Entity e in entities)
+                {
+                    if (e.IsVisible)
+                    {
+                        enitiesDrawn++;
+                        //  e.ShowBoundingBox = true;
+
+                        e.SetModelEffect(modelEffect, false);
+                        e.Draw(PlayerCamera.viewMatrix, PlayerCamera.GetCameraPostion());
+                    }
                 }
+
+
+
+                prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1600, 50, 500), prelightRender.SunLight.GetRotationMatrix());
+                ((Game1)game).debugImg = prelightRender.normalTarg;
+
+
+                
+                
+
+
+
+
+            }
+            else if (this.ActiveRenderer == RENDERER.DEFERED)
+            {
+
+                deferredRenderer.terrainVertexBuffer = _quadTree.GetVertexBuffer();
+                deferredRenderer.terrainIndexBuffer = _quadTree.GetIndexBuffer();
+
+                deferredRenderer.Draw(this.device, null, this.lightManager, playerCamera, null);
+
+       //         ssao.Draw(this.device, deferredRenderer.getGBuffer(), Scene, playerCamera, null);
+
+                SpriteBatch b = new SpriteBatch(game.GraphicsDevice);
+                deferredRenderer.Debug(game.GraphicsDevice, b);
+                
+
+
             }
 
-
-            //prelightRender.DrawSun(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion());
-        //    prelightRender.DrawSun(playerCamera.viewMatrix, playerCamera.BigProjectionMatrix, playerCamera.GetCameraPostion());
+           
 
 
-            prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1600, 50, 500), prelightRender.SunLight.GetRotationMatrix());
-          //  prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1500, 100, 500), new Vector3(0,0,1));
-            //prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1450, 100, 500), new Vector3(0, 0, -1));
 
-
-        //    prelightRender.DrawTriangle(playerCamera.viewMatrix, playerCamera.BigProjectionMatrix, playerCamera.GetCameraPostion());
             
-        //    ((Game1)base.Game).debugImg = MiniMap(PlayerCamera.GetCameraPostion());
-            //  ((Game1)base.Game).debugImg = prelightRender.lightTarg;
-            //  ((Game1)base.Game).debugImg = prelightRender.depthTarg;
-              ((Game1)game).debugImg = prelightRender.normalTarg;
-            // shadowDepthTarg
 
         }
 
         public void Update(GameTime gameTime)
         {
             playerLight.Position = new Vector3(playerCamera.GetCameraPostion().X, playerCamera.GetCameraPostion().Y + 20, playerCamera.GetCameraPostion().Z);
-
-
-         //   _quadTree.View = _camera.View;
-          //  _quadTree.Projection = _camera.Projection;
-        //    _quadTree.CameraPosition = _camera.Position;
             _quadTree.Update(gameTime, playerCamera);
-
-
-      //      prelightRender.LightDirection = prelightRender.LightDirection + (Vector3.Up*0.001f);
-
         }
 
 
@@ -447,45 +465,14 @@ namespace Simgame2.LODTerrain
         public void setCell(int x, int y, int value)
         {
             this._quadTree.Vertices.Vertices[getCellAdress(x, y)].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
-
-            //this.heightMap[getCellAdress(x, y)] = value;
-       //     if (globalVertices != null)
-        //    {
-         //       globalVertices[getCellAdress(x, y)].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);
-          //  }
         }
 
 
-    /*    public void setCell(int x, int y, int value, float tex_x, float tex_y, float tex_z, float tex_w)
-        {
-            setCell(x, y, value);
-            this.textureMap[getCellAdress(x, y)] = new Vector4(tex_x, tex_y, tex_z, tex_w);
-        }
-
-        public void setCell(int x, int y, int value, float tex_x, float tex_y, float tex_z, float tex_w, int sector)
-        {
-            setCell(x, y, value);
-            this.textureMap[getCellAdress(x, y)] = new Vector4(tex_x, tex_y, tex_z, tex_w);
-
-            this._quadTree.Vertices.sector[getCellAdress(x, y)] = sector;
-            //this.sector[getCellAdress(x, y)] = sector;
-        }
-*/
         public void SetResources(ResourceCell[] resources)
         {
             this._quadTree.Vertices.resources = resources;
         }
 
-/*
-        private Vector4 getCellTexWeights(int x, int y)
-        {
-            if (x < 0 || y < 0 || x >= this.mapNumCellsPerRow || y >= this.mapNumCellPerColumn)
-            {
-                return new Vector4(0);
-            }
-
-            return this.textureMap[getCellAdress(x, y)];
-        }*/
 
 
         private Vector3 getPlaneNormalFromWorldCoor(float wx, float wz)
@@ -505,12 +492,6 @@ namespace Simgame2.LODTerrain
             return 1;   // TODO fix this
             //return cellTravelResistance[adress];
         }
-
-
-
-
-
-
 
 
 
@@ -553,13 +534,8 @@ namespace Simgame2.LODTerrain
         public int getMapWidth() { return this.mapNumCellsPerRow * LODTerrain.mapCellScale; }
         public int getMapHeight() { return this.mapNumCellPerColumn * LODTerrain.mapCellScale; }
 
-   //     private int[] heightMap;
-  //      private Vector4[] textureMap;
 
         private double[] cellTravelResistance;
-
-     //   private int[] sector;
- //       private ResourceCell[] resources;
 
 
 
@@ -585,7 +561,6 @@ namespace Simgame2.LODTerrain
         public int[] pointAltitude;
 
         private Vector3[] PlaneNormals;
-     //   VertexMultitextured[] globalVertices;
 
         // selection
         public Texture2D selectionTexture;
@@ -595,458 +570,3 @@ namespace Simgame2.LODTerrain
 
 
 
-
-// worldmap:
-
-
-
-/*
-        
-
-
-        
-
-
-        
-
-
-
-
-
-
-
-          #region PrivateMembers
-
-          // Private 
-          //==============================
-
-
-          private Texture2D MiniMap(Vector3 cameraPosition)
-        {
-          //  Texture2D Minimap = new Texture2D(renderer.device, this.mapNumCellsPerRow, this.mapNumCellPerColumn, false, SurfaceFormat.Color);
-            Texture2D Minimap = new Texture2D(this.prelightRender.device, this.mapNumCellsPerRow, this.mapNumCellPerColumn, false, SurfaceFormat.Color);
-
-            Color[] noisyColors = new Color[this.mapNumCellsPerRow * this.mapNumCellPerColumn];
-            int r, g, b;
-
-
-            for (int x = 0; x < mapNumCellsPerRow; x++)
-            {
-                for (int y = 0; y < mapNumCellPerColumn; y++)
-                {
-                    r = heightMap[x + y * mapNumCellsPerRow] * 40;
-                    b = g = r;
-                   
-                    
-
-                    // rbg must be int (range 0-255) or floats (range 0-1);
-                    noisyColors[x + y * mapNumCellsPerRow] = new Color(r, g, b);
-
-                }
-            }
-
-            if (pointX != null)
-            {
-                for (int i = 0; i < pointX.Length; i++)
-                {
-                    noisyColors[pointX[i] + pointY[i] * mapNumCellsPerRow] = new Color(255, 0, 0);
-                }
-
-            }
-
-            int xx = (int)Math.Floor(cameraPosition.X / mapCellScale);
-            int yy = (int)Math.Floor(-cameraPosition.Z / mapCellScale);
-            noisyColors[(int)(xx + yy * mapNumCellsPerRow)] = new Color(0, 255, 0); //  BUG boundery condition
-            noisyColors[(int)(xx+1 + yy * mapNumCellsPerRow)] = new Color(0, 255, 0); //  BUG boundery condition
-            noisyColors[(int)(xx + (yy+1) * mapNumCellsPerRow)] = new Color(0, 255, 0); //  BUG boundery condition
-            noisyColors[(int)(xx+1 + (yy+1) * mapNumCellsPerRow)] = new Color(0, 255, 0); //  BUG boundery condition
-            //  cameraPosition
-                Minimap.SetData(noisyColors);
-            
-            return Minimap;
-        }
-
-
-
-
-
-
-
-
-          
-
-        
-
-
-
-
-
-    
-        private void generateMap()
-        {
-            //WorldGenerator.generateBasicMap(this, this.width, this.height, this.minHeight, this.maxHeight);
-            WorldGenerator.generateRegionMap(this, this.mapNumCellsPerRow, this.mapNumCellPerColumn, this.minHeight, this.maxHeight);
-            
-            GenerateSearchTree();
-        }
-
-
-        private void GenerateMovementMap()
-        {
-            cellTravelResistance = new double[this.mapNumCellsPerRow * this.mapNumCellPerColumn];
-            int adress;
-            for (int y = 0; y < this.mapNumCellPerColumn; y++)
-            {
-                for (int x = 0; x < this.mapNumCellsPerRow; x++)
-                {
-                    adress = getCellAdress(x, y);
-
-                    // create an inpassable border around the map.
-                    if (x == 0 || y == 0 || x == this.mapNumCellsPerRow-1 || y == this.mapNumCellPerColumn-1)
-                    {
-                        cellTravelResistance[adress] = double.MaxValue;
-                        continue;
-                    }
-
-                    // traveling through water?
-                    if (this.heightMap[adress] <= waterHeight)
-                    {
-                      //  cellTravelResistance[adress] = TravelResistance_Water;
-                        cellTravelResistance[adress] = TravelResistance_Water; // double.MaxValue;
-                        continue;
-                    }
-
-                    // angle between 1 (flat) and 0 straight edge
-                    float angle = -Vector3.Dot(getPlaneNormalFromWorldCoor(x, y), Vector3.Up);
-
-                    if (angle < 0)
-                    {
-                        Console.WriteLine("negative angle found");
-                    }
-
-                    // can't pass if angle is more than ~75°
-                    if (angle < 0.4f)
-                    {
-                        cellTravelResistance[adress] = 70000000.0d;//double.MaxValue;
-                        continue;
-                    }
-
-
-                  
-
-                    // otherwise resistance is relative to angle
-
-                    cellTravelResistance[adress] = 1.0d;
-                    if (angle < 1) { cellTravelResistance[adress] = 1.0d; }
-                    if (angle < 0.9) { cellTravelResistance[adress] = 5.0d; }
-                    if (angle < 0.8) { cellTravelResistance[adress] = 7.0d; }
-                    if (angle < 0.7) { cellTravelResistance[adress] = 10.0d; }
-                    if (angle < 0.6) { cellTravelResistance[adress] = 15.0d; }
-
-                 //   cellTravelResistance[adress] = 100 - (int)Math.Floor((angle-0.5) * 2*100);
-               //     cellTravelResistance[adress] = 1;
-
-
-
-
-                }
-            }
-        }
-
-        
-
-
-
-        private const int TravelResistance_Water = 100;
-
-        private void GenerateSearchTree()
-        {
-            root = GenerateTree(new Node(0, 0, this.mapNumCellsPerRow, this.mapNumCellPerColumn, 0),false);
-        }
-
-        private Node GenerateTree(Node current, bool direction)
-        {
-
-            current.A = current.B = null;
-            if (direction) // vertical division
-            {
-                
-                if (current.width > 10)
-                {
-                    current.A = GenerateTree(new Node(current.left, current.upper, current.width / 2, current.height, current.depth + 1), !direction);
-                    current.B = GenerateTree(new Node(current.left + (current.width / 2), current.upper, current.width / 2, current.height, current.depth + 1), !direction);
-                }
-            }
-            else // horizontal division
-            {
-                if (current.height > 10)
-                {
-                    current.A = GenerateTree(new Node(current.left, current.upper, current.width, current.height / 2, current.depth + 1), !direction);
-                    current.B = GenerateTree(new Node(current.left, current.upper + (current.height / 2), current.width, current.height / 2, current.depth + 1), !direction);
-
-                }
-            }
-
-            return current;
-
-        }
-
-
-        
- 
-
-        private void GenerateView(Vector3 cameraPosition)
-        {
-
-            int regionWidth = 0;
-            int regionHeight = 0;
-
-            int regionLeft = int.MaxValue;
-            int regionRight = int.MinValue;
-            int regionUp = int.MaxValue;
-            int regionDown = int.MinValue;
-
-
-            // look for edge corners of the visual region
-            Queue<Node> expandNode = new Queue<Node>();
-
-            expandNode.Enqueue(root);
-
-            Node currentNode;
-            while (expandNode.Count > 0)
-            {
-                currentNode = expandNode.Dequeue();
-
-                if (currentNode.A == null && currentNode.B == null)
-                {
-                    if (currentNode.left < regionLeft) { regionLeft = currentNode.left; }
-                    if (currentNode.left + currentNode.width > regionRight) { regionRight = currentNode.left + currentNode.width; }
-                    if (currentNode.upper < regionUp) { regionUp = currentNode.upper; }
-                    if (currentNode.upper + currentNode.height > regionDown) { regionDown = currentNode.upper + currentNode.height; }
-                }
-                else
-                {
-                    if (currentNode.A != null &&
-                        IsBoxInFrustum(currentNode.A.boundingBox.Min, currentNode.A.boundingBox.Max, frustum))
-                    {
-                        expandNode.Enqueue(currentNode.A);
-                    }
-
-                    if (currentNode.B != null &&
-                        IsBoxInFrustum(currentNode.B.boundingBox.Min, currentNode.B.boundingBox.Max, frustum))
-                    {
-                        expandNode.Enqueue(currentNode.B);
-                    }
-                }
-            }
-
-           
-
-
-            regionLeft -= 2; if (regionLeft < 0) regionLeft = 0;
-            regionRight += 2; if (regionRight > this.mapNumCellsPerRow) regionRight = this.mapNumCellsPerRow;
-            regionUp -= 2; if (regionUp < 0) regionUp = 0;
-            regionDown += 2; if (regionDown > this.mapNumCellPerColumn) regionDown = this.mapNumCellPerColumn;
-
-            regionWidth = regionRight - regionLeft;
-            regionHeight = regionDown - regionUp;
-
-
-          //  renderer.vertices = new VertexMultitextured[regionWidth * regionHeight];
-            this.prelightRender.vertices = new VertexMultitextured[regionWidth * regionHeight];
-
-
-           // float mapCellScaleDivTextureSize = mapCellScale / textureSize;
-
-
-            for (int x = regionLeft; x < regionRight; x++)
-            {
-
-                for (int y = regionUp; y < regionDown; y++)
-                {
-                    int adress = (x - regionLeft) + (y - regionUp) * regionWidth;
-
-                  //  renderer.vertices[adress] = globalVertices[getCellAdress(x, y)];
-                    this.prelightRender.vertices[adress] = globalVertices[getCellAdress(x, y)];
-                }
-            }
-
-
-          //  renderer.updateIndices(regionWidth, regionHeight);
-            prelightRender.updateIndices(regionWidth, regionHeight);
-
-
-          //  renderer.CopyToTerrainBuffers();
-            prelightRender.CopyToTerrainBuffers();
-
-        }
-
-
-        
-
-
-        
-        private void PrecalculateVertices() 
-        {
-            globalVertices = new VertexMultitextured[this.heightMap.Length];
-
-            float mapCellScaleDivTextureSize = mapCellScale / textureSize;
-            for (int x = 0; x < mapNumCellsPerRow; x++)
-            {
-
-                for (int y = 0; y < mapNumCellPerColumn; y++)
-                {
-                    int adress = getCellAdress(x, y); // x + y * mapNumCellsPerRow;
-
-
-                    globalVertices[adress].Position = new Vector3(x * mapCellScale, getCell(x, y) * mapHeightScale, -y * mapCellScale);   
-
-                    globalVertices[adress].TextureCoordinate.X = ((float)(x * mapCellScaleDivTextureSize));
-                    globalVertices[adress].TextureCoordinate.Y = ((float)(y * mapCellScaleDivTextureSize));
-
-
-                    globalVertices[adress].TexWeights = getCellTexWeights(x, y);
-
-                    globalVertices[adress].Normal = new Vector3(0, 0, 0);
-
-                }
-            }
-
-
-            PlaneNormals = new Vector3[this.heightMap.Length];
-            for (int x = 0; x < mapNumCellsPerRow-1; x++)
-            {
-                for (int y = 0; y < mapNumCellPerColumn-1; y++)
-                {
-                    long index1 = getCellAdress(x, y);
-                    long index2 = getCellAdress(x+1, y+1);
-                    long index3 = getCellAdress(x, y + 1);
-
-                    Vector3 side1 = globalVertices[index1].Position - globalVertices[index3].Position;
-                    Vector3 side2 = globalVertices[index1].Position - globalVertices[index2].Position;
-                    Vector3 normal = Vector3.Cross(side1, side2);
-
-                    PlaneNormals[getCellAdress(x, y)] = normal;
-                    PlaneNormals[getCellAdress(x, y)].Normalize();
-
-                    globalVertices[index1].Normal += normal;
-                    globalVertices[index2].Normal += normal;
-                    globalVertices[index3].Normal += normal;
-
-                    //index1 = getCellAdress(x, y);
-                    index2 = getCellAdress(x + 1, y);
-                    index3 = getCellAdress(x+1, y + 1);
-
-                    side1 = globalVertices[index1].Position - globalVertices[index3].Position;
-                    side2 = globalVertices[index1].Position - globalVertices[index2].Position;
-                    normal = Vector3.Cross(side1, side2);
-
-                    globalVertices[index1].Normal += normal;
-                    globalVertices[index2].Normal += normal;
-                    globalVertices[index3].Normal += normal;
-
-
-                }
-            }
-
-
-            for (long i = 0; i < globalVertices.Length; i++)
-                globalVertices[i].Normal.Normalize();
-
-
-        }
-
-
-       
-       
-
-        private bool IsBoxInFrustum(Vector3 bMin, Vector3 bMax, BoundingFrustum Frustum)
-        {
-            Vector3 NearPoint;
-
-            Plane[] plane = new Plane[6];
-            plane[0] = frustum.Bottom;
-            plane[1] = frustum.Far;
-            plane[2] = frustum.Left;
-            plane[3] = frustum.Near;
-            plane[4] = frustum.Right;
-            plane[5] = frustum.Top;
-                
-            
-            for (int i = 0; i < 6; i++)
-            {
-                if (plane[i].Normal.X > 0.0f)
-                {
-                    if (plane[i].Normal.Y > 0.0f)//
-                    {
-                        if (plane[i].Normal.Z > 0.0f)
-                        {
-                            NearPoint.X = bMin.X; NearPoint.Y = bMin.Y; NearPoint.Z = bMin.Z;
-                        }
-                        else
-                        {
-                            NearPoint.X = bMin.X; NearPoint.Y = bMin.Y; NearPoint.Z = bMax.Z;
-                        }
-                    }
-                    else
-                    {
-                        if (plane[i].Normal.Z > 0.0f)
-                        {
-                            NearPoint.X = bMin.X; NearPoint.Y = bMax.Y; NearPoint.Z= bMin.Z;
-                        }
-                        else
-                        {
-                            NearPoint.X = bMin.X; NearPoint.Y = bMax.Y; NearPoint.Z = bMax.Z;
-                        }
-                    }
-                }
-                else
-                {
-                    if (plane[i].Normal.Y > 0.0f)
-                    {
-                        if (plane[i].Normal.Z > 0.0f)
-                        {
-                            NearPoint.X = bMax.X; NearPoint.Y = bMin.Y; NearPoint.Z = bMin.Z;
-                        }
-                        else
-                        {
-                            NearPoint.X = bMax.X; NearPoint.Y = bMin.Y; NearPoint.Z = bMax.Z;
-                        }
-                    }
-                    else
-                    {
-                        if (plane[i].Normal.Z > 0.0f)
-                        {
-                            NearPoint.X = bMax.X; NearPoint.Y = bMax.Y; NearPoint.Z = bMin.Z;
-                        }
-                        else
-                        {
-                            NearPoint.X = bMax.X; NearPoint.Y = bMax.Y; NearPoint.Z = bMax.Z;
-                        }
-                    }
-                }
-
-                // near extreme point is outside, and thus
-                // the AABB is totally outside the polyhedron
-
-                float dotProduct;
-                Vector3.Dot(ref plane[i].Normal, ref NearPoint, out dotProduct);
-                if (dotProduct + plane[i].D > 0)
-                    return false;
-                
-            }
-            return true;
-        }
-
-
-        
-      
-
-       
-
-
-
-       
-
-
-*/

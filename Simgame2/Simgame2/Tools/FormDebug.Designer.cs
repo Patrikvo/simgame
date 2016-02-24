@@ -41,6 +41,10 @@
             this.tabPageGeneral = new System.Windows.Forms.TabPage();
             this.tabPageLight = new System.Windows.Forms.TabPage();
             this.tabPageShadow = new System.Windows.Forms.TabPage();
+            this.labelRenderer = new System.Windows.Forms.Label();
+            this.comboBoxRenderer = new System.Windows.Forms.ComboBox();
+            this.textBoxNormalBias = new System.Windows.Forms.TextBox();
+            this.labelNormalBias = new System.Windows.Forms.Label();
             this.textBoxShadowBias = new System.Windows.Forms.TextBox();
             this.labelShadowBias = new System.Windows.Forms.Label();
             this.textBoxShadowFarPlane = new System.Windows.Forms.TextBox();
@@ -59,8 +63,6 @@
             this.textBoxShadowPosX = new System.Windows.Forms.TextBox();
             this.labelShadowPosX = new System.Windows.Forms.Label();
             this.label5 = new System.Windows.Forms.Label();
-            this.textBoxNormalBias = new System.Windows.Forms.TextBox();
-            this.labelNormalBias = new System.Windows.Forms.Label();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarYaw)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarPitch)).BeginInit();
             ((System.ComponentModel.ISupportInitialize)(this.trackBarRoll)).BeginInit();
@@ -194,6 +196,8 @@
             // 
             // tabPageShadow
             // 
+            this.tabPageShadow.Controls.Add(this.labelRenderer);
+            this.tabPageShadow.Controls.Add(this.comboBoxRenderer);
             this.tabPageShadow.Controls.Add(this.textBoxNormalBias);
             this.tabPageShadow.Controls.Add(this.labelNormalBias);
             this.tabPageShadow.Controls.Add(this.textBoxShadowBias);
@@ -221,6 +225,42 @@
             this.tabPageShadow.TabIndex = 2;
             this.tabPageShadow.Text = "Shadow";
             this.tabPageShadow.UseVisualStyleBackColor = true;
+            // 
+            // labelRenderer
+            // 
+            this.labelRenderer.AutoSize = true;
+            this.labelRenderer.Location = new System.Drawing.Point(8, 142);
+            this.labelRenderer.Name = "labelRenderer";
+            this.labelRenderer.Size = new System.Drawing.Size(51, 13);
+            this.labelRenderer.TabIndex = 21;
+            this.labelRenderer.Text = "Renderer";
+            // 
+            // comboBoxRenderer
+            // 
+            this.comboBoxRenderer.DropDownStyle = System.Windows.Forms.ComboBoxStyle.DropDownList;
+            this.comboBoxRenderer.FormattingEnabled = true;
+            this.comboBoxRenderer.Location = new System.Drawing.Point(11, 158);
+            this.comboBoxRenderer.Name = "comboBoxRenderer";
+            this.comboBoxRenderer.Size = new System.Drawing.Size(121, 21);
+            this.comboBoxRenderer.TabIndex = 20;
+            this.comboBoxRenderer.SelectedIndexChanged += new System.EventHandler(this.comboBoxRenderer_SelectedIndexChanged);
+            // 
+            // textBoxNormalBias
+            // 
+            this.textBoxNormalBias.Location = new System.Drawing.Point(158, 159);
+            this.textBoxNormalBias.Name = "textBoxNormalBias";
+            this.textBoxNormalBias.Size = new System.Drawing.Size(100, 20);
+            this.textBoxNormalBias.TabIndex = 19;
+            this.textBoxNormalBias.Leave += new System.EventHandler(this.textBoxNormalBias_Leave);
+            // 
+            // labelNormalBias
+            // 
+            this.labelNormalBias.AutoSize = true;
+            this.labelNormalBias.Location = new System.Drawing.Point(155, 143);
+            this.labelNormalBias.Name = "labelNormalBias";
+            this.labelNormalBias.Size = new System.Drawing.Size(60, 13);
+            this.labelNormalBias.TabIndex = 18;
+            this.labelNormalBias.Text = "NormalBias";
             // 
             // textBoxShadowBias
             // 
@@ -374,23 +414,6 @@
             this.label5.TabIndex = 0;
             this.label5.Text = "ShadowLightPosition";
             // 
-            // textBoxNormalBias
-            // 
-            this.textBoxNormalBias.Location = new System.Drawing.Point(158, 159);
-            this.textBoxNormalBias.Name = "textBoxNormalBias";
-            this.textBoxNormalBias.Size = new System.Drawing.Size(100, 20);
-            this.textBoxNormalBias.TabIndex = 19;
-            this.textBoxNormalBias.Leave += new System.EventHandler(this.textBoxNormalBias_Leave);
-            // 
-            // labelNormalBias
-            // 
-            this.labelNormalBias.AutoSize = true;
-            this.labelNormalBias.Location = new System.Drawing.Point(155, 143);
-            this.labelNormalBias.Name = "labelNormalBias";
-            this.labelNormalBias.Size = new System.Drawing.Size(60, 13);
-            this.labelNormalBias.TabIndex = 18;
-            this.labelNormalBias.Text = "NormalBias";
-            // 
             // FormDebug
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -451,6 +474,8 @@
         private System.Windows.Forms.Label labelShadowBias;
         private System.Windows.Forms.TextBox textBoxNormalBias;
         private System.Windows.Forms.Label labelNormalBias;
+        private System.Windows.Forms.Label labelRenderer;
+        private System.Windows.Forms.ComboBox comboBoxRenderer;
 
 
 

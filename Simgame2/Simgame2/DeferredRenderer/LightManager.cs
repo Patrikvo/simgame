@@ -13,7 +13,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2.DeferredRenderer
 {
-    class LightManager
+    public class LightManager
     {
         //Depth Writing Shader
         Effect depthWriter;

@@ -136,7 +136,52 @@ namespace Simgame2.LODTerrain
             Vertices[idx1].Normal += normal;
             Vertices[idx2].Normal += normal;
             Vertices[idx3].Normal += normal;
+
+
+            Vector3 v1 = Vertices[idx1].Position;
+            Vector3 v2 = Vertices[idx2].Position;
+            Vector3 v3 = Vertices[idx3].Position;
+
+            // These are the texture coordinate of the triangle  
+            Vector4 w1 = Vertices[idx1].TextureCoordinate; 
+            Vector4 w2 = Vertices[idx2].TextureCoordinate; 
+            Vector4 w3 = Vertices[idx3].TextureCoordinate;
+
+            float x1 = v2.X - v1.X;
+            float x2 = v3.X - v1.X;
+            float y1 = v2.Y - v1.Y;
+            float y2 = v3.Y - v1.Y;
+            float z1 = v2.Z - v1.Z;
+            float z2 = v3.Z - v1.Z;
+
+            float s1 = w2.X - w1.X;
+            float s2 = w3.X - w1.X;
+            float t1 = w2.Y - w1.Y;
+            float t2 = w3.Y - w1.Y;
+
+            float r = 1.0f / (s1 * t2 - s2 * t1);
+            Vector3 sdir = new Vector3((t2 * x1 - t1 * x2) * r, (t2 * y1 - t1 * y2) * r, (t2 * z1 - t1 * z2) * r);
+            Vector3 tdir = new Vector3((s1 * x2 - s2 * x1) * r, (s1 * y2 - s2 * y1) * r, (s1 * z2 - s2 * z1) * r);
+
+            // Gram-Schmidt orthogonalize  
+            Vector3 tangent = sdir - normal * Vector3.Dot(normal, sdir);
+            tangent.Normalize();
+
+            // Calculate handedness (here maybe you need to switch >= with <= depend on the geometry winding order)  
+            float tangentdir = (Vector3.Dot(Vector3.Cross(normal, sdir), tdir) >= 0.0f) ? 1.0f : -1.0f;
+            Vector3 binormal = Vector3.Cross(normal, tangent) * tangentdir;
+
+            Vertices[idx1].Tangent = tangent;
+            Vertices[idx2].Tangent = tangent;
+            Vertices[idx3].Tangent = tangent;
+
+            Vertices[idx1].BiTangent = binormal;
+            Vertices[idx2].BiTangent = binormal;
+            Vertices[idx2].BiTangent = binormal;
+
+
         }
+
 
 
 

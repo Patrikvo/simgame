@@ -12,7 +12,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2.DeferredRenderer
 {
-    class PointLight
+    public class PointLight
     {
 
         //Position
