@@ -201,7 +201,7 @@ namespace Simgame2
 
 
             // skydome
-            LODMap.GetRenderer().LoadSkyDome(Content.Load<Model>("dome"));
+            LODMap.GetRenderer().LoadSkyDome(Content.Load<Model>("Models/dome"));
 
 
             PlayerCamera.UpdateViewMatrix();

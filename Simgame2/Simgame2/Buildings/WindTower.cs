@@ -32,7 +32,7 @@ namespace Simgame2.Buildings
             this.rotation = rotation;
             this.location = location;
 
-            this.LoadModel("WindTower");
+            this.LoadModel("Models/WindTower");
 
             rotorTransform = this.model.Bones["Rotor"].Transform;  // Rotor start position
         }

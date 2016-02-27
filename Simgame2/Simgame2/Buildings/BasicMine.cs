@@ -23,12 +23,12 @@ namespace Simgame2.Buildings
 
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
-            
+
             this.AddTexture("BasicMineTex");
             this.scale = scale;
             this.rotation = rotation;
             this.location = location;
-            this.LoadModel("BasicMine");
+            this.LoadModel("Models/BasicMine");
         }
 
         public override void Update(GameTime gameTime)

@@ -29,7 +29,7 @@ namespace Simgame2.Buildings
             this.rotation = rotation;
             this.location = location;
 
-            this.LoadModel("SolarPlant"); 
+            this.LoadModel("Models/SolarPlant");
 
             this.AddTexture("SolarPlantTex");  // base texture
 

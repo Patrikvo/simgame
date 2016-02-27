@@ -109,7 +109,7 @@ namespace Simgame2.Renderer
             lightingEffect.Parameters["viewportHeight"].SetValue(viewHeight);
 
             // Load point light mesh and set light mapping effect to it
-            lightMesh = game.Content.Load<Model>("PPLightMesh");
+            lightMesh = game.Content.Load<Model>("Models/PPLightMesh");
             lightMesh.Meshes[0].MeshParts[0].Effect = lightingEffect;
 
      //       sun =  game.Content.Load<Model>("PPLightMesh");
@@ -259,7 +259,6 @@ namespace Simgame2.Renderer
             // Calculate view and projection matrices for the "light"
             // shadows are being calculated for
             shadowView = Matrix.CreateLookAt(PlayerCamera.GetCameraPostion() + SunLight.ShadowLightPosition, PlayerCamera.GetCameraPostion() + SunLight.ShadowLightTarget, Vector3.Up);
-            //shadowView = Matrix.CreateLookAt(SunLight.ShadowLightPosition, SunLight.ShadowLightTarget, Vector3.Up);
        
             shadowProjection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(90), 1, 1, shadowFarPlane);
 
@@ -563,6 +562,7 @@ namespace Simgame2.Renderer
 
                     this.effect.Parameters["viewportHeight"].SetValue(viewHeight);
 
+
                     // shadowmap:
                     if (this.effect.Parameters["DoShadowMapping"] != null)
                         this.effect.Parameters["DoShadowMapping"].SetValue(DoShadowMapping);
@@ -584,8 +584,6 @@ namespace Simgame2.Renderer
                         this.effect.Parameters["ShadowBias"].SetValue(ShadowBias);
                     if (this.effect.Parameters["NormalBias"] != null)
                         this.effect.Parameters["NormalBias"].SetValue(this.NormalBias);
-
-
 
 
 
@@ -716,7 +714,7 @@ namespace Simgame2.Renderer
                     this.effect.Parameters["ShadowBias"].SetValue(ShadowBias);
                 if (this.effect.Parameters["NormalBias"] != null)
                     this.effect.Parameters["NormalBias"].SetValue(this.NormalBias);
-
+            
             
 
                 effect.Parameters["LightViewProj"].SetValue(CreateLightViewProjectionMatrix());

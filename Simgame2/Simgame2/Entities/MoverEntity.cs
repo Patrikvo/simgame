@@ -19,7 +19,7 @@ namespace Simgame2.Entities
         {
             this.movement = new Movement(this);
             this.AddTexture("CubeTex");
-            this.LoadModel("Cube"); //, this.effect);
+            this.LoadModel("Models/Cube"); //, this.effect);
             CorrectBoundingBox = true;
             this.Type = EntityTypes.MOVER;
            
