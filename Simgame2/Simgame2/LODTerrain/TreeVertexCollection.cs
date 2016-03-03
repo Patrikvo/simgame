@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
+using Simgame2.Renderer;
 
 // source:   http://www.dustinhorne.com/post/2011/08/28/XNA-Terrain-with-LOD-Part-3-Structuring-the-QuadTree
 

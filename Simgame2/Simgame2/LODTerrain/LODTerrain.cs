@@ -54,6 +54,7 @@ namespace Simgame2.LODTerrain
             prelightRender.Initialize(this.mapNumCellsPerRow * LODTerrain.mapCellScale, this.mapNumCellPerColumn * LODTerrain.mapCellScale);
 
             prelightRender.SetUpWaterVertices(10000, 10000, mapCellScale, waterHeight);
+
         }
 
 
@@ -119,7 +120,7 @@ namespace Simgame2.LODTerrain
 
 
 
-            prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1600, 50, 500), prelightRender.SunLight.GetRotationMatrix());
+     //       prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1600, 50, 500), prelightRender.SunLight.GetRotationMatrix());
             ((Game1)game).debugImg = prelightRender.normalTarg;
 
 
@@ -142,10 +143,25 @@ namespace Simgame2.LODTerrain
 
         public void Update(GameTime gameTime)
         {
+            if (Lander == null)
+            {
+                PlaceLander();
+            }
             playerLight.Position = new Vector3(playerCamera.GetCameraPostion().X, playerCamera.GetCameraPostion().Y + 20, playerCamera.GetCameraPostion().Z);
             _quadTree.Update(gameTime, playerCamera);
         }
 
+        EntityBuilding Lander = null;
+        
+        private void PlaceLander()
+        {
+            Game1 g = (Game1)this.game;
+            Lander = (EntityBuilding)g.entityFactory.CreateEnity(Entity.EntityTypes.LANDER, this.playerCamera.GetCameraPostion(), true);
+            Lander.PlaceBuilding(g.LODMap, true);
+            g.simulator.AddEntity(Lander.GetSimEntity());
+            g.simulator.MapModified= true;
+
+        }
 
 
         public bool Collides(BoundingBox box)

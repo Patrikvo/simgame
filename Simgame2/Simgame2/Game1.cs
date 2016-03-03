@@ -12,75 +12,11 @@ using Microsoft.Xna.Framework.Media;
 namespace Simgame2
 {
     
-    public struct VertexPositionColored : IVertexType
-    {
-        public Vector3 Position;
-        public Color Color1;
-
-        public VertexPositionColored(Vector3 position, Color color1)
-        {
-            this.Position = position;
-            this.Color1 = color1;
-        }
-
-        public static int SizeInBytes = 7 * 4;
-
-        public readonly static VertexDeclaration VertexDeclaration = new VertexDeclaration
-        (
-            new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0),
-            new VertexElement(sizeof(float) * 3, VertexElementFormat.Color, VertexElementUsage.Color, 0)
-        );
-
-
-        VertexDeclaration IVertexType.VertexDeclaration { get { return VertexDeclaration; } }
-
-    }
-
-    public struct VertexMultitextured : IVertexType
-    {
-        public VertexMultitextured (
-         Vector3 position,
-         Vector3 normal,
-         Vector4 textureCoordinate,
-         Vector4 texWeights,
-         Vector3 Tangent,
-         Vector3 Bitangent
-            )
-        {
-            this.Position = position;
-            this.Normal = normal;
-            this.TextureCoordinate = textureCoordinate;
-            this.TexWeights = texWeights;
-            this.Tangent = Tangent;
-            this.BiTangent = Bitangent;
-        }
-
-        public Vector3 Position;
-        public Vector3 Normal;
-        public Vector4 TextureCoordinate;
-        public Vector4 TexWeights;
-        public Vector3 Tangent;
-        public Vector3 BiTangent; // : BINORMAL0;
-
-        public static int SizeInBytes = (3 + 3 + 4 + 4+3) * sizeof(float);
-        public readonly static VertexDeclaration VertexDeclaration = new VertexDeclaration
-     (
-         new VertexElement(0, VertexElementFormat.Vector3, VertexElementUsage.Position, 0 ),
-         new VertexElement(sizeof(float) * 3, VertexElementFormat.Vector3, VertexElementUsage.Normal, 0 ),
-         new VertexElement(sizeof(float) * 6, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 0 ),
-         new VertexElement(sizeof(float) * 10, VertexElementFormat.Vector4, VertexElementUsage.TextureCoordinate, 1 ),
-         new VertexElement(sizeof(float) * 14, VertexElementFormat.Vector3, VertexElementUsage.Tangent, 0 ),
-         new VertexElement(sizeof(float) * 17, VertexElementFormat.Vector3, VertexElementUsage.Binormal, 0)
-     );
-
-        VertexDeclaration IVertexType.VertexDeclaration { get { return VertexDeclaration; } }
-    }
-
-
-    
 
     public class Game1 : Microsoft.Xna.Framework.Game
     {
+        GameSession.GameSession RunningGameSession;
+
         private const int mapNumCellsPerSide = 641; // 20 40 80 160 320 640 
 
         // Rendering objects
@@ -126,6 +62,8 @@ namespace Simgame2
 
         public Game1()
         {
+
+
             this.IsFixedTimeStep = false;    // fixes stutter problem in Win 10.
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";

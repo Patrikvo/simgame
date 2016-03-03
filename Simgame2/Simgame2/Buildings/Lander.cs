@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
-
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
@@ -11,54 +10,64 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
+
+
+// TODO create door opening animation
+
+
 namespace Simgame2.Buildings
 {
-    public class SolarPlant : EntityBuilding
+    public class Lander : EntityBuilding
     {
-        public SolarPlant(Game game)
+        public Lander(Game game)
             : base(game)
         {
-            this.Type = EntityTypes.SOLAR;
+            this.Type = EntityTypes.LANDER;
         }
-
 
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
+            this.AddTexture("Ship");  // Ship texture
+            this.AddTexture("ShipDoor");  // back door texture
+          
 
             this.scale = scale;
             this.rotation = rotation;
             this.location = location;
 
-            this.LoadModel("Models/SolarPlant");
+            this.LoadModel("Models/Lander");
 
-            this.AddTexture("SolarPlantTex");  // base texture
-
+//            doorTransform = this.model.Bones["Rotor"].Transform;  // Door start position
         }
 
         public override void Update(GameTime gameTime)
         {
-            base.Update(gameTime);
+//            rotorRotation += (float)((rotationSpeed * gameTime.ElapsedGameTime.TotalSeconds) % 2*Math.PI);
 
             if (HasMouseFocus)
             {
                 UpdateStatusScreen();
             }
+            base.Update(gameTime);
         }
 
 
 
         public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
+//            this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * doorTransform; 
+                
             Matrix worldMatrix = GetWorldMatrix();
             Matrix[] transforms = GetBoneTransforms();
+
 
             int meshNum = 0;
             foreach (ModelMesh mesh in model.Meshes)
             {
-
+                
                 foreach (Effect currentEffect in mesh.Effects)
                 {
-
+                    
                     currentEffect.Parameters["View"].SetValue(currentViewMatrix);
                     currentEffect.Parameters["Projection"].SetValue(projectionMatrix);
                     currentEffect.CurrentTechnique = currentEffect.Techniques["Textured"];
@@ -90,6 +99,7 @@ namespace Simgame2.Buildings
                 mesh.Draw();
                 meshNum++;
             }
+
             if (ShowBoundingBox)
             {
                 DrawBoundingBox(currentViewMatrix, cameraPosition);
@@ -99,8 +109,8 @@ namespace Simgame2.Buildings
             {
                 statusBillboard.Draw(this.playerCamera);
             }
-
         }
+
 
         SpriteBatch spriteBatch;
         public void UpdateStatusScreen()
@@ -110,8 +120,8 @@ namespace Simgame2.Buildings
             {
                 float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.ResourceStorage.Resource.ELECTRICITY);
                 float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.ResourceStorage.Resource.ELECTRICITY);
-                
-                spriteBatch = new SpriteBatch(this.game.device);
+
+                spriteBatch = new SpriteBatch(this.device);
 
 
                 RenderTarget2D target = new RenderTarget2D(this.device, 400, 400);
@@ -127,8 +137,7 @@ namespace Simgame2.Buildings
                 sb.Append(electicAvail.ToString("0.0"));
                 sb.Append("/");
                 sb.Append(electricMax);
-                sb.AppendLine();
-                sb.Append(this.getAltitude());
+
                 spriteBatch.DrawString(this.font, sb.ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
 
                 spriteBatch.End();
@@ -141,67 +150,66 @@ namespace Simgame2.Buildings
 
         }
 
+
         public override Simulation.SimulationBuildingEnity GetSimEntity()
         {
-            if (solarSimEntity == null)
+            if (landerSim == null)
             {
-                solarSimEntity = new SolorPlantSim();
+                landerSim = new LanderSim();
             }
 
-            return solarSimEntity;
+            return landerSim;
         }
 
-        SolorPlantSim solarSimEntity;
 
     //    public Effect effect { get; set; }
 
-        public static Vector3 StandardScale = new Vector3(10, 10, 10);    // (5, 5, 5);
+        public static Vector3 StandardScale = new Vector3(5, 5, 5);
         public static Vector3 StandardRotation = new Vector3(0, MathHelper.Pi, 0);
 
-       // private float rotorRotation = 0;
-      //  private float rotationSpeed = 1;
-     //   private Matrix rotorTransform;
+        private float rotorRotation = 0;
+        private float rotationSpeed = 1;
+        private Matrix doorTransform;
 
+        private LanderSim landerSim;
 
-
-        private class SolorPlantSim : Simulation.SimulationBuildingEnity
+        private class LanderSim : Simulation.SimulationBuildingEnity
         {
-            public SolorPlantSim()
+            public LanderSim()
             {
-                ProduceRate[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = 0.01f;
-                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = 1000;
+                //                ProduceRate[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = 0.01f;
+                //                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = 1000;
             }
 
 
             public override void Update(GameTime gameTime)
             {
                 float timeDelta = gameTime.ElapsedGameTime.Milliseconds;
-                for (int i = 0; i < Simulation.ResourceStorage.ResourceCount; i++)
-                {
-                    ResourceOutput[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = clamp(ResourceOutput[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] +
-                        (ProduceRate[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] * timeDelta), ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.ELECTRICITY]);
-                }
+//                for (int i = 0; i < ResourceCount; i++)
+ //               {
+                //                   ResourceOutput[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = clamp(Simulation.ResourceStorage.ResourceOutput[(int)Resource.ELECTRICITY] +
+                //                       (ProduceRate[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] * timeDelta), ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.ELECTRICITY]);
+ //               }
             }
 
 
 
 
-          //  protected float[] ResouceAmount;
-         //   protected float[] ResourceConsumptionPerSecond;
-          //  protected float[] ResourceMaxAmount;
+            //  protected float[] ResouceAmount;
+            //   protected float[] ResourceConsumptionPerSecond;
+            //  protected float[] ResourceMaxAmount;
 
-//           protected Resource[] ConvertsTo;
-  //          protected float[] ProduceRate;
+            //           protected Resource[] ConvertsTo;
+            //          protected float[] ProduceRate;
 
-    //        protected bool[] ConsumingResource;
+            //        protected bool[] ConsumingResource;
 
-    //        protected float[] ResourceOutput;
+            //        protected float[] ResourceOutput;
 
-      //      public const int ResourceCount = 3;
-        //    public enum Resource { NOTHING, ELECTRICITY, ORE, METAL };
-            
+            //      public const int ResourceCount = 3;
+            //    public enum Resource { NOTHING, ELECTRICITY, ORE, METAL };
+
         }
-
 
     }
 }

@@ -115,8 +115,8 @@ namespace Simgame2.Buildings
             // TODO modifyvto allow custom string and images.
             if (statusBillboard.BillboardBackGroundTexture != null)
             {
-                float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.SimulationBuildingEnity.Resource.ELECTRICITY);
-                float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.SimulationBuildingEnity.Resource.ELECTRICITY);
+                float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.ResourceStorage.Resource.ELECTRICITY);
+                float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.ResourceStorage.Resource.ELECTRICITY);
 
                 spriteBatch = new SpriteBatch(this.device);
 
@@ -174,18 +174,18 @@ namespace Simgame2.Buildings
         {
             public WindTowerSim()
             {
-                ProduceRate[(int)Resource.ELECTRICITY] = 0.01f;
-                ResourceMaxAmount[(int)Resource.ELECTRICITY] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = 0.01f;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = 1000;
             }
 
 
             public override void Update(GameTime gameTime)
             {
                 float timeDelta = gameTime.ElapsedGameTime.Milliseconds;
-                for (int i = 0; i < ResourceCount; i++)
+                for (int i = 0; i < Simulation.ResourceStorage.ResourceCount; i++)
                 {
-                    ResourceOutput[(int)Resource.ELECTRICITY] = clamp(ResourceOutput[(int)Resource.ELECTRICITY] +
-                        (ProduceRate[(int)Resource.ELECTRICITY] * timeDelta), ResourceMaxAmount[(int)Resource.ELECTRICITY]);
+                    ResourceOutput[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = clamp(ResourceOutput[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] +
+                        (ProduceRate[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] * timeDelta), ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.ELECTRICITY]);
                 }
             }
 

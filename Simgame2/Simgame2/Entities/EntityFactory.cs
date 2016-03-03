@@ -81,6 +81,8 @@ namespace Simgame2
                     return CreateBasicSolarPlant(location, flatten);
                 case Entity.EntityTypes.WIND_TOWER:
                     return CreateWindTower(location, flatten);
+                case Entity.EntityTypes.LANDER:
+                    return CreateLander(location, flatten);
                 case Entity.EntityTypes.MOVER:
                     
 
@@ -124,6 +126,19 @@ namespace Simgame2
         }
 
 
+        public Buildings.Lander CreateLander(Vector3 location, bool flatten)
+        {
+            Buildings.Lander lander = new Buildings.Lander(this.Game);
+            lander.projectionMatrix = this.projectionMatrix;
+            lander.Initialize(Buildings.Lander.StandardScale, Buildings.Lander.StandardRotation);
+            int height = ((Game1)this.Game).LODMap.getCellHeightFromWorldCoor(location.X, location.Z);
+
+            lander.location = new Vector3(location.X, height, location.Z);
+            this.buildings.Add(lander);
+            return lander;
+        }
+
+
 
         public Buildings.BasicMine CreateBasicMine(Vector3 location, bool flatten)
         {
@@ -140,9 +155,7 @@ namespace Simgame2
         {
             Buildings.WindTower tower = new Buildings.WindTower(this.Game);
             tower.projectionMatrix = this.projectionMatrix;
-       //     tower.effect = this.modelEffect;
             tower.Initialize(Buildings.WindTower.StandardScale, Buildings.WindTower.StandardRotation);
-          //  tower.Place(worldMap, location, flatten);
             this.buildings.Add(tower);
             return tower;
         }

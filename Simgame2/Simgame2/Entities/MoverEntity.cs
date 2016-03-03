@@ -80,6 +80,31 @@ namespace Simgame2.Entities
             return a;
         }
 
+
+        public void MoveTo(Vector3 Destination)
+        {
+            // TODO implement
+        }
+
+        public double DistanceToTarget()
+        {
+            // TODO implement
+            return 0;
+        }
+
+        private const double DestinationMargin = 1.0d;
+        public bool HasArrived()
+        {
+            if (DistanceToTarget() < DestinationMargin)
+            {
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+
         public void SetTargetNearest(EntityTypes target)
         {
             float distance = float.MaxValue;

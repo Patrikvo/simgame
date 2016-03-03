@@ -124,48 +124,48 @@ namespace Simgame2.Buildings
             public BasicMineSim(BasicMine mineParent)
             {
                 this.mineParent = mineParent;
-                ProduceRate[(int)Resource.OreAluminium] = this.mineParent.resourceCell.Aluminium;
-                ResourceMaxAmount[(int)Resource.OreAluminium] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreAluminium] = this.mineParent.resourceCell.Aluminium;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreAluminium] = 1000;
 
-                ProduceRate[(int)Resource.OreCopper] = this.mineParent.resourceCell.Copper;
-                ResourceMaxAmount[(int)Resource.OreCopper] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreCopper] = this.mineParent.resourceCell.Copper;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreCopper] = 1000;
 
-                ProduceRate[(int)Resource.OreGold] = this.mineParent.resourceCell.Gold;
-                ResourceMaxAmount[(int)Resource.OreGold] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreGold] = this.mineParent.resourceCell.Gold;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreGold] = 1000;
 
-                ProduceRate[(int)Resource.OreIron] = this.mineParent.resourceCell.Iron;
-                ResourceMaxAmount[(int)Resource.OreIron] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreIron] = this.mineParent.resourceCell.Iron;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreIron] = 1000;
 
-                ProduceRate[(int)Resource.OreLead] = this.mineParent.resourceCell.Lead;
-                ResourceMaxAmount[(int)Resource.OreLead] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreLead] = this.mineParent.resourceCell.Lead;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreLead] = 1000;
 
-                ProduceRate[(int)Resource.OreLithium] = this.mineParent.resourceCell.Lithium;
-                ResourceMaxAmount[(int)Resource.OreLithium] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreLithium] = this.mineParent.resourceCell.Lithium;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreLithium] = 1000;
 
-                ProduceRate[(int)Resource.OreNickel] = this.mineParent.resourceCell.Nickel;
-                ResourceMaxAmount[(int)Resource.OreNickel] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreNickel] = this.mineParent.resourceCell.Nickel;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreNickel] = 1000;
 
-                ProduceRate[(int)Resource.OrePlatinum] = this.mineParent.resourceCell.Platinum;
-                ResourceMaxAmount[(int)Resource.OrePlatinum] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OrePlatinum] = this.mineParent.resourceCell.Platinum;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OrePlatinum] = 1000;
 
-                ProduceRate[(int)Resource.OreSilver] = this.mineParent.resourceCell.Silver;
-                ResourceMaxAmount[(int)Resource.OreSilver] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreSilver] = this.mineParent.resourceCell.Silver;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreSilver] = 1000;
 
-                ProduceRate[(int)Resource.OreTitanium] = this.mineParent.resourceCell.Titanium;
-                ResourceMaxAmount[(int)Resource.OreTitanium] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreTitanium] = this.mineParent.resourceCell.Titanium;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreTitanium] = 1000;
 
-                ProduceRate[(int)Resource.OreTungsten] = this.mineParent.resourceCell.Tungsten;
-                ResourceMaxAmount[(int)Resource.OreTungsten] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreTungsten] = this.mineParent.resourceCell.Tungsten;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreTungsten] = 1000;
 
-                ProduceRate[(int)Resource.OreUranium] = this.mineParent.resourceCell.Uranium;
-                ResourceMaxAmount[(int)Resource.OreUranium] = 1000;
+                ProduceRate[(int)Simulation.ResourceStorage.Resource.OreUranium] = this.mineParent.resourceCell.Uranium;
+                ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.OreUranium] = 1000;
             }
 
 
             public override void Update(GameTime gameTime)
             {
                 float timeDelta = gameTime.ElapsedGameTime.Milliseconds;
-                for (int i = 0; i < ResourceCount; i++)
+                for (int i = 0; i < Simulation.ResourceStorage.ResourceCount; i++)
                 {
                     ResourceOutput[i] = clamp(ResourceOutput[i] +
                         (ProduceRate[i]/100 * timeDelta), ResourceMaxAmount[i]);
@@ -179,7 +179,7 @@ namespace Simgame2.Buildings
 
                 for (int i = 2; i < 14; i++)
                 {
-                    sb.Append((Resource)(i)); sb.Append(": "); sb.Append((int)ResourceOutput[i]);
+                    sb.Append((Simulation.ResourceStorage.Resource)(i)); sb.Append(": "); sb.Append((int)ResourceOutput[i]);
                     sb.Append("/"); sb.Append(ResourceMaxAmount[i]); sb.Append(" @ ");
                     sb.Append(ProduceRate[i]);
                     sb.AppendLine();

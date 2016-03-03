@@ -15,7 +15,7 @@ namespace Simgame2
     public class Entity : Microsoft.Xna.Framework.GameComponent
     {
 
-        public enum EntityTypes { NONE, BASIC_MINE, MELTER, SOLAR, WIND_TOWER, MOVER };
+        public enum EntityTypes { NONE, BASIC_MINE, MELTER, SOLAR, WIND_TOWER, MOVER, LANDER };
 
         public Entity(Game game)
             : base(game)
