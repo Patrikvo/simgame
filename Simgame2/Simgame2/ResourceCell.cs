@@ -21,6 +21,48 @@ namespace Simgame2
         public float Lead;
         public float Uranium;
 
+        public ResourceCell()
+        {
+
+        }
+
+
+        public void Store(GameSession.GameStorage storage)
+        {
+
+            storage.Write(Iron);
+            storage.Write(Copper);
+            storage.Write(Aluminium);
+            storage.Write(Lithium);
+            storage.Write(Titanium);
+            storage.Write(Nickel);
+            storage.Write(Silver);
+            storage.Write(Tungsten);
+            storage.Write(Platinum);
+            storage.Write(Gold);
+            storage.Write(Lead);
+            storage.Write(Uranium);
+        }
+
+        public void Restore(GameSession.GameStorage storage)
+        {
+            this.Iron = storage.ReadSingle();
+            this.Copper = storage.ReadSingle();
+            this.Aluminium = storage.ReadSingle();
+            this.Lithium = storage.ReadSingle();
+            this.Titanium = storage.ReadSingle();
+            this.Nickel = storage.ReadSingle();
+            this.Silver = storage.ReadSingle();
+            this.Tungsten = storage.ReadSingle();
+            this.Platinum = storage.ReadSingle();
+            this.Gold = storage.ReadSingle();
+            this.Lead = storage.ReadSingle();
+            this.Uranium = storage.ReadSingle();
+        }
+
+
+
+
         public void Randomize(Random rnd)
         {
             //Random rnd = new Random();

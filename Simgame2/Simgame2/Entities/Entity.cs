@@ -12,43 +12,51 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    public class Entity : Microsoft.Xna.Framework.GameComponent
+    public class Entity
     {
 
         public enum EntityTypes { NONE, BASIC_MINE, MELTER, SOLAR, WIND_TOWER, MOVER, LANDER };
 
-        public Entity(Game game)
-            : base(game)
+        protected GameSession.GameSession RunningGameSession;
+
+
+
+        public Entity(GameSession.GameSession RunningGameSession)
         {
-            this.game = (Game1)game;
-            basicEffect = new BasicEffect(this.game.device);
+            this.RunningGameSession = RunningGameSession;
+            basicEffect = new BasicEffect(this.RunningGameSession.device);
             this.ShowBoundingBox = false;
             this.Type = EntityTypes.NONE;
             this.IsGhost = false;
-
+            this.CanBeCommanded = false;
+            this.IsMover = false;
             
         }
 
-        public Game1 game;
+
+        public bool CanBeCommanded { get; set; }
+        public bool IsMover { get; set; }
 
         public bool IsVisible { get; set; }
 
+        
         public bool HideBillboard { get; set; }
 
-        public LODTerrain.LODTerrain LODMap { get { return game.LODMap; } }
+        public LODTerrain.LODTerrain LODMap { get { return this.RunningGameSession.LODMap; } }
 
-        public EntityFactory entityFactory { get { return game.entityFactory; } }
-        public GraphicsDevice device { get { return game.device; } }
-        public Effect effect { get { return game.effect; } }
-        public SpriteFont font { get { return game.font; } }
-        public Camera playerCamera { get { return game.PlayerCamera; } }
+        public EntityFactory entityFactory { get { return this.RunningGameSession.entityFactory; } }
+        public GraphicsDevice device { get { return RunningGameSession.device; } }
+        public Effect effect { get { return this.RunningGameSession.effect; } }
+        public SpriteFont font { get { return this.RunningGameSession.font; } }
+        public Camera playerCamera { get { return this.RunningGameSession.PlayerCamera; } }
+
         public ResourceCell getResourceCell(float wx, float wy )
         {
             return this.LODMap.GetResourceFromWorldCoor(wx, wy);
         }
 
 
-        public Entity(Entity other): base(other.Game)
+        public Entity(Entity other)
         {
             this.HideBillboard = false;
             this.model = other.model;
@@ -71,20 +79,19 @@ namespace Simgame2
 
         public EntityTypes Type;
 
-        public override void Initialize()
+   
+        public virtual void Initialize()
         {
-            base.Initialize();
         }
 
-        public override void Update(GameTime gameTime)
+        public virtual void Update(GameTime gameTime)
         {
-            base.Update(gameTime);
         }
 
 
         public void LoadModel(string assetName) //, Effect effect)
         {
-            model = Game.Content.Load<Model>(assetName); 
+            model = this.RunningGameSession.Content.Load<Model>(assetName); 
             foreach (ModelMesh mesh in model.Meshes)
                 foreach (ModelMeshPart meshPart in mesh.MeshParts)
                     meshPart.Effect = effect.Clone();
@@ -179,7 +186,7 @@ namespace Simgame2
 
         public void AddTexture(string textureName)
         {
-            AddTexture(this.Game.Content.Load<Texture2D>(textureName));
+            AddTexture(this.RunningGameSession.Content.Load<Texture2D>(textureName));
         }
 
 
@@ -225,6 +232,7 @@ namespace Simgame2
 
         public virtual void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
+            
             this.Draw(currentViewMatrix, this.projectionMatrix, cameraPosition);
         }
 
@@ -232,7 +240,7 @@ namespace Simgame2
         {
 
             Matrix worldMatrix = GetWorldMatrix();
-            LODMap.GetRenderer().DrawModel(this.model, this.texture, this.IsTransparant, this.CanPlace, this.GetWorldMatrix(), currentViewMatrix,
+            LODMap.GetRenderer().DrawModel(this.model, this.texture, this.IsTransparant, this.CanPlace, this.HasMouseFocus, this.GetWorldMatrix(), currentViewMatrix,
                 projectionMatrix, cameraPosition, "Textured");
            
         }
@@ -267,7 +275,7 @@ namespace Simgame2
             foreach (EffectPass pass in basicEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                game.device.DrawUserIndexedPrimitives(PrimitiveType.LineList, BoundingBoxprimitiveList, 0, 8, bBoxIndices, 0, 12);
+                RunningGameSession.device.DrawUserIndexedPrimitives(PrimitiveType.LineList, BoundingBoxprimitiveList, 0, 8, bBoxIndices, 0, 12);
             }
         }
 
@@ -370,6 +378,8 @@ namespace Simgame2
         public bool CanPlace { get; set; }
 
         public bool IsGhost { get; set; }
+        
+
 
         public bool ShowBoundingBox = false;
 

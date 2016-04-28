@@ -69,21 +69,25 @@ namespace Simgame2.Renderer
         public int DrawnLights { get; set; }
 
 
-        private Game1 game;
+//        private Game1 game;
 
         Model sun;
 
-        
 
-        public PrelightingRenderer(Game game, Effect effect, GraphicsDevice device, List<Entity> entities)
-            : base(game)
+        protected GameSession.GameSession RunningGameSession;
+
+        public PrelightingRenderer(GameSession.GameSession RunningGameSession, Effect effect, GraphicsDevice device, List<Entity> entities)
+            : base(RunningGameSession.game)
         {
  
 
             viewWidth = device.Viewport.Width;
             viewHeight = device.Viewport.Height;
-            this.game = (Game1)game;
-            this.PlayerCamera = ((Game1)game).PlayerCamera;
+//            this.game = (Game1)game;
+
+            this.RunningGameSession = RunningGameSession;
+
+            this.PlayerCamera = this.RunningGameSession.PlayerCamera;
             this.device = device;
             AmbientLightLevel = 0.2f;
 
@@ -98,10 +102,10 @@ namespace Simgame2.Renderer
 
 
             // Load effects
-            depthNormalEffect = game.Content.Load<Effect>("PPDepthNormal");
-            lightingEffect = game.Content.Load<Effect>("PPLight");
-            this.effect = game.Content.Load<Effect>("PrelightEffects");
-            shadowDepthEffect = game.Content.Load<Effect>("ShadowDepthEffect");
+            depthNormalEffect = this.RunningGameSession.Content.Load<Effect>("PPDepthNormal");
+            lightingEffect = this.RunningGameSession.Content.Load<Effect>("PPLight");
+            this.effect = this.RunningGameSession.Content.Load<Effect>("PrelightEffects");
+            shadowDepthEffect = this.RunningGameSession.Content.Load<Effect>("ShadowDepthEffect");
 
 
             // Set effect parameters to light mapping effect
@@ -109,7 +113,7 @@ namespace Simgame2.Renderer
             lightingEffect.Parameters["viewportHeight"].SetValue(viewHeight);
 
             // Load point light mesh and set light mapping effect to it
-            lightMesh = game.Content.Load<Model>("Models/PPLightMesh");
+            lightMesh = this.RunningGameSession.Content.Load<Model>("Models/PPLightMesh");
             lightMesh.Meshes[0].MeshParts[0].Effect = lightingEffect;
 
      //       sun =  game.Content.Load<Model>("PPLightMesh");
@@ -516,7 +520,7 @@ namespace Simgame2.Renderer
         #region   MODEL
 
 
-        public void DrawModel(Model model, Texture2D[] textures, bool IsTransparant, bool CanPlace, Matrix WorldMatrix, Matrix ViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition, string Technique)
+        public void DrawModel(Model model, Texture2D[] textures, bool IsTransparant, bool CanPlace, bool HasFocus, Matrix WorldMatrix, Matrix ViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition, string Technique)
         {
 
             Matrix[] ModelTransforms = new Matrix[model.Bones.Count];
@@ -543,10 +547,16 @@ namespace Simgame2.Renderer
                         currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 0.0f, 0.0f, 0.5f));
                     }
 
+                    if (HasFocus)
+                    {
+                        currentEffect.Parameters["xIsTransparant"].SetValue(true);
+                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 1.0f, 0.0f, 0.7f));
+                    }
+
                     currentEffect.Parameters["xTexture"].SetValue(textures[meshCount]);
                     currentEffect.Parameters["xEnableLighting"].SetValue(true);
-                    currentEffect.Parameters["xAmbient"].SetValue(game.LODMap.GetRenderer().AmbientLightLevel);
-                    currentEffect.Parameters["LightDirection"].SetValue(game.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
+                    currentEffect.Parameters["xAmbient"].SetValue(this.RunningGameSession.LODMap.GetRenderer().AmbientLightLevel);
+                    currentEffect.Parameters["LightDirection"].SetValue(this.RunningGameSession.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
 
                     currentEffect.Parameters["cameraPos"].SetValue(cameraPosition);
                     currentEffect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
@@ -804,6 +814,8 @@ namespace Simgame2.Renderer
         public Texture2D waterBumpMap;
         public Matrix reflectionViewMatrix;
 
+   //     public Texture2D WaterTexture;
+
         public void SetUpWaterVertices(int width, int height, int mapCellScale, float waterHeight)
         {
             width = width * mapCellScale;
@@ -838,6 +850,10 @@ namespace Simgame2.Renderer
             effect.Parameters["xWaveLength"].SetValue(0.01f);
             effect.Parameters["xWaveHeight"].SetValue(0.03f);
 
+            
+     //       effect.Parameters["waterTexWidth"].SetValue( (float)LODTerrain.LODTerrain.mapCellScale / (float)WaterTexture.Width);
+     //       effect.Parameters["waterTexHeight"].SetValue((float)LODTerrain.LODTerrain.mapCellScale / (float)WaterTexture.Height);
+     //       effect.Parameters["waterTexture"].SetValue(WaterTexture);
          //   effect.Parameters["xCamPos"].SetValue(cameraPosition);
 
             effect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());

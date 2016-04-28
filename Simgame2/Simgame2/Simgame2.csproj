@@ -88,6 +88,7 @@
     <Compile Include="Entities\EntityBuilding.cs" />
     <Compile Include="Entities\EntityFactory.cs" />
     <Compile Include="GameSession\GameSession.cs" />
+    <Compile Include="GameSession\GameStorage.cs" />
     <Compile Include="GameStates\DebugState.cs" />
     <Compile Include="GameStates\FreeLook.cs" />
     <Compile Include="GameStates\GameState.cs" />

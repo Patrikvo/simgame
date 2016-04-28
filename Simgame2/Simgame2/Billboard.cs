@@ -14,12 +14,17 @@ namespace Simgame2
 {
     public class Billboard: Entity
     {
-        public Billboard(Game game) :base (game)
+        public Billboard(GameSession.GameSession RuningGameSession)
+            : base(RuningGameSession)
         {
             this.Width = 25;
             this.Height = 25;
             this.Show = true;
+            BillboardEffect = this.RunningGameSession.effect;
         }
+
+        public Effect BillboardEffect { get; set; }
+
 
         public void loadTexture(Texture2D texture, Vector3 location)
         {
@@ -81,13 +86,13 @@ namespace Simgame2
             Matrix offCenter = Matrix.CreateTranslation(playerCamera.sideVector * (offset + (this.Width/2)));
 
 
-            this.effect.CurrentTechnique = this.effect.Techniques["CylBillboard"];
-            this.effect.Parameters["xWorld"].SetValue(billboardMatrix * offCenter);
-            this.effect.Parameters["xView"].SetValue(playerCamera.viewMatrix);
-            this.effect.Parameters["xProjection"].SetValue(playerCamera.projectionMatrix);
-            this.effect.Parameters["xCamPos"].SetValue(playerCamera.GetCameraPostion());
-            
-            this.effect.Parameters["xBillboardTexture"].SetValue(billboardTexture);
+            this.BillboardEffect.CurrentTechnique = this.effect.Techniques["CylBillboard"];
+            this.BillboardEffect.Parameters["xWorld"].SetValue(billboardMatrix * offCenter);
+            this.BillboardEffect.Parameters["xView"].SetValue(playerCamera.viewMatrix);
+            this.BillboardEffect.Parameters["xProjection"].SetValue(playerCamera.projectionMatrix);
+            this.BillboardEffect.Parameters["xCamPos"].SetValue(playerCamera.GetCameraPostion());
+
+            this.BillboardEffect.Parameters["xBillboardTexture"].SetValue(billboardTexture);
 
             
 
@@ -99,7 +104,7 @@ namespace Simgame2
             this.device.RasterizerState = RasterizerState.CullNone;
             this.device.DepthStencilState = DepthStencilState.DepthRead;
 
-            foreach (EffectPass pass in this.game.effect.CurrentTechnique.Passes)
+            foreach (EffectPass pass in this.BillboardEffect.CurrentTechnique.Passes)
             {
                 pass.Apply();
                 this.device.SetVertexBuffer(treeVertexBuffer);

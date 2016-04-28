@@ -16,10 +16,11 @@ namespace Simgame2.Buildings
 {
     public class WindTower : EntityBuilding
     {
-        public WindTower(Game game)
-            : base(game)
+        public WindTower(GameSession.GameSession RuningGameSession)
+            : base(RuningGameSession)
         {
             this.Type = EntityTypes.WIND_TOWER;
+
         }
 
         public void Initialize(Vector3 scale, Vector3 rotation)
@@ -82,9 +83,14 @@ namespace Simgame2.Buildings
                         currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 0.0f, 0.0f, 0.5f));
                     }
 
+                    if (HasMouseFocus)
+                    {
+                        currentEffect.Parameters["xIsTransparant"].SetValue(true);
+                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 1.0f, 0.0f, 0.7f));
+                    }
                     currentEffect.Parameters["xEnableLighting"].SetValue(true);
-                    currentEffect.Parameters["xAmbient"].SetValue(game.LODMap.GetRenderer().AmbientLightLevel);
-                    currentEffect.Parameters["LightDirection"].SetValue(game.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
+                    currentEffect.Parameters["xAmbient"].SetValue(this.RunningGameSession.LODMap.GetRenderer().AmbientLightLevel);
+                    currentEffect.Parameters["LightDirection"].SetValue(this.RunningGameSession.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
 
                     currentEffect.Parameters["cameraPos"].SetValue(cameraPosition);
                     currentEffect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());

@@ -12,29 +12,26 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    public class TextureGenerator : Microsoft.Xna.Framework.GameComponent
+    public class TextureGenerator
     {
         // source http://lodev.org/cgtutor/randomnoise.html
 
+        protected GameSession.GameSession RunningGameSession;
 
-        public TextureGenerator(Game game)
-            : base(game)
+        public TextureGenerator(GameSession.GameSession RunningGameSession)
         {
-            this.device = game.GraphicsDevice;
+            this.device = RunningGameSession.device;
+            this.RunningGameSession = RunningGameSession;
         }
 
         public GraphicsDevice device { get; set; }
 
-        public override void Initialize()
+        public virtual void Initialize()
         {
-
-
-            base.Initialize();
         }
 
-        public override void Update(GameTime gameTime)
+        public virtual void Update(GameTime gameTime)
         {
-            base.Update(gameTime);
         }
 
 

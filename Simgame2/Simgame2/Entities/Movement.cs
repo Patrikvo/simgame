@@ -70,7 +70,10 @@ namespace Simgame2.Entities
 
         public void Update(GameTime gameTime)
         {
-
+            if (this.TargetEntity != null && this.TargetEntity.IsMover)
+            {
+                this.MoveTo(this.TargetEntity.location);
+            }
         }
 
 
@@ -113,7 +116,7 @@ namespace Simgame2.Entities
             float angle2 = (float)Math.Atan(Math.Abs((h2 - h3)) / (l23 * Math.Sqrt(2)));
 
 
-            this.ParentEntity.rotation = new Vector3(angle1, this.Rotation.Y, angle2);
+            this.ParentEntity.rotation = new Vector3(angle1, this.Rotation.Y, -angle2);
             
             
 
@@ -158,9 +161,17 @@ namespace Simgame2.Entities
         public MoverSim moverSim;
 
 
+
+
+
+
+
+
         public class MoverSim : Simulation.SimulationEntity
         {
-            public const float StopDistance = 20;
+            public const float StopDistance = 30;
+
+            public bool ManualControl { get; set; }
 
 
             public MoverSim(Movement mover)
@@ -171,6 +182,7 @@ namespace Simgame2.Entities
                 this.PayloadState = UnitPayloadState.EMPTY;
                 ReachedGoal = true;
                 RefreshTarget = true;
+                ManualControl = false;
             }
 
             public override void Update(GameTime gameTime)
@@ -232,7 +244,7 @@ namespace Simgame2.Entities
                 if (DistanceToTarget() < MoverSim.StopDistance)
                 {
                     CurrentPathStep++;
-                    if (CurrentPathStep >= this.Path.Length)
+                    if (this.Path == null || CurrentPathStep >= this.Path.Length)
                     {
                         this.MovementState = UnitMovementState.IDLE;
                         ReachedGoal = true;

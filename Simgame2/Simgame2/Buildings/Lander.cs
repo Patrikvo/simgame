@@ -19,8 +19,9 @@ namespace Simgame2.Buildings
 {
     public class Lander : EntityBuilding
     {
-        public Lander(Game game)
-            : base(game)
+
+        public Lander(GameSession.GameSession RuningGameSession)
+            : base(RuningGameSession)
         {
             this.Type = EntityTypes.LANDER;
         }
@@ -85,9 +86,14 @@ namespace Simgame2.Buildings
                         currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 0.0f, 0.0f, 0.5f));
                     }
 
+                    if (HasMouseFocus)
+                    {
+                        currentEffect.Parameters["xIsTransparant"].SetValue(true);
+                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 1.0f, 0.0f, 0.7f));
+                    }
                     currentEffect.Parameters["xEnableLighting"].SetValue(true);
-                    currentEffect.Parameters["xAmbient"].SetValue(game.LODMap.GetRenderer().AmbientLightLevel);
-                    currentEffect.Parameters["LightDirection"].SetValue(game.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
+                    currentEffect.Parameters["xAmbient"].SetValue(this.RunningGameSession.LODMap.GetRenderer().AmbientLightLevel);
+                    currentEffect.Parameters["LightDirection"].SetValue(this.RunningGameSession.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
 
                     currentEffect.Parameters["cameraPos"].SetValue(cameraPosition);
                     currentEffect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
@@ -167,9 +173,9 @@ namespace Simgame2.Buildings
         public static Vector3 StandardScale = new Vector3(5, 5, 5);
         public static Vector3 StandardRotation = new Vector3(0, MathHelper.Pi, 0);
 
-        private float rotorRotation = 0;
-        private float rotationSpeed = 1;
-        private Matrix doorTransform;
+//        private float rotorRotation = 0;
+//        private float rotationSpeed = 1;
+//        private Matrix doorTransform;
 
         private LanderSim landerSim;
 

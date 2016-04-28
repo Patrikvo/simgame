@@ -15,8 +15,8 @@ namespace Simgame2.Buildings
 {
     public class SolarPlant : EntityBuilding
     {
-        public SolarPlant(Game game)
-            : base(game)
+        public SolarPlant(GameSession.GameSession RuningGameSession)
+            : base(RuningGameSession)
         {
             this.Type = EntityTypes.SOLAR;
         }
@@ -76,9 +76,15 @@ namespace Simgame2.Buildings
                         currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 0.0f, 0.0f, 0.5f));
                     }
 
+                    if (HasMouseFocus)
+                    {
+                        currentEffect.Parameters["xIsTransparant"].SetValue(true);
+                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 1.0f, 0.0f, 0.7f));
+                    }
+
                     currentEffect.Parameters["xEnableLighting"].SetValue(true);
-                    currentEffect.Parameters["xAmbient"].SetValue(game.LODMap.GetRenderer().AmbientLightLevel);
-                    currentEffect.Parameters["LightDirection"].SetValue(game.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
+                    currentEffect.Parameters["xAmbient"].SetValue(this.RunningGameSession.LODMap.GetRenderer().AmbientLightLevel);
+                    currentEffect.Parameters["LightDirection"].SetValue(this.RunningGameSession.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
 
                     currentEffect.Parameters["cameraPos"].SetValue(cameraPosition);
                     currentEffect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
@@ -111,7 +117,7 @@ namespace Simgame2.Buildings
                 float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.ResourceStorage.Resource.ELECTRICITY);
                 float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.ResourceStorage.Resource.ELECTRICITY);
                 
-                spriteBatch = new SpriteBatch(this.game.device);
+                spriteBatch = new SpriteBatch(this.RunningGameSession.device);
 
 
                 RenderTarget2D target = new RenderTarget2D(this.device, 400, 400);

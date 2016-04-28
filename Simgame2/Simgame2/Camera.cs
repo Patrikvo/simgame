@@ -16,10 +16,6 @@ namespace Simgame2
     public class Camera
     {
 
-
-
-        private float _DrawDistance;
-
         public float DrawDistance
         {
             get { return _DrawDistance; }
@@ -30,8 +26,7 @@ namespace Simgame2
             }
         }
 
-
-        public float AspectRatio;
+        
 
         public Camera(float AspectRatio)
         {
@@ -146,15 +141,14 @@ namespace Simgame2
             this.viewMatrix = Matrix.CreateLookAt(position, target, upVector);
         }
 
-        public Vector3 LookAt;
-        public Vector3 sideVector;
+
 
 
         public void AdjustCameraAltitude(GameTime gameTime)
         {
             // keeps camera at a set height above the terrain.
             //double intendedCameraHeight = (worldMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, -this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
-            double intendedCameraHeight = (LODMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
+            float intendedCameraHeight = (LODMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
             
             
             // int intendedCameraHeight = worldMap.getAltitude(cameraPosition.X, cameraPosition.Z) + CameraHeightOffset;
@@ -169,7 +163,7 @@ namespace Simgame2
 
             if (this.cameraHeight < intendedCameraHeight)
             {
-                this.cameraHeight += riseSpeed * gameTime.ElapsedGameTime.TotalSeconds;
+                this.cameraHeight += (float)(riseSpeed * gameTime.ElapsedGameTime.TotalSeconds);
                 if (this.cameraHeight > intendedCameraHeight)
                 {
                     this.cameraHeight = intendedCameraHeight;
@@ -177,7 +171,7 @@ namespace Simgame2
             }
             else if (this.cameraHeight > intendedCameraHeight)
             {
-                this.cameraHeight -= dropSpeed * gameTime.ElapsedGameTime.TotalSeconds;
+                this.cameraHeight -= (float)(dropSpeed * gameTime.ElapsedGameTime.TotalSeconds);
                 if (this.cameraHeight < intendedCameraHeight)
                 {
                     this.cameraHeight = intendedCameraHeight;
@@ -266,6 +260,60 @@ namespace Simgame2
         }
 
 
+        public void Store(GameSession.GameStorage writer)
+        {
+            writer.Write(leftrightRot);
+            writer.Write(updownRot);
+
+            writer.Write(cameraPosition);
+
+            writer.Write(cameraHeight);
+
+            writer.Write(LookAt);
+
+            writer.Write(sideVector);
+
+            writer.Write(_DrawDistance);
+            writer.Write(AspectRatio);
+
+            writer.Write(viewMatrix);
+
+            writer.Write(viewMatrixBackShifted);
+
+            writer.Write(projectionMatrix);
+
+            writer.Write(BigProjectionMatrix);
+        }
+
+        public void Restore(GameSession.GameStorage reader)
+        {
+
+
+            leftrightRot = reader.ReadSingle();
+            updownRot = reader.ReadSingle();
+
+            cameraPosition = reader.ReadVector3(); 
+
+            cameraHeight = reader.ReadSingle();
+
+            LookAt = reader.ReadVector3();
+
+            sideVector = reader.ReadVector3();
+
+            _DrawDistance = reader.ReadSingle();
+            AspectRatio = reader.ReadSingle();
+
+            viewMatrix = reader.ReadMatrix();
+
+            viewMatrixBackShifted = reader.ReadMatrix();
+
+            projectionMatrix = reader.ReadMatrix();
+
+            BigProjectionMatrix = reader.ReadMatrix();
+        }
+
+
+
         public Matrix viewMatrix { get; set; }
         public Matrix viewMatrixBackShifted{ get; set; }
 
@@ -274,10 +322,23 @@ namespace Simgame2
         public float updownRot = -MathHelper.Pi / 10.0f;
 
 
-        public double cameraHeight { get; set; }
+        public float cameraHeight { get; set; }
 
 
         public const int CameraHeightOffset = 25;
+
+
+        public Matrix projectionMatrix;
+        public Matrix BigProjectionMatrix;
+
+
+        private float _DrawDistance;
+        public float AspectRatio;
+
+
+        public Vector3 LookAt;
+        public Vector3 sideVector;
+
 
 
 
@@ -287,14 +348,9 @@ namespace Simgame2
         public const float dropSpeed = 30.0f;
         public const float rotationSpeed = 0.3f;
 
-  //      public WorldMap worldMap { get; set; }
         public LODTerrain.LODTerrain LODMap { get; set; }
 
 
-        //private WorldMap worldMap;
-
-        public Matrix projectionMatrix;
-        public Matrix BigProjectionMatrix;
 
     }
 }

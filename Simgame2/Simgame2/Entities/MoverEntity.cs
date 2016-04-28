@@ -14,22 +14,37 @@ namespace Simgame2.Entities
 {
     public class MoverEntity : Entity
     {
-        public MoverEntity(Game game)
-            : base(game)
+        public MoverEntity(GameSession.GameSession RuningGameSession)
+            : base(RuningGameSession)
         {
             this.movement = new Movement(this);
             this.AddTexture("CubeTex");
             this.LoadModel("Models/Cube"); //, this.effect);
             CorrectBoundingBox = true;
             this.Type = EntityTypes.MOVER;
-           
+            this.CanBeCommanded = true;
+            this.IsMover = true;
+            
         }
 
+
+        //public bool ManualControl { get; set; }
+
         
+
+        public bool ManualControl
+        {
+            get { return ((Movement.MoverSim)this.movement.GetSimEntity()).ManualControl; }
+            set { ((Movement.MoverSim)this.movement.GetSimEntity()).ManualControl = value; }
+        }
+
+
+
 
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
+            this.movement.Update(gameTime);
 
             if (this.movement.moverSim.MovementState == Movement.MoverSim.UnitMovementState.MOVING)
             {
@@ -84,7 +99,24 @@ namespace Simgame2.Entities
         public void MoveTo(Vector3 Destination)
         {
             // TODO implement
+            this.movement.TargetLocation = Destination;
+            this.movement.turnToTarget();
+            this.movement.moverSim.MovementState = Movement.MoverSim.UnitMovementState.MOVING;
+            
         }
+
+
+        public void MoveTo(Entity target)
+        {
+            // TODO implement
+            //this.movement.TargetLocation = target.location;
+            this.movement.MoveTo(target);
+            this.movement.turnToTarget();
+            this.movement.moverSim.MovementState = Movement.MoverSim.UnitMovementState.MOVING;
+
+        }
+
+
 
         public double DistanceToTarget()
         {

@@ -14,11 +14,14 @@ namespace Simgame2
 {
     public class EntityBuilding: Entity
     {
-        public EntityBuilding(Game game): base(game)
+        public EntityBuilding(GameSession.GameSession RuningGameSession)
+            : base(RuningGameSession)
         {
             this.IsTransparant = false;
-            statusBillboard = new Billboard(game);
+            statusBillboard = new Billboard(RuningGameSession);
             statusBillboard.Show = false;
+            this.CanBeCommanded = true;
+            
         }
 
         public bool PlaceBuilding(LODTerrain.LODTerrain map, bool flattening)
@@ -27,7 +30,7 @@ namespace Simgame2
             bool res = PlaceBuilding(map, (int)this.location.X, (int)this.location.Z, flattening);
             if (flattening)
             {
-                statusBillboard.loadTexture(this.Game.Content.Load<Texture2D>("GUI\\Bilboard"), this.location);
+                statusBillboard.loadTexture(this.RunningGameSession.Content.Load<Texture2D>("GUI\\Bilboard"), this.location);
                 statusBillboard.offset = surroundingCicle;
                 statusBillboard.Show = true;
             }

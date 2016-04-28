@@ -19,32 +19,22 @@ namespace Simgame2.LODTerrain
     {
      
 
-        Game game;
+        protected GameSession.GameSession RunningGameSession;
 
-        GraphicsDevice device;
-
-        public LODTerrain(Game1 game, int mapNumCellsPerRow, int mapNumCellPerColumn, Effect effect, GraphicsDevice device)
+        public LODTerrain(GameSession.GameSession RunningGameSession, int mapNumCellsPerRow, int mapNumCellPerColumn, Effect effect, GraphicsDevice device, GameSession.GameStorage storage)
         {
 
-            this.game = game;
+            this.RunningGameSession = RunningGameSession;
 
             playerLight = new PPPointLight(new Vector3(0, 0, 0), Color.White* 0.50f, 100);
-            this.playerCamera = game.PlayerCamera;
+            this.playerCamera = this.RunningGameSession.PlayerCamera;
 
-            modelEffect = game.Content.Load<Effect>("PrelightEffects");
+            modelEffect = this.RunningGameSession.Content.Load<Effect>("PrelightEffects");
            
 
-            CreateNewMap(mapNumCellsPerRow, mapNumCellPerColumn, device);
-            this.device = device;
-
-
+            CreateNewMap(mapNumCellsPerRow, mapNumCellPerColumn, device, storage);
             
-            prelightRender = new PrelightingRenderer(game, effect, device, entities);
-
-
-           
-
-                
+            prelightRender = new PrelightingRenderer(this.RunningGameSession, effect, device, entities);
 
             this.Initialize();
         }
@@ -58,16 +48,20 @@ namespace Simgame2.LODTerrain
         }
 
 
-        public void CreateNewMap(int mapNumCellsPerRow, int mapNumCellPerColumn, GraphicsDevice device)
+        public void CreateNewMap(int mapNumCellsPerRow, int mapNumCellPerColumn, GraphicsDevice device, GameSession.GameStorage storage)
         {
             entities = new List<Entity>();
             this.mapNumCellsPerRow = mapNumCellsPerRow;
             this.mapNumCellPerColumn = mapNumCellPerColumn;
 
-            _quadTree = new QuadTree(new Vector4(mapNumCellsPerRow, mapNumCellPerColumn, this.minHeight, this.maxHeight), device);
+            _quadTree = new QuadTree(new Vector4(mapNumCellsPerRow, mapNumCellPerColumn, this.minHeight, this.maxHeight), device, storage);
         }
 
 
+        public void Store(GameSession.GameStorage storage)
+        {
+            _quadTree.Store(storage);
+        }
 
         public void Draw(Camera PlayerCamera, GameTime gameTime)
         {
@@ -89,7 +83,7 @@ namespace Simgame2.LODTerrain
             prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), this.frustum);
 
             this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
-            prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
+        //    prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
 
             if (prelightRender.DoShadowMapping) { prelightRender.drawShadowDepthMap(); }
 
@@ -121,7 +115,7 @@ namespace Simgame2.LODTerrain
 
 
      //       prelightRender.DrawNormal(playerCamera.viewMatrix, playerCamera.projectionMatrix, playerCamera.GetCameraPostion(), new Vector3(1600, 50, 500), prelightRender.SunLight.GetRotationMatrix());
-            ((Game1)game).debugImg = prelightRender.normalTarg;
+            this.RunningGameSession.game.debugImg = prelightRender.normalTarg;
 
 
                 
@@ -155,11 +149,10 @@ namespace Simgame2.LODTerrain
         
         private void PlaceLander()
         {
-            Game1 g = (Game1)this.game;
-            Lander = (EntityBuilding)g.entityFactory.CreateEnity(Entity.EntityTypes.LANDER, this.playerCamera.GetCameraPostion(), true);
-            Lander.PlaceBuilding(g.LODMap, true);
-            g.simulator.AddEntity(Lander.GetSimEntity());
-            g.simulator.MapModified= true;
+            Lander = (EntityBuilding)this.RunningGameSession.entityFactory.CreateEnity(Entity.EntityTypes.LANDER, this.playerCamera.GetCameraPostion(), true);
+            Lander.PlaceBuilding(this.RunningGameSession.LODMap, true);
+            this.RunningGameSession.simulator.AddEntity(Lander.GetSimEntity());
+            this.RunningGameSession.simulator.MapModified = true;
 
         }
 
@@ -504,7 +497,7 @@ namespace Simgame2.LODTerrain
         public int getMapHeight() { return this.mapNumCellPerColumn * LODTerrain.mapCellScale; }
 
 
-        private double[] cellTravelResistance;
+//        private double[] cellTravelResistance;
 
 
 

@@ -29,18 +29,20 @@ namespace Simgame2
 
         List<Texture2D> images;
 
-        private Game1 game;
 
-        public GUI(Game1 game)
+        protected GameSession.GameSession RunningGameSession;
+
+        public GUI(GameSession.GameSession RunningGameSession)
         {
             this.buttonWidth = 100;
             this.buttonHeight = 100;
 
+            this.RunningGameSession = RunningGameSession;
 
-            this.upper = game.GraphicsDevice.Viewport.Height - this.buttonHeight;
+            this.upper = this.RunningGameSession.device.Viewport.Height - this.buttonHeight;
             this.left = 0;
 
-            this.game = game;
+            
 
             images = new List<Texture2D>();
 
@@ -105,31 +107,31 @@ namespace Simgame2
 
         public void PlaceBuildingSolar() 
         {
-            this.game.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.SOLAR;
-            this.game.ChangeGameState(this.game.PlaceBuildingState);
+            this.RunningGameSession.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.SOLAR;
+            this.RunningGameSession.ChangeGameState(this.RunningGameSession.PlaceBuildingState);
         }
 
         public void PlaceBuildingMelter()
         {
-            this.game.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.MELTER;
-            this.game.ChangeGameState(this.game.PlaceBuildingState);
+            this.RunningGameSession.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.MELTER;
+            this.RunningGameSession.ChangeGameState(this.RunningGameSession.PlaceBuildingState);
         }
 
         public void PlaceBuildingMine()
         {
-            this.game.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.BASIC_MINE;
-            this.game.ChangeGameState(this.game.PlaceBuildingState);
+            this.RunningGameSession.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.BASIC_MINE;
+            this.RunningGameSession.ChangeGameState(this.RunningGameSession.PlaceBuildingState);
         }
 
         public void PlaceBuildingWind()
         {
-            this.game.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.WIND_TOWER;
-            this.game.ChangeGameState(this.game.PlaceBuildingState);
+            this.RunningGameSession.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.WIND_TOWER;
+            this.RunningGameSession.ChangeGameState(this.RunningGameSession.PlaceBuildingState);
         }
 
         public void PlaceBuilding()
         {
-            this.game.ChangeGameState(this.game.PlaceBuildingState);
+            this.RunningGameSession.ChangeGameState(this.RunningGameSession.PlaceBuildingState);
         }
 
         public void AddButton(int imageReleaseID, int imagePressedID, Click clickDelegate)

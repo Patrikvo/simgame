@@ -13,46 +13,41 @@ using Microsoft.Xna.Framework.Media;
 namespace Simgame2
 {
 
-    public class EntityFactory : Microsoft.Xna.Framework.GameComponent
+    public class EntityFactory
     {
-     //   private Effect modelEffect;
-    //    private WorldMap worldMap;
-
+     
         private LODTerrain.LODTerrain LODMap;
 
-        private EntityFactory(Game game, LODTerrain.LODTerrain map, Matrix projectionMatrix)
-        //private EntityFactory(Game game, WorldMap map, Matrix projectionMatrix)
-            : base(game)
+        protected GameSession.GameSession RunningGameSession;
+
+        private EntityFactory(GameSession.GameSession RunningGameSession, LODTerrain.LODTerrain map, Matrix projectionMatrix)
         {
             this.projectionMatrix = projectionMatrix;
 
-       //     modelEffect = game.Content.Load<Effect>("Series4Effects");
-            
-            //this.worldMap = map;
             this.LODMap = map;
             this.buildings = new List<EntityBuilding>();
             this.Movers = new List<Entity>();
+
+            this.RunningGameSession = RunningGameSession;
+
         }
 
-        public static EntityFactory CreateFactory(Game game, LODTerrain.LODTerrain map, Matrix projectionMatrix)
-        //public static EntityFactory CreateFactory(Game game, WorldMap map, Matrix projectionMatrix)
+        public static EntityFactory CreateFactory(GameSession.GameSession RunningGameSession, LODTerrain.LODTerrain map, Matrix projectionMatrix)
         {
             if (factorySingleton == null)
             {
-                factorySingleton = new EntityFactory(game, map, projectionMatrix);
+                factorySingleton = new EntityFactory(RunningGameSession, map, projectionMatrix);
             }
             return factorySingleton;
         }
 
 
-        public override void Initialize()
+        public virtual void Initialize()
         {
-
-            base.Initialize();
         }
 
 
-        public override void Update(GameTime gameTime)
+        public virtual void Update(GameTime gameTime)
         {
             foreach (EntityBuilding building in buildings)
             {
@@ -63,9 +58,6 @@ namespace Simgame2
             {
                 e.Update(gameTime);
             }
-
-
-            base.Update(gameTime);
         }
 
 
@@ -95,10 +87,9 @@ namespace Simgame2
 
         public Entities.MoverEntity CreateMover(Vector3 location)
         {
-            Entities.MoverEntity mover = new Entities.MoverEntity(this.Game);
+            Entities.MoverEntity mover = new Entities.MoverEntity(this.RunningGameSession);
             mover.projectionMatrix = this.projectionMatrix;
-            //int height = ((Game1)this.Game).worldMap.getCellHeightFromWorldCoor(location.X, -location.Z);
-            int height = ((Game1)this.Game).LODMap.getCellHeightFromWorldCoor(location.X, location.Z);
+            int height = this.RunningGameSession.LODMap.getCellHeightFromWorldCoor(location.X, location.Z);
 
             mover.location = new Vector3(location.X, height, location.Z);
             mover.scale = new Vector3(5.0f, 5.0f, 5.0f);
@@ -111,10 +102,9 @@ namespace Simgame2
 
         public Entities.MoverEntity CreateMiniMover(Vector3 location)
         {
-            Entities.MoverEntity mover = new Entities.MoverEntity(this.Game);
+            Entities.MoverEntity mover = new Entities.MoverEntity(this.RunningGameSession);
             mover.projectionMatrix = this.projectionMatrix;
-            //int height = ((Game1)this.Game).worldMap.getCellHeightFromWorldCoor(location.X, -location.Z);
-            int height = ((Game1)this.Game).LODMap.getCellHeightFromWorldCoor(location.X, location.Z);
+            int height = this.RunningGameSession.LODMap.getCellHeightFromWorldCoor(location.X, location.Z);
 
             mover.location = new Vector3(location.X, height, location.Z);
             mover.scale = new Vector3(2.0f, 2.0f, 2.0f);
@@ -128,10 +118,10 @@ namespace Simgame2
 
         public Buildings.Lander CreateLander(Vector3 location, bool flatten)
         {
-            Buildings.Lander lander = new Buildings.Lander(this.Game);
+            Buildings.Lander lander = new Buildings.Lander(this.RunningGameSession);
             lander.projectionMatrix = this.projectionMatrix;
             lander.Initialize(Buildings.Lander.StandardScale, Buildings.Lander.StandardRotation);
-            int height = ((Game1)this.Game).LODMap.getCellHeightFromWorldCoor(location.X, location.Z);
+            int height = this.RunningGameSession.LODMap.getCellHeightFromWorldCoor(location.X, location.Z);
 
             lander.location = new Vector3(location.X, height, location.Z);
             this.buildings.Add(lander);
@@ -142,18 +132,16 @@ namespace Simgame2
 
         public Buildings.BasicMine CreateBasicMine(Vector3 location, bool flatten)
         {
-            Buildings.BasicMine mine = new Buildings.BasicMine(this.Game);
+            Buildings.BasicMine mine = new Buildings.BasicMine(this.RunningGameSession);
             mine.projectionMatrix = this.projectionMatrix;
-         //   mine.effect = this.modelEffect;
             mine.Initialize(Buildings.BasicMine.StandardScale, Buildings.BasicMine.StandardRotation);
-          //  mine.Place(worldMap, location, flatten);
             this.buildings.Add(mine);
             return mine;
         }
 
         public Buildings.WindTower CreateWindTower(Vector3 location, bool flatten)
         {
-            Buildings.WindTower tower = new Buildings.WindTower(this.Game);
+            Buildings.WindTower tower = new Buildings.WindTower(this.RunningGameSession);
             tower.projectionMatrix = this.projectionMatrix;
             tower.Initialize(Buildings.WindTower.StandardScale, Buildings.WindTower.StandardRotation);
             this.buildings.Add(tower);
@@ -162,22 +150,18 @@ namespace Simgame2
 
         public Buildings.Melter CreateBasicMelter(Vector3 location, bool flatten)
         {
-            Buildings.Melter melter = new Buildings.Melter(this.Game);
+            Buildings.Melter melter = new Buildings.Melter(this.RunningGameSession);
             melter.projectionMatrix = this.projectionMatrix;
-       //     melter.effect = this.modelEffect;
             melter.Initialize(Buildings.Melter.StandardScale, Buildings.Melter.StandardRotation);
-         //   melter.Place(worldMap, location, flatten);
             this.buildings.Add(melter);
             return melter;
         }
 
         public Buildings.SolarPlant CreateBasicSolarPlant(Vector3 location, bool flatten)
         {
-            Buildings.SolarPlant solar = new Buildings.SolarPlant(this.Game);
+            Buildings.SolarPlant solar = new Buildings.SolarPlant(this.RunningGameSession);
             solar.projectionMatrix = this.projectionMatrix;
-        //    solar.effect = this.modelEffect;
             solar.Initialize(Buildings.SolarPlant.StandardScale, Buildings.SolarPlant.StandardRotation);
-          //  solar.Place(worldMap, location, flatten);
             this.buildings.Add(solar);
             return solar;
         }
@@ -185,7 +169,6 @@ namespace Simgame2
 
         public void RemoveBuilding(EntityBuilding building)
         {
-     //       building.RemoveBuilding(worldMap);
             this.buildings.Remove(building);
         }
 

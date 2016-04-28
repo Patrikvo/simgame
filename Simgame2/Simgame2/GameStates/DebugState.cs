@@ -14,10 +14,10 @@ namespace Simgame2.GameStates
 {
     public class DebugState: GameState
     {
-        public DebugState(Game1 game)
-            : base(game)
+        public DebugState(GameSession.GameSession RunningGameSession)
+            : base(RunningGameSession)
         {
-
+            
         }
 
         public override void Draw(GameTime gameTime)
@@ -30,11 +30,11 @@ namespace Simgame2.GameStates
           //  base.Update(gameTime);
 
             this.keyState = Keyboard.GetState();
-            game.entityFactory.Update(gameTime);
-            this.game.LODMap.Update(gameTime);
+            this.RunningGameSession.entityFactory.Update(gameTime);
+            this.RunningGameSession.LODMap.Update(gameTime);
 
             if (keyState.IsKeyDown(Keys.Escape))
-                game.Exit();
+                this.RunningGameSession.game.Exit();
 
             if (currentMouseState != originalMouseState)
             {
@@ -65,7 +65,7 @@ namespace Simgame2.GameStates
             if (currentMouseState.RightButton == ButtonState.Released && mouseRightButtonDown == true)
             {
                 mouseRightButtonDown = false;
-                game.ChangeGameState(game.MousePointerLookState);
+                this.RunningGameSession.ChangeGameState(this.RunningGameSession.MousePointerLookState);
             }
 
 
@@ -73,7 +73,7 @@ namespace Simgame2.GameStates
             {
                 button_PageUp_pressed = false;
                 //game.worldMap.GetRenderer().IncreaseAmbientLightLevel();
-                game.LODMap.GetRenderer().IncreaseAmbientLightLevel();
+                this.RunningGameSession.LODMap.GetRenderer().IncreaseAmbientLightLevel();
             }
             if (keyState.IsKeyDown(Keys.PageUp))
             {
@@ -85,7 +85,7 @@ namespace Simgame2.GameStates
             {
                 button_PageDown_pressed = false;
                 //   game.worldMap.GetRenderer().DecreaseAmbientLightLevel();
-                game.LODMap.GetRenderer().DecreaseAmbientLightLevel();
+                this.RunningGameSession.LODMap.GetRenderer().DecreaseAmbientLightLevel();
             }
             if (keyState.IsKeyDown(Keys.PageDown))
             {
@@ -95,7 +95,7 @@ namespace Simgame2.GameStates
             if (keyState.IsKeyUp(Keys.D) && button_D_pressed == true)
             {
                 button_D_pressed = false;
-                game.ChangeGameState(game.FreeLookState);
+                this.RunningGameSession.ChangeGameState(this.RunningGameSession.FreeLookState);
 
             }
             if (keyState.IsKeyDown(Keys.D) && button_D_Reseted == true)
@@ -114,12 +114,12 @@ namespace Simgame2.GameStates
 
             if (keyState.IsKeyUp(Keys.X) && ButtonXDown == true)
             {
-                game.showDebugImg = !game.showDebugImg;
+                this.RunningGameSession.showDebugImg = !this.RunningGameSession.showDebugImg;
                 ButtonXDown = false;
             }
 
 
-            game.HUD_overlay.Update(0, 0, false, true);
+            this.RunningGameSession.HUD_overlay.Update(0, 0, false, true);
 
 
         }
@@ -130,20 +130,21 @@ namespace Simgame2.GameStates
 
         private bool button_D_Reseted;
 
-        private bool ButtonXDown;
+//        private bool ButtonXDown;
 
 
 
         public override void EnterState()
         {
+            
             base.EnterState();
-            Mouse.SetPosition(game.device.Viewport.Width / 2, game.device.Viewport.Height / 2);
+            Mouse.SetPosition(RunningGameSession.device.Viewport.Width / 2, RunningGameSession.device.Viewport.Height / 2);
             originalMouseState = Mouse.GetState();
-            game.IsMouseVisible = false;
+            this.RunningGameSession.game.IsMouseVisible = false;
             button_PageUp_pressed = false;
             button_PageDown_pressed = false;
             button_D_pressed = false;
-            game.PlayerCamera.ForceViewMatrix(game.LODMap.GetRenderer().SunLight.ShadowLightPosition, game.LODMap.GetRenderer().SunLight.ShadowLightTarget, Vector3.Up);
+            this.RunningGameSession.PlayerCamera.ForceViewMatrix(this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightPosition, this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightTarget, Vector3.Up);
             button_D_Reseted = false;
         }
 

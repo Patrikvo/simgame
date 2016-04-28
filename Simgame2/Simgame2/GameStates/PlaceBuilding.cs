@@ -14,8 +14,8 @@ namespace Simgame2.GameStates
 {
     public class PlaceBuilding : GameState
     {
-        public PlaceBuilding(Game1 game)
-            : base(game)
+        public PlaceBuilding(GameSession.GameSession RunningGameSession)
+            : base(RunningGameSession)
         {
             LastSelectedEntityType = Entity.EntityTypes.NONE;
         }
@@ -36,14 +36,14 @@ namespace Simgame2.GameStates
 
             if (keyState.IsKeyUp(Keys.Space) && ButtonSpaceDown == true)
             {
-                game.ChangeGameState(game.MousePointerLookState);
+                this.RunningGameSession.ChangeGameState(this.RunningGameSession.MousePointerLookState);
                 ButtonSpaceDown = false;
             }
 
 
 
 
-            markerLocation = game.PlayerCamera.UnProjectScreenPointLoc(currentMouseState.X, currentMouseState.Y, this.game.GraphicsDevice.Viewport);
+            markerLocation = this.RunningGameSession.PlayerCamera.UnProjectScreenPointLoc(currentMouseState.X, currentMouseState.Y, this.RunningGameSession.device.Viewport);
 
 
            // Vector3 offset = Vector3.Transform(new Vector3(0, 0, -50), Matrix.CreateRotationY(game.PlayerCamera.leftrightRot));
@@ -51,39 +51,39 @@ namespace Simgame2.GameStates
             int rotAmout = currentMouseState.ScrollWheelValue - mouseRotation;
             mouseRotation = currentMouseState.ScrollWheelValue;
 
-           
 
 
-            if (game.selBuilding == null)
+
+            if (this.RunningGameSession.selBuilding == null)
             {
-                game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
-                game.selBuilding.IsGhost = true;
+                this.RunningGameSession.selBuilding = (EntityBuilding)this.RunningGameSession.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
+                this.RunningGameSession.selBuilding.IsGhost = true;
             }
 
-            game.selBuilding.location = markerLocation;
+            this.RunningGameSession.selBuilding.location = markerLocation;
 
             // convert rotation to radials, add to current rotation then limit to 0 - 2*PI
-            game.selBuilding.rotation.Y = (float)(game.selBuilding.rotation.Y + (rotAmout * Math.PI / 180) % 2* Math.PI);
+            this.RunningGameSession.selBuilding.rotation.Y = (float)(this.RunningGameSession.selBuilding.rotation.Y + (rotAmout * Math.PI / 180) % 2 * Math.PI);
 
 
             //game.selBuilding.PlaceBuilding(game.worldMap, false);
-            game.selBuilding.PlaceBuilding(game.LODMap, false);
+            this.RunningGameSession.selBuilding.PlaceBuilding(this.RunningGameSession.LODMap, false);
 
-            game.selBuilding.UpdateBoundingBox();
+            this.RunningGameSession.selBuilding.UpdateBoundingBox();
 
-            game.selBuilding.IsTransparant = true;
+            this.RunningGameSession.selBuilding.IsTransparant = true;
             
             
             // does the building collide with other buildings?
             //game.selBuilding.CanPlace = !game.worldMap.Collides(game.selBuilding.boundingBox);
-            game.selBuilding.CanPlace = !game.LODMap.Collides(game.selBuilding.boundingBox);
+            this.RunningGameSession.selBuilding.CanPlace = !this.RunningGameSession.LODMap.Collides(this.RunningGameSession.selBuilding.boundingBox);
             
             // are we placing in on water?
-            if (game.selBuilding.getAltitude() < 1)
+            if (this.RunningGameSession.selBuilding.getAltitude() < 1)
             
          //   if (game.worldMap.getAltitude(game.selBuilding.location.X, game.selBuilding.location.Z) < WorldMap.waterHeight) 
             {
-                game.selBuilding.CanPlace = false;
+                this.RunningGameSession.selBuilding.CanPlace = false;
             }
 
             
@@ -95,59 +95,59 @@ namespace Simgame2.GameStates
             if (currentMouseState.LeftButton == ButtonState.Released && mouseLeftButtonDown == true)
             {
                 mouseLeftButtonDown = false;
-                if (game.selBuilding.CanPlace)
+                if (this.RunningGameSession.selBuilding.CanPlace)
                 {
-                    //game.selBuilding.RemoveBuilding(game.worldMap);
-                    game.selBuilding.RemoveBuilding(game.LODMap);
-                    game.selBuilding.IsTransparant = false;
-                    game.selBuilding.IsGhost = false;
-                    //game.selBuilding.PlaceBuilding(game.worldMap, true);
-                    game.selBuilding.PlaceBuilding(game.LODMap, true);
-                    game.simulator.AddEntity(game.selBuilding.GetSimEntity());
-                    game.simulator.MapModified = true;
+                    //this.RunningGameSession.selBuilding.RemoveBuilding(game.worldMap);
+                    this.RunningGameSession.selBuilding.RemoveBuilding(this.RunningGameSession.LODMap);
+                    this.RunningGameSession.selBuilding.IsTransparant = false;
+                    this.RunningGameSession.selBuilding.IsGhost = false;
+                    //this.RunningGameSession.selBuilding.PlaceBuilding(game.worldMap, true);
+                    this.RunningGameSession.selBuilding.PlaceBuilding(this.RunningGameSession.LODMap, true);
+                    this.RunningGameSession.simulator.AddEntity(this.RunningGameSession.selBuilding.GetSimEntity());
+                    this.RunningGameSession.simulator.MapModified = true;
 
                  //   game.selBuilding = new EntityBuilding(game.selBuilding);
-                    game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
-                    game.selBuilding.IsGhost = true;
-                    game.ChangeGameState(game.MousePointerLookState);
+                    this.RunningGameSession.selBuilding = (EntityBuilding)this.RunningGameSession.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
+                    this.RunningGameSession.selBuilding.IsGhost = true;
+                    this.RunningGameSession.ChangeGameState(this.RunningGameSession.MousePointerLookState);
                 }
             }
 
             if (currentMouseState.RightButton == ButtonState.Released && mouseRightButtonDown == true)
             {
                 mouseRightButtonDown = false;
-                game.ChangeGameState(game.FreeLookState);
+                this.RunningGameSession.ChangeGameState(this.RunningGameSession.FreeLookState);
 
             }
 
             //game.HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, currentMouseState.LeftButton == ButtonState.Pressed);
-            game.HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, false, true);
+            this.RunningGameSession.HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, false, true);
 
 
         }
 
         public override void EnterState()
         {
-            game.IsMouseVisible = true;
+            this.RunningGameSession.game.IsMouseVisible = true;
             base.EnterState();
-            if (game.selBuilding != null)
+            if (this.RunningGameSession.selBuilding != null)
             {
                 //game.selBuilding.RemoveBuilding(game.worldMap);
-                game.selBuilding.RemoveBuilding(game.LODMap);
+                this.RunningGameSession.selBuilding.RemoveBuilding(this.RunningGameSession.LODMap);
             }
          //   game.selBuilding = null;
-            game.selBuilding = (EntityBuilding)game.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
-            game.selBuilding.IsGhost = true;
+            this.RunningGameSession.selBuilding = (EntityBuilding)this.RunningGameSession.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
+            this.RunningGameSession.selBuilding.IsGhost = true;
         }
 
         public override void ExitState()
         {
-            game.IsMouseVisible = false;
+            this.RunningGameSession.game.IsMouseVisible = false;
             base.ExitState();
-            if (game.selBuilding != null)
+            if (this.RunningGameSession.selBuilding != null)
             {
                 //game.selBuilding.RemoveBuilding(game.worldMap);
-                game.selBuilding.RemoveBuilding(game.LODMap);
+                this.RunningGameSession.selBuilding.RemoveBuilding(this.RunningGameSession.LODMap);
             }
         }
 

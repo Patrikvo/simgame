@@ -15,8 +15,8 @@ namespace Simgame2.Buildings
 {
     public class BasicMine: EntityBuilding
     {
-        public BasicMine(Game game)
-            : base(game)
+        public BasicMine(GameSession.GameSession RuningGameSession)
+            : base(RuningGameSession)
         {
             this.Type = EntityTypes.BASIC_MINE;
         }

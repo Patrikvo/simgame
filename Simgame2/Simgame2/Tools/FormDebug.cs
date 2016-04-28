@@ -12,37 +12,39 @@ namespace Simgame2.Tools
 {
     public partial class FormDebug : Form
     {
-        Game1 game;
+        protected GameSession.GameSession RunningGameSession;
 
-        public FormDebug(Game1 game)
+        public FormDebug(GameSession.GameSession RunningGameSession)
         {
-            this.game = game;
+            
+            this.RunningGameSession = RunningGameSession;
+
             InitializeComponent();
 
 
 
 
-            this.trackBarYaw.Value = (int)(game.LODMap.GetRenderer().SunLight.Yaw / (2 * Math.PI) * 360);
-            this.trackBarPitch.Value = (int)(game.LODMap.GetRenderer().SunLight.Pitch / (2 * Math.PI) * 360);
-            this.trackBarRoll.Value = (int)(game.LODMap.GetRenderer().SunLight.Roll / (2 * Math.PI) * 360);
+            this.trackBarYaw.Value = (int)(this.RunningGameSession.LODMap.GetRenderer().SunLight.Yaw / (2 * Math.PI) * 360);
+            this.trackBarPitch.Value = (int)(this.RunningGameSession.LODMap.GetRenderer().SunLight.Pitch / (2 * Math.PI) * 360);
+            this.trackBarRoll.Value = (int)(this.RunningGameSession.LODMap.GetRenderer().SunLight.Roll / (2 * Math.PI) * 360);
 
-            this.labelLightvalues.Text = "yaw: " + game.LODMap.GetRenderer().SunLight.Yaw.ToString("0.00") + " / pitch: " +
-                game.LODMap.GetRenderer().SunLight.Pitch.ToString("0.00") + " / roll: " + game.LODMap.GetRenderer().SunLight.Roll.ToString("0.00");
+            this.labelLightvalues.Text = "yaw: " + this.RunningGameSession.LODMap.GetRenderer().SunLight.Yaw.ToString("0.00") + " / pitch: " +
+                this.RunningGameSession.LODMap.GetRenderer().SunLight.Pitch.ToString("0.00") + " / roll: " + this.RunningGameSession.LODMap.GetRenderer().SunLight.Roll.ToString("0.00");
 
 
-            this.textBoxShadowPosX.Text = game.LODMap.GetRenderer().SunLight.ShadowLightPosition.X.ToString();
-            this.textBoxShadowPosY.Text = game.LODMap.GetRenderer().SunLight.ShadowLightPosition.Y.ToString();
-            this.textBoxShadowPosZ.Text = game.LODMap.GetRenderer().SunLight.ShadowLightPosition.Z.ToString();
+            this.textBoxShadowPosX.Text = this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightPosition.X.ToString();
+            this.textBoxShadowPosY.Text = this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightPosition.Y.ToString();
+            this.textBoxShadowPosZ.Text = this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightPosition.Z.ToString();
 
-            this.textBoxlShadowTargetX.Text = game.LODMap.GetRenderer().SunLight.ShadowLightTarget.X.ToString();
-            this.textBoxlShadowTargetY.Text = game.LODMap.GetRenderer().SunLight.ShadowLightTarget.Y.ToString();
-            this.textBoxlShadowTargetZ.Text = game.LODMap.GetRenderer().SunLight.ShadowLightTarget.Z.ToString();
+            this.textBoxlShadowTargetX.Text = this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightTarget.X.ToString();
+            this.textBoxlShadowTargetY.Text = this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightTarget.Y.ToString();
+            this.textBoxlShadowTargetZ.Text = this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightTarget.Z.ToString();
 
-            this.textBoxShadowFarPlane.Text = game.LODMap.GetRenderer().shadowFarPlane.ToString();
+            this.textBoxShadowFarPlane.Text = this.RunningGameSession.LODMap.GetRenderer().shadowFarPlane.ToString();
 
-            this.textBoxShadowBias.Text = (1.0f / game.LODMap.GetRenderer().ShadowBias).ToString();
+            this.textBoxShadowBias.Text = (1.0f / this.RunningGameSession.LODMap.GetRenderer().ShadowBias).ToString();
 
-            this.textBoxNormalBias.Text = game.LODMap.GetRenderer().NormalBias.ToString();
+            this.textBoxNormalBias.Text = this.RunningGameSession.LODMap.GetRenderer().NormalBias.ToString();
 
 
 
@@ -86,7 +88,7 @@ namespace Simgame2.Tools
 
             this.labelLightvalues.Text = "yaw: " + yaw.ToString("0.00") + " / pitch: " + pitch.ToString("0.00") + " / roll: " + roll.ToString("0.00");
 
-            game.LODMap.GetRenderer().SunLight.SetLightDirection((float)yaw, (float)pitch, (float)roll);
+            this.RunningGameSession.LODMap.GetRenderer().SunLight.SetLightDirection((float)yaw, (float)pitch, (float)roll);
         }
 
        
@@ -114,7 +116,7 @@ namespace Simgame2.Tools
             if (allOk) 
             {
                  Microsoft.Xna.Framework.Vector3 shadowPos = new Microsoft.Xna.Framework.Vector3(x, y, z);
-                game.LODMap.GetRenderer().SunLight.ShadowLightPosition = shadowPos;
+                 this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightPosition = shadowPos;
             }
 
         }
@@ -167,7 +169,7 @@ namespace Simgame2.Tools
             if (allOk)
             {
                 Microsoft.Xna.Framework.Vector3 shadowPos = new Microsoft.Xna.Framework.Vector3(x, y, z);
-                game.LODMap.GetRenderer().SunLight.ShadowLightTarget = shadowPos;
+                this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightTarget = shadowPos;
             }
 
         }
@@ -178,7 +180,7 @@ namespace Simgame2.Tools
             int farPlane;
             if (ParseIntField(this.textBoxShadowFarPlane.Text, this.labelShadowFarPlane, out farPlane))
             {
-                game.LODMap.GetRenderer().shadowFarPlane = farPlane;
+                this.RunningGameSession.LODMap.GetRenderer().shadowFarPlane = farPlane;
             }
 
         }
@@ -188,7 +190,7 @@ namespace Simgame2.Tools
             int bias;
             if (ParseIntField(this.textBoxShadowBias.Text, this.labelShadowBias, out bias))
             {
-                game.LODMap.GetRenderer().ShadowBias = 1.0f / bias;
+                this.RunningGameSession.LODMap.GetRenderer().ShadowBias = 1.0f / bias;
             }
         }
 
@@ -197,7 +199,7 @@ namespace Simgame2.Tools
             float bias;
             if (ParseFloatField(this.textBoxNormalBias.Text, this.labelNormalBias, out bias))
             {
-                game.LODMap.GetRenderer().NormalBias = bias;
+                this.RunningGameSession.LODMap.GetRenderer().NormalBias = bias;
             }
         }
 

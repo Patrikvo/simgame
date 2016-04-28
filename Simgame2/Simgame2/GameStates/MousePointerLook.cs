@@ -15,8 +15,8 @@ namespace Simgame2.GameStates
     public class MousePointerLook : GameState
     {
       //  private Vector3 markerLocation;
-        public MousePointerLook(Game1 game)
-            : base(game)
+        public MousePointerLook(GameSession.GameSession RunningGameSession)
+            : base(RunningGameSession)
         {
             
         }
@@ -58,11 +58,11 @@ namespace Simgame2.GameStates
 
 
 
-            mouseCursorRay = game.PlayerCamera.UnProjectScreenPoint(currentMouseState.X, currentMouseState.Y, this.game.GraphicsDevice.Viewport);
+            mouseCursorRay = this.RunningGameSession.PlayerCamera.UnProjectScreenPoint(currentMouseState.X, currentMouseState.Y, this.RunningGameSession.device.Viewport);
                 
             
             //entityWithFocus = this.game.worldMap.FindEntityAt(mouseCursorRay);
-            entityWithFocus = this.game.LODMap.FindEntityAt(mouseCursorRay);
+            entityWithFocus = this.RunningGameSession.LODMap.FindEntityAt(mouseCursorRay);
 
             if (entityWithFocus != null)
             {
@@ -72,7 +72,7 @@ namespace Simgame2.GameStates
 
             if (keyState.IsKeyUp(Keys.Space) && ButtonSpaceDown == true)
             {
-                game.ChangeGameState(game.PlaceBuildingState);
+                this.RunningGameSession.ChangeGameState(this.RunningGameSession.PlaceBuildingState);
                 ButtonSpaceDown = false;
             }
 
@@ -85,17 +85,45 @@ namespace Simgame2.GameStates
             {
                 // do nothing in this state
                 mouseLeftButtonDown = false;
+
+
+                if (entityWithFocus != null)
+                {
+                    if (SelectedEntity == null ) 
+                    {
+                        SelectedEntity = entityWithFocus;
+                    }
+                    else
+                    {
+                        if (SelectedEntity.CanBeCommanded && SelectedEntity.IsMover)
+                        {
+                            ((Entities.MoverEntity)SelectedEntity).ManualControl = true;
+                            //((Entities.MoverEntity)SelectedEntity).MoveTo(entityWithFocus.location);
+                            ((Entities.MoverEntity)SelectedEntity).MoveTo(entityWithFocus);
+                            SelectedEntity = null;
+                        }
+                        else
+                        {
+                            SelectedEntity = null;
+                        }
+                    }
+
+                    
+                }
+
+
+
             }
 
 
             if (currentMouseState.RightButton == ButtonState.Released && mouseRightButtonDown == true)
             {
                 mouseRightButtonDown = false;
-                game.ChangeGameState(game.FreeLookState);
+                this.RunningGameSession.ChangeGameState(this.RunningGameSession.FreeLookState);
                 
             }
 
-            game.HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, currentMouseState.LeftButton == ButtonState.Pressed, false);
+            this.RunningGameSession.HUD_overlay.Update(currentMouseState.X, currentMouseState.Y, currentMouseState.LeftButton == ButtonState.Pressed, false);
 
 
 
@@ -116,7 +144,7 @@ namespace Simgame2.GameStates
                 ButtonDDown = false;
                 if (this.formDebug == null)
                 {
-                    this.formDebug = new Tools.FormDebug(this.game);
+                    this.formDebug = new Tools.FormDebug(this.RunningGameSession);
                     this.formDebug.Show();
                 }
                 else 
@@ -137,7 +165,7 @@ namespace Simgame2.GameStates
         public override void EnterState()
         {
             base.EnterState();
-            game.IsMouseVisible = true;
+            this.RunningGameSession.game.IsMouseVisible = true;
         }
 
         public override void ExitState()
@@ -147,13 +175,17 @@ namespace Simgame2.GameStates
                 entityWithFocus.HasMouseFocus = false;
             }
             base.ExitState();
-            game.IsMouseVisible = false;
+            this.RunningGameSession.game.IsMouseVisible = false;
         }
 
         public override string GetShortName() { return "M"; }
 
 
         protected bool ButtonDDown = false;
+
+
+
+        protected Entity SelectedEntity;
 
 
         Tools.FormDebug formDebug;

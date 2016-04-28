@@ -21,6 +21,7 @@ namespace Simgame2.LODTerrain
         int _topSize;
         int _halfSize;
         int _vertexCount;
+        Vector4 MapSize;
      //   int _scale;
 
         public int[] sector;
@@ -33,14 +34,39 @@ namespace Simgame2.LODTerrain
         }
 
 
+        public void Store(GameSession.GameStorage storage)
+        {
+            storage.Write(MapSize);     //  Vector4 MapSize;
+
+            // VertexMultitextured[] Vertices;
+            for (int i = 0; i < this.Vertices.Length; i++)
+            {
+                storage.Write(this.Vertices[i]);
+            }
+
+            // int[] sector;
+            storage.Write(sector.Length);
+            for (int i = 0; i < sector.Length; i++)
+            {
+                storage.Write(sector[i]);
+            }
+            
+            // ResourceCell[] resources;
+            storage.Write(resources.Length);
+            for (int i = 0; i < this.resources.Length; i++)
+            {
+                resources[i].Store(storage);
+            }
+
+        }
+
+
+
         public TreeVertexCollection(Vector4 mapSize)
         {
-       //     _scale = scale;
-           // _topSize = heightMap.Width - 1;
+            this.MapSize = mapSize;
             _topSize = (int)mapSize.X - 1;
             _halfSize = _topSize / 2;
-        //    _position = position;
-           // _vertexCount = heightMap.Width * heightMap.Width;
             _vertexCount = (int)(mapSize.X * mapSize.Y);
 
             //Initialize our array to hold the vertices
@@ -56,6 +82,46 @@ namespace Simgame2.LODTerrain
 
         }
 
+        public TreeVertexCollection(GameSession.GameStorage storage)
+        {
+            this.MapSize = storage.ReadVector4();
+            _topSize = (int)this.MapSize.X - 1;
+            _halfSize = _topSize / 2;
+            _vertexCount = (int)(this.MapSize.X * this.MapSize.Y);
+
+            int vertexCount = storage.ReadInt();
+
+            //Initialize our array to hold the vertices
+            Vertices = new VertexMultitextured[_vertexCount];
+
+            //Our method to populate the vertex collection
+            // VertexMultitextured[] Vertices;
+            for (int i = 0; i < this.Vertices.Length; i++)
+            {
+                this.Vertices[i] = storage.ReadVertexMultiTextured();
+            }
+
+            // int[] sector;
+            sector = new int[storage.ReadInt()];
+            for (int i = 0; i < sector.Length; i++)
+            {
+                sector[i] = storage.ReadInt();
+            }
+
+            // ResourceCell[] resources;
+            resources = new ResourceCell[storage.ReadInt()];
+            for (int i = 0; i < this.resources.Length; i++)
+            {
+                resources[i] = new ResourceCell();
+                resources[i].Restore(storage);
+            }
+
+            //Our method to  calculate the normals for all vertices
+            CalculateAllNormals();
+
+
+
+        }
 
         private void BuildVertices(Vector4 mapSize)
         {
@@ -67,34 +133,25 @@ namespace Simgame2.LODTerrain
            WorldGenerator.generateRegionMapLOD(out this.Vertices, out this.sector, out this.resources, (int)mapSize.X, (int)mapSize.Y, (int)mapSize.Z, (int)mapSize.W);
            sw.Stop();
            Console.WriteLine("map generation took: " + sw.ElapsedMilliseconds.ToString() + " ms");
-            
+           GameSession.GameStorage storage = new GameSession.GameStorage("map.dat", true);
+           storage.Write(mapSize);
+           storage.Write(this.Vertices.Length);
+           for (int i = 0; i < this.Vertices.Length; i++)
+           {
+               storage.Write(this.Vertices[i]);
+           }
+           storage.Write(this.sector.Length);
+           for (int i = 0; i < this.sector.Length; i++)
+           {
+               storage.Write(this.sector[i]);
+           }
+           storage.Write(this.resources.Length);
+           for (int i = 0; i < this.resources.Length; i++)
+           {
+               this.resources[i].Store(storage);
+           }
 
-
-            /*
-
-        //    var heightMapColors = new Color[_vertexCount];
-         //   heightMap.GetData(heightMapColors);
-
-            float x = _position.X;
-            float z = _position.Z;
-            float y = _position.Y;
-            float maxX = x + _topSize;
-
-            for (int i = 0; i < _vertexCount; i++)
-            {
-                if (x > maxX)
-                {
-                    x = _position.X;
-                    z++;
-                }
-
-                y = _position.Y + (heightMapColors[i].R / 5.0f);
-                VertexMultitextured vert = new VertexMultitextured(new Vector3(x * _scale, y * _scale, z * _scale), Vector3.Zero, Vector4.Zero, Vector4.Zero);
-                
-                vert.TextureCoordinate = new Vector4((vert.Position.X - _position.X) / _topSize, (vert.Position.Z - _position.Z) / _topSize,0.0f, 0.0f);
-                Vertices[i] = vert;
-                x++;
-            }*/
+           storage.Close();
         }
 
         private void CalculateAllNormals()

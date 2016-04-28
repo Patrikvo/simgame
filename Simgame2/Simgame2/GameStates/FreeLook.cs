@@ -14,7 +14,8 @@ namespace Simgame2.GameStates
 {
     public class FreeLook : GameState
     {
-        public FreeLook(Game1 game): base(game)
+        public FreeLook(GameSession.GameSession RunningGameSession)
+            : base(RunningGameSession)
         {
             
         }
@@ -35,10 +36,10 @@ namespace Simgame2.GameStates
                 float yDifference = 0;
                 float xDifference = currentMouseState.X - originalMouseState.X;
                 yDifference = currentMouseState.Y - originalMouseState.Y;
-                game.PlayerCamera.leftrightRot -= Camera.rotationSpeed * xDifference * timeDifference;
-                game.PlayerCamera.updownRot -= Camera.rotationSpeed * yDifference * timeDifference;
-                Mouse.SetPosition(game.device.Viewport.Width / 2, game.device.Viewport.Height / 2);
-                game.PlayerCamera.UpdateViewMatrix();
+                this.RunningGameSession.PlayerCamera.leftrightRot -= Camera.rotationSpeed * xDifference * timeDifference;
+                this.RunningGameSession.PlayerCamera.updownRot -= Camera.rotationSpeed * yDifference * timeDifference;
+                Mouse.SetPosition(RunningGameSession.device.Viewport.Width / 2, RunningGameSession.device.Viewport.Height / 2);
+                this.RunningGameSession.PlayerCamera.UpdateViewMatrix();
             }
 
             if (keyState.IsKeyUp(Keys.Space) && ButtonSpaceDown == true)
@@ -58,15 +59,14 @@ namespace Simgame2.GameStates
             if (currentMouseState.RightButton == ButtonState.Released && mouseRightButtonDown == true)
             {
                 mouseRightButtonDown = false;
-                game.ChangeGameState(game.MousePointerLookState);
+                this.RunningGameSession.ChangeGameState(this.RunningGameSession.MousePointerLookState);
             }
 
 
             if (keyState.IsKeyUp(Keys.PageUp) && button_PageUp_pressed == true)
             { 
                 button_PageUp_pressed = false;
-                //game.worldMap.GetRenderer().IncreaseAmbientLightLevel();
-                game.LODMap.GetRenderer().IncreaseAmbientLightLevel();
+                this.RunningGameSession.LODMap.GetRenderer().IncreaseAmbientLightLevel();
             }
             if (keyState.IsKeyDown(Keys.PageUp))
             {
@@ -77,8 +77,7 @@ namespace Simgame2.GameStates
             if (keyState.IsKeyUp(Keys.PageDown) && button_PageDown_pressed == true)
             {
                 button_PageDown_pressed = false;
-             //   game.worldMap.GetRenderer().DecreaseAmbientLightLevel();
-                game.LODMap.GetRenderer().DecreaseAmbientLightLevel();
+                this.RunningGameSession.LODMap.GetRenderer().DecreaseAmbientLightLevel();
             }
             if (keyState.IsKeyDown(Keys.PageDown))
             {
@@ -89,7 +88,7 @@ namespace Simgame2.GameStates
             if (keyState.IsKeyUp(Keys.D) && button_D_pressed == true)
             {
                 button_D_pressed = false;
-                game.ChangeGameState(game.debugState);
+                this.RunningGameSession.ChangeGameState(this.RunningGameSession.debugState);
 
             }
             if (keyState.IsKeyDown(Keys.D))
@@ -98,7 +97,7 @@ namespace Simgame2.GameStates
             }
 
 
-            game.HUD_overlay.Update(0, 0, false, true);
+            this.RunningGameSession.HUD_overlay.Update(0, 0, false, true);
 
 
         }
@@ -111,9 +110,9 @@ namespace Simgame2.GameStates
         public override void EnterState()
         {
             base.EnterState();
-            Mouse.SetPosition(game.device.Viewport.Width / 2, game.device.Viewport.Height / 2);
+            Mouse.SetPosition(this.RunningGameSession.device.Viewport.Width / 2, this.RunningGameSession.device.Viewport.Height / 2);
             originalMouseState = Mouse.GetState();
-            game.IsMouseVisible = false;
+            this.RunningGameSession.game.IsMouseVisible = false;
             button_PageUp_pressed = false;
             button_PageDown_pressed = false;
 

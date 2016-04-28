@@ -15,64 +15,24 @@ namespace Simgame2
 
     public class Game1 : Microsoft.Xna.Framework.Game
     {
-        GameSession.GameSession RunningGameSession;
+        public GameSession.GameSession RunningGameSession;
 
-        private const int mapNumCellsPerSide = 641; // 20 40 80 160 320 640 
 
         // Rendering objects
         private GraphicsDeviceManager graphics;
-        public GraphicsDevice device;
-        public Effect effect;
 
-        // Camera objects
-        public Camera PlayerCamera;
+        private bool doneLoading = false;
 
-
-        // Input/output objects
-        public SpriteFont font;
-
-        // GUI
-
-        public GUI HUD_overlay;
-
-
-        // Game Objects
-        public LODTerrain.LODTerrain LODMap;
-        public TextureGenerator textureGenerator;
-
-
-        public GameStates.GameState CurrentGameState;
-        public GameStates.FreeLook FreeLookState;
-        public GameStates.MousePointerLook MousePointerLookState;
-        public GameStates.PlaceBuilding PlaceBuildingState;
-        public GameStates.DebugState debugState;
-
-
-        public Simulation.Simulator simulator;
-
-        // test objects
-
-        public EntityBuilding selBuilding;
 
         
-        public EntityFactory entityFactory;
-
-        public Vector3 markerLocation;
-        private bool doneLoading = false;
 
         public Game1()
         {
-
-
             this.IsFixedTimeStep = false;    // fixes stutter problem in Win 10.
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
-            simulator = new Simulation.Simulator(this);
-            FreeLookState = new GameStates.FreeLook(this);
-            MousePointerLookState = new GameStates.MousePointerLook(this);
-            PlaceBuildingState = new GameStates.PlaceBuilding(this);
-            debugState = new GameStates.DebugState(this);
-            
+
+            this.RunningGameSession = new GameSession.GameSession(this);
         }
 
 
@@ -82,82 +42,37 @@ namespace Simgame2
             graphics.PreferredBackBufferHeight = 900;
             graphics.IsFullScreen = false;
             graphics.ApplyChanges();
-            HUD_overlay = new GUI(this);
 
-
-            _rsWire.CullMode = CullMode.CullCounterClockwiseFace;
-            _rsWire.FillMode = FillMode.WireFrame;
-
-            
-
+            this.RunningGameSession.Initialize(graphics.GraphicsDevice);
             base.Initialize();
         }
 
 
 
-        public void PlaceBuilding()
-        {
-            ChangeGameState(PlaceBuildingState);
-        }
-
 
         protected override void LoadContent()
         {
-            font = Content.Load<SpriteFont>("Courier New");
-            device = graphics.GraphicsDevice;
-            effect = Content.Load<Effect>("Series4Effects");
+            if (System.IO.File.Exists("savegame.dat") && System.IO.File.Exists("map.dat"))
+            {
+                GameSession.GameStorage storage = new GameSession.GameStorage("savegame.dat", false);
+                GameSession.GameStorage mapstorage = new GameSession.GameStorage("map.dat", false);
+                this.RunningGameSession.LoadContent(this.Content, storage, mapstorage);
 
-
-            PlayerCamera = new Camera(device.Viewport.AspectRatio);
-            LODMap = new LODTerrain.LODTerrain(this, mapNumCellsPerSide, mapNumCellsPerSide, effect, device);
-
-            PlayerCamera.LODMap = LODMap;
-
-            PlayerCamera.DrawDistance = 1200.0f; // 300.0f;
-
-            HUD_overlay.PreloadImages(this.Content);
-
-            HUD_overlay.ConstructButtons();
-
+            }
+            else
+            {
+                this.RunningGameSession.LoadContent(this.Content);
+            }
             
 
-
-            textureGenerator = new TextureGenerator(this);
-           // texture = textureGenerator.GenerateGroundTexture(new Color(124, 124, 124, 1), new Vector3(0,39,39), 512);
-            Texture2D texture = textureGenerator.GenerateGroundTexture(new Color(120, 62, 62, 1), new Vector3(20, 20, 20), 512);
-
-            LODMap.GetRenderer().waterBumpMap = Content.Load<Texture2D>("waterbump");
-
-            LODMap.GetRenderer().Textures = new Texture2D[5];
-            LODMap.GetRenderer().Textures[0] = Content.Load<Texture2D>("Textures\\tex1");
-            LODMap.GetRenderer().Textures[1] = Content.Load<Texture2D>("Textures\\tex0");
-            LODMap.GetRenderer().Textures[2] = Content.Load<Texture2D>("Textures\\tex2");
-            LODMap.GetRenderer().Textures[3] = Content.Load<Texture2D>("Textures\\tex3");
-            LODMap.GetRenderer().Textures[4] = Content.Load<Texture2D>("Textures\\tex1");
-
-            LODMap.selectionTexture = textureGenerator.SelectionImage(Color.Yellow, 5); //WorldMap.mapCellScale);
-
-
-            // skydome
-            LODMap.GetRenderer().LoadSkyDome(Content.Load<Model>("Models/dome"));
-
-
-            PlayerCamera.UpdateViewMatrix();
-
-
-            entityFactory = EntityFactory.CreateFactory(this, this.LODMap, PlayerCamera.projectionMatrix);
-
-  
             doneLoading = true;
-            ChangeGameState(FreeLookState);
+            this.RunningGameSession.ChangeGameState(this.RunningGameSession.FreeLookState);
         }
 
 
 
         protected override void UnloadContent()
-
         {
-            // TODO: Unload any non ContentManager content here
         }
 
 
@@ -167,8 +82,8 @@ namespace Simgame2
         {
             stopwatch.Reset();
             stopwatch.Start();
-            simulator.Update(gameTime);
-            this.CurrentGameState.Update(gameTime);
+
+            RunningGameSession.Update(gameTime);
 
             base.Update(gameTime);
             stopwatch.Stop();
@@ -177,60 +92,14 @@ namespace Simgame2
 
 
 
-
-        public Texture2D debugImg = null;
-        public bool showDebugImg = false;
-        private int fps = 0;
-        private float fps_avg = 0;
-        private int fps_sampleSize = 10;
-        private int fps_SampleNum = 10;
-
-        private float drawTime_avg = 0;
-        private int drawTime_sampleSize = 10;
-        private int drawTime_SampleNum = 10;
-        private int drawtime = 0;
-        private SpriteBatch spriteBatch;
-
-        Vector2 pos = new Vector2(20, 20);
-        Vector2 pos2 = new Vector2(20, 60);
-        Vector2 pos3 = new Vector2(20, 100);
-        Rectangle rect = new Rectangle(20, 50, 400, 400);
-
-        RasterizerState _rsWire = new RasterizerState();
-
-        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
         protected override void Draw(GameTime gameTime)
         {
-            
-
-       //     GraphicsDevice.RasterizerState = _rsWire;
-
-
-
-
-
             if (!doneLoading) { return; }
 
-            if (gameTime.ElapsedGameTime.Milliseconds != 0)
-            {
-               // fps = (int)(1000 / gameTime.ElapsedGameTime.Milliseconds);
-                fps_avg += (1000 / gameTime.ElapsedGameTime.Milliseconds);
-                fps_SampleNum--;
-                if (fps_SampleNum <= 0)
-                {
-                    fps = (int)(fps_avg / fps_sampleSize);
-                    fps_SampleNum = fps_sampleSize;
-                    fps_avg = 0;
-                }
 
-            }
-            
-            
-            GraphicsDevice.Clear(Color.Black);
-            GraphicsDevice.DepthStencilState = DepthStencilState.Default;   // fixes the Z-buffer. 
+            MeasureFramerate(gameTime);
 
-
-            LODMap.Draw(PlayerCamera, gameTime);
+            RunningGameSession.Draw(gameTime);
 
 
             if (stopwatch.ElapsedMilliseconds != 0)
@@ -247,62 +116,86 @@ namespace Simgame2
 
            
             // Draws stats
-            spriteBatch = new SpriteBatch(this.device);
+            spriteBatch = new SpriteBatch(this.RunningGameSession.device);
             spriteBatch.Begin();
-            
-            spriteBatch.DrawString(font, "fps: " + fps.ToString() + " - " + LODMap.GetStats(), pos, Color.White);
-            spriteBatch.DrawString(font, "(" + this.PlayerCamera.GetCameraPostion().X + ", " + this.PlayerCamera.GetCameraPostion().Y + ", " + this.PlayerCamera.GetCameraPostion().Z + ")" + " - state " + DebugState() + 
+
+            spriteBatch.DrawString(this.RunningGameSession.font, "fps: " + fps.ToString() + " - " + this.RunningGameSession.LODMap.GetStats(), pos, Color.White);
+            spriteBatch.DrawString(this.RunningGameSession.font, "(" + this.RunningGameSession.PlayerCamera.GetCameraPostion().X + ", " + this.RunningGameSession.PlayerCamera.GetCameraPostion().Y + ", " + this.RunningGameSession.PlayerCamera.GetCameraPostion().Z + ")" + " - state " + DebugState() + 
             " drawtime: " + drawtime.ToString() + " ms", pos2, Color.White);
 
 
-            if (debugImg != null && showDebugImg == true)
+            if (debugImg != null && this.RunningGameSession.showDebugImg == true)
             {
                 spriteBatch.Draw(debugImg, rect, Color.White);
             }
             spriteBatch.End();
 
-            if (CurrentGameState is GameStates.MousePointerLook || CurrentGameState is GameStates.PlaceBuilding)
-            {
-                HUD_overlay.Draw(gameTime, this.device);
-            }
 
-       //     if (drawtime > 20)
-        //    {
-         //       int a = 0;
-          //  }
+
+            
+
 
 
             base.Draw(gameTime);
         }
 
-
-
-
-
-
-
-        public void ChangeGameState(GameStates.GameState newstate)
+        private void MeasureFramerate(GameTime gameTime)
         {
-            if (CurrentGameState != null)
+            // measure frame rate
+            if (gameTime.ElapsedGameTime.Milliseconds != 0)
             {
-                CurrentGameState.ExitState();
-            }
+                fps_avg += (1000 / gameTime.ElapsedGameTime.Milliseconds);
+                fps_SampleNum--;
+                if (fps_SampleNum <= 0)
+                {
+                    fps = (int)(fps_avg / fps_sampleSize);
+                    fps_SampleNum = fps_sampleSize;
+                    fps_avg = 0;
+                }
 
-            if (newstate != null)
-            {
-                CurrentGameState = newstate;
-                CurrentGameState.EnterState();
             }
         }
+
+
+
+
+
+
+
+
 
 
 
 
 
         private string DebugState() 
-        {  
-            return CurrentGameState.GetShortName();
+        {
+            return RunningGameSession.CurrentGameState.GetShortName();
         }
+
+
+
+        public Texture2D debugImg = null;
+
+
+        private int fps = 0;
+        private float fps_avg = 0;
+        private int fps_sampleSize = 10;
+        private int fps_SampleNum = 10;
+
+        private float drawTime_avg = 0;
+        private int drawTime_sampleSize = 10;
+        private int drawTime_SampleNum = 10;
+        private int drawtime = 0;
+        private SpriteBatch spriteBatch;
+
+        Vector2 pos = new Vector2(20, 20);
+        Vector2 pos2 = new Vector2(20, 60);
+        Vector2 pos3 = new Vector2(20, 100);
+        Rectangle rect = new Rectangle(20, 50, 400, 400);
+
+
+        System.Diagnostics.Stopwatch stopwatch = new System.Diagnostics.Stopwatch();
 
     }
 }

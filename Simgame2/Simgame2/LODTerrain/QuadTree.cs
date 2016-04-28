@@ -9,7 +9,7 @@ namespace Simgame2.LODTerrain
 {
     public class QuadTree
     {
-        public QuadTree(Vector4 mapSize, GraphicsDevice device)
+        public QuadTree(Vector4 mapSize, GraphicsDevice device, GameSession.GameStorage storage)
         {
          //   this.Cull = false;
             this.MinimumDepth = 8;
@@ -20,7 +20,14 @@ namespace Simgame2.LODTerrain
           //  _topNodeSize =  heightMap.Width - 1;
             _topNodeSize = (int)mapSize.X - 1;
 
-            _vertices = new TreeVertexCollection( mapSize);
+            if (storage == null)
+            {
+                _vertices = new TreeVertexCollection(mapSize);
+            }
+            else
+            {
+                _vertices = new TreeVertexCollection(storage);
+            }
             _buffers = new BufferManager(_vertices.Vertices, device, bufferSize);
             _rootNode = new QuadNode(NodeType.FullNode, _topNodeSize, 1, null, this, 0);
          //   View = viewMatrix;
@@ -34,6 +41,10 @@ namespace Simgame2.LODTerrain
             Indices = new int[bufferSize];
         }
 
+        public void Store(GameSession.GameStorage storage)
+        {
+            this._vertices.Store(storage);
+        }
 
         float LastCameraLeftRightRot = 0;
         float LastCameraUpDownRot = 0;
