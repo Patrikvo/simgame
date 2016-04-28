@@ -34,29 +34,29 @@ namespace Simgame2.Simulation
                 {
                     e.Update(gameTime);
 
-                    if (e is Entities.Movement.MoverSim)
+                    if (e is Entities.MoverEntity.MoverSim)
                     {
-                        Entities.Movement.MoverSim s = (Entities.Movement.MoverSim)e;
+                        Entities.MoverEntity.MoverSim s = (Entities.MoverEntity.MoverSim)e;
                         if (s.ManualControl == true) { continue; }
                         if (MapModified) { s.RefreshTarget = true; }
 
-                        if (s.MovementState == Entities.Movement.MoverSim.UnitMovementState.IDLE)
+                        if (s.MovementState == Entities.MoverEntity.MoverSim.UnitMovementState.IDLE)
                         {
-                            if (s.PayloadState == Entities.Movement.MoverSim.UnitPayloadState.EMPTY)
+                            if (s.PayloadState == Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY)
                             {
                                 Vector3 target = SetTargetNearest(s, Entity.EntityTypes.BASIC_MINE);
 
-                                if (target != Vector3.Zero && s.DistanceToTarget(target) > Entities.Movement.MoverSim.StopDistance)
+                                if (target != Vector3.Zero && s.DistanceToTarget(target) > Entities.MoverEntity.MoverSim.StopDistance)
                                 {
                                     s.SetTarget(target);
-                                    s.MovementState = Entities.Movement.MoverSim.UnitMovementState.MOVING;
+                                    s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.MOVING;
                                 }
                             }
                             else{
                                 Vector3 target = SetTargetNearest(s, Entity.EntityTypes.MELTER);
                                 if (target != Vector3.Zero){
                                     s.SetTarget(target);
-                                    s.MovementState = Entities.Movement.MoverSim.UnitMovementState.MOVING;
+                                    s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.MOVING;
                                 }
                             }
                         }
@@ -66,15 +66,15 @@ namespace Simgame2.Simulation
                           //  {
                                 if (s.ReachedGoal) // .DistanceToTarget() < 20)
                                 {
-                                    if (s.PayloadState == Entities.Movement.MoverSim.UnitPayloadState.EMPTY)
+                                    if (s.PayloadState == Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY)
                                     {
-                                        s.PayloadState = Entities.Movement.MoverSim.UnitPayloadState.LOADED;
-                                        s.MovementState = Entities.Movement.MoverSim.UnitMovementState.IDLE;
+                                        s.PayloadState = Entities.MoverEntity.MoverSim.UnitPayloadState.LOADED;
+                                        s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.IDLE;
                                     }
                                     else
                                     {
-                                        s.PayloadState = Entities.Movement.MoverSim.UnitPayloadState.EMPTY;
-                                        s.MovementState = Entities.Movement.MoverSim.UnitMovementState.IDLE;
+                                        s.PayloadState = Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY;
+                                        s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.IDLE;
                                     }
                                 }
                         //    }
@@ -105,7 +105,7 @@ namespace Simgame2.Simulation
 
 
 
-        public Vector3 SetTargetNearest(Entities.Movement.MoverSim unit,  Entity.EntityTypes targetType)
+        public Vector3 SetTargetNearest(Entities.MoverEntity.MoverSim unit,  Entity.EntityTypes targetType)
         {
             float distance = float.MaxValue;
             Vector3 TargetLocation = Vector3.Zero;

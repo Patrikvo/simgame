@@ -26,7 +26,7 @@ namespace Simgame2.Buildings
 
             this.AddTexture("BasicMineTex");
             this.scale = scale;
-            this.rotation = rotation;
+            this.Rotation = rotation;
             this.location = location;
             this.LoadModel("Models/BasicMine");
         }

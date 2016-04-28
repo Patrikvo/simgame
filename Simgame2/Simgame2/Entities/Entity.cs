@@ -61,7 +61,7 @@ namespace Simgame2
             this.HideBillboard = false;
             this.model = other.model;
             this.location = new Vector3(other.location.X, other.location.Y, other.location.Z);
-            this.rotation = new Vector3(other.rotation.X, other.rotation.Y, other.rotation.Z);
+            this.Rotation = new Vector3(other.Rotation.X, other.Rotation.Y, other.Rotation.Z);
             this.scale = new Vector3(other.scale.X, other.scale.Y, other.scale.Z);
 
             this.texture = other.texture;
@@ -86,6 +86,17 @@ namespace Simgame2
 
         public virtual void Update(GameTime gameTime)
         {
+        }
+
+
+        public float DistanceTo(Entity other)
+        {
+            float distance = float.MaxValue;
+            if (other != null)
+            {
+                distance = Vector3.Distance(other.location, this.Location);
+            }
+            return distance;
         }
 
 
@@ -219,8 +230,8 @@ namespace Simgame2
 
         public Matrix GetWorldMatrix()
         {
-            return Matrix.CreateScale(scale) * Matrix.CreateRotationX(rotation.X) * Matrix.CreateRotationY(rotation.Y) *
-                    Matrix.CreateRotationZ(rotation.Z) * Matrix.CreateTranslation(location);
+            return Matrix.CreateScale(scale) * Matrix.CreateRotationX(Rotation.X) * Matrix.CreateRotationY(Rotation.Y) *
+                    Matrix.CreateRotationZ(Rotation.Z) * Matrix.CreateTranslation(location);
         }
 
         public Matrix[] GetBoneTransforms()
@@ -284,8 +295,8 @@ namespace Simgame2
         public BoundingBox UpdateBoundingBox()
         {
 
-            Matrix worldTransform = Matrix.CreateScale(scale) * Matrix.CreateRotationX(rotation.X) * Matrix.CreateRotationX((float)Math.PI / 2) * Matrix.CreateRotationY(rotation.Y) *
-                Matrix.CreateRotationZ(rotation.Z) * Matrix.CreateTranslation(location);
+            Matrix worldTransform = Matrix.CreateScale(scale) * Matrix.CreateRotationX(Rotation.X) * Matrix.CreateRotationX((float)Math.PI / 2) * Matrix.CreateRotationY(Rotation.Y) *
+                Matrix.CreateRotationZ(Rotation.Z) * Matrix.CreateTranslation(location);
 
             // Initialize minimum and maximum corners of the bounding box to max and min values
             Vector3 min = new Vector3(float.MaxValue, float.MaxValue, float.MaxValue);
@@ -353,10 +364,7 @@ namespace Simgame2
             return altitude;
         }
 
-        public float DistanceTo(Entity other)
-        {
-            return Vector3.Distance(this.location, other.location);
-        }
+       
 
 
         public BoundingBox boundingBox;
@@ -365,7 +373,7 @@ namespace Simgame2
         public Model model { get; set; }
         public Vector3 location { get { return Location; } set { this.Location = value;  } }
         private Vector3 Location;
-        public Vector3 rotation;
+        public Vector3 Rotation;
 
         public Vector3 scale { get; set; }
 

@@ -114,7 +114,7 @@ namespace Simgame2.GameStates
                 Entities.MoverEntity mover = this.RunningGameSession.entityFactory.CreateMover(this.RunningGameSession.PlayerCamera.GetCameraPostion());
                 //this.game.worldMap.AddEntity(mover);
                 this.RunningGameSession.LODMap.AddEntity(mover);
-                this.RunningGameSession.simulator.AddEntity(mover.movement.GetSimEntity());
+     //           this.RunningGameSession.simulator.AddEntity(mover.movement.GetSimEntity());
 
 
                     ButtonInsertDown = false;

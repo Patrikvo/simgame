@@ -63,7 +63,7 @@ namespace Simgame2.GameStates
             this.RunningGameSession.selBuilding.location = markerLocation;
 
             // convert rotation to radials, add to current rotation then limit to 0 - 2*PI
-            this.RunningGameSession.selBuilding.rotation.Y = (float)(this.RunningGameSession.selBuilding.rotation.Y + (rotAmout * Math.PI / 180) % 2 * Math.PI);
+            this.RunningGameSession.selBuilding.Rotation.Y = (float)(this.RunningGameSession.selBuilding.Rotation.Y + (rotAmout * Math.PI / 180) % 2 * Math.PI);
 
 
             //game.selBuilding.PlaceBuilding(game.worldMap, false);

@@ -33,7 +33,7 @@ namespace Simgame2.Buildings
           
 
             this.scale = scale;
-            this.rotation = rotation;
+            this.Rotation = rotation;
             this.location = location;
 
             this.LoadModel("Models/Lander");
