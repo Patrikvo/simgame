@@ -26,11 +26,13 @@ namespace Simgame2.Renderer
 
         // Shadow depth target and depth-texture effect
         public RenderTarget2D shadowDepthTarg;
+        public RenderTarget2D BlurredShadowDepthTarg;
         Effect shadowDepthEffect;
+        Effect BlurEffect;
 
         // Depth texture parameters
         int shadowMapSize = 4096; // 2048;
-        public int shadowFarPlane = 750;
+        public int shadowFarPlane = 2000;
 
         // Shadow light view and projection
         Matrix shadowView, shadowProjection;
@@ -97,7 +99,7 @@ namespace Simgame2.Renderer
             lightTarg = new RenderTarget2D(device, viewWidth, viewHeight, false, SurfaceFormat.Color, DepthFormat.Depth24);
             //shadowDepthTarg = new RenderTarget2D(device, shadowMapSize, shadowMapSize, false, SurfaceFormat.Single, DepthFormat.Depth24);
             shadowDepthTarg = new RenderTarget2D(device, shadowMapSize, shadowMapSize, false, SurfaceFormat.Single, DepthFormat.Depth24);
-            
+            BlurredShadowDepthTarg = new RenderTarget2D(device, shadowMapSize, shadowMapSize, false, SurfaceFormat.Single, DepthFormat.Depth24);
             
 
 
@@ -106,6 +108,7 @@ namespace Simgame2.Renderer
             lightingEffect = this.RunningGameSession.Content.Load<Effect>("PPLight");
             this.effect = this.RunningGameSession.Content.Load<Effect>("PrelightEffects");
             shadowDepthEffect = this.RunningGameSession.Content.Load<Effect>("ShadowDepthEffect");
+            BlurEffect = this.RunningGameSession.Content.Load<Effect>("Blur");
 
 
             // Set effect parameters to light mapping effect
@@ -121,7 +124,7 @@ namespace Simgame2.Renderer
 
             
             //shadow map
-            this.shadowFarPlane = (int)PlayerCamera.DrawDistance;
+         //   this.shadowFarPlane = (int)PlayerCamera.DrawDistance;
             shadowDepthEffect.Parameters["FarPlane"].SetValue(shadowFarPlane);
 
             this.graphicsDevice = device;
@@ -285,7 +288,7 @@ namespace Simgame2.Renderer
             // LightPosition
 
 
-
+            /*
             this.shadowDepthEffect.CurrentTechnique.Passes[0].Apply();
             foreach (EffectPass pass in this.shadowDepthEffect.CurrentTechnique.Passes)
             {
@@ -296,9 +299,9 @@ namespace Simgame2.Renderer
 
                 int noVertices = this.terrainVertexBuffer.VertexCount;
                 int noTriangles = this.terrainIndexBuffer.IndexCount / 3;
-                this.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, noVertices, 0, noTriangles);
+        //        this.graphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, noVertices, 0, noTriangles);   // disabled terrain self shadowing
             }
-
+            */
 
             foreach (Entity e in entities)
             {
@@ -326,6 +329,29 @@ namespace Simgame2.Renderer
         }
 
 
+
+        public void BlurShadowMap()
+        {
+            // BlurredShadowDepthTarg
+            
+            graphicsDevice.SetRenderTarget(BlurredShadowDepthTarg);
+            graphicsDevice.Clear(Color.White);
+           
+
+            
+
+            SpriteBatch spriteBatch = new SpriteBatch(graphicsDevice);
+            spriteBatch.Begin(SpriteSortMode.BackToFront, BlendState.Opaque, SamplerState.PointClamp, DepthStencilState.Default, RasterizerState.CullNone);
+            BlurEffect.CurrentTechnique.Passes[0].Apply();
+            spriteBatch.Draw(shadowDepthTarg, new Vector2(0, 0), Color.White);
+            spriteBatch.End();
+
+            graphicsDevice.SetRenderTarget(null);
+
+        //    shadowDepthTarg = BlurredShadowDepthTarg;
+
+
+        }
 
 
 
@@ -355,14 +381,15 @@ namespace Simgame2.Renderer
 
 
 
-            this.SunLight.ShadowLightPosition = new Vector3(-500, 200, -500);
+            //this.SunLight.ShadowLightPosition = new Vector3(-500, 500, -500);
+            this.SunLight.ShadowLightPosition = new Vector3(300, 200, -300);
 
  
-            this.SunLight.ShadowLightTarget = new Vector3(500, 100, 500);
+            this.SunLight.ShadowLightTarget = new Vector3(0, 0, 0);
 
             this.DoShadowMapping = true;
-            this.ShadowMult = 0.3f;
-            this.ShadowBias = 1.0f / 200.0f;
+            this.ShadowMult =  0.3f;
+            this.ShadowBias = 1.0f/2000.0f;
 
 
             this.NormalBias = 0.4f;

@@ -26,6 +26,15 @@ namespace Simgame2.Buildings
             this.Type = EntityTypes.LANDER;
         }
 
+        public override bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            base.OnEvent(ReceivedEvent);
+            // TODO IMPLEMENT
+            
+
+            return false;
+        }
+
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
             this.AddTexture("Ship");  // Ship texture

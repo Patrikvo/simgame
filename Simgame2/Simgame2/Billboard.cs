@@ -25,6 +25,12 @@ namespace Simgame2
 
         public Effect BillboardEffect { get; set; }
 
+        public override bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            // TODO IMPLEMENT
+            return false;
+        }
+
 
         public void loadTexture(Texture2D texture, Vector3 location)
         {

@@ -37,6 +37,10 @@ namespace Simgame2.Renderer
             
             LightDirection = Vector3.Transform(Vector3.Up, this.RotationMatrix);
             LightDirection.Normalize();
+
+            
+
+
         }
 
         public Matrix GetRotationMatrix() { return RotationMatrix; }

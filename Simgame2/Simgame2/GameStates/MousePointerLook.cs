@@ -51,12 +51,7 @@ namespace Simgame2.GameStates
          //   }
 
 
-            if (entityWithFocus != null) 
-            {
-                entityWithFocus.HasMouseFocus = false;
-            }
-
-
+            Entity previousEntityWithFocus = entityWithFocus;
 
             mouseCursorRay = this.RunningGameSession.PlayerCamera.UnProjectScreenPoint(currentMouseState.X, currentMouseState.Y, this.RunningGameSession.device.Viewport);
                 
@@ -64,11 +59,24 @@ namespace Simgame2.GameStates
             //entityWithFocus = this.game.worldMap.FindEntityAt(mouseCursorRay);
             entityWithFocus = this.RunningGameSession.LODMap.FindEntityAt(mouseCursorRay);
 
-            if (entityWithFocus != null)
+
+            if (previousEntityWithFocus != null && entityWithFocus != null && previousEntityWithFocus != entityWithFocus)
             {
-                entityWithFocus.HasMouseFocus = true;
+                this.RunningGameSession.simulator.AddEvent(new Simulation.Events.EntityLostFocusEvent(previousEntityWithFocus));
+                this.RunningGameSession.simulator.AddEvent(new Simulation.Events.EntityHasFocusEvent(entityWithFocus));
+            }
+            else if (previousEntityWithFocus != null && entityWithFocus == null)
+            {
+                this.RunningGameSession.simulator.AddEvent(new Simulation.Events.EntityLostFocusEvent(previousEntityWithFocus));
+            }
+            else if (previousEntityWithFocus == null && entityWithFocus != null)
+            {
+                this.RunningGameSession.simulator.AddEvent(new Simulation.Events.EntityHasFocusEvent(entityWithFocus));
             }
 
+
+
+            // EntityHasFocusEvent
 
             if (keyState.IsKeyUp(Keys.Space) && ButtonSpaceDown == true)
             {

@@ -13,12 +13,51 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2.Buildings
 {
-    public class BasicMine: EntityBuilding
+    public class BasicMine : EntityBuilding, Simulation.Events.EventReceiver
     {
         public BasicMine(GameSession.GameSession RuningGameSession)
             : base(RuningGameSession)
         {
             this.Type = EntityTypes.BASIC_MINE;
+        }
+
+        public override bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            base.OnEvent(ReceivedEvent);
+            // TODO IMPLEMENT
+/*
+            if (ReceivedEvent is Simulation.Events.BuildingContructionDoneEvent)
+            {
+                Simulation.Events.BuildingContructionDoneEvent e = (Simulation.Events.BuildingContructionDoneEvent)ReceivedEvent;
+
+                Console.WriteLine("Saw New Building");
+
+                return true;
+            }
+
+            if (ReceivedEvent is Simulation.Events.EntityLostFocus)
+            {
+                Simulation.Events.EntityLostFocus e = (Simulation.Events.EntityLostFocus)ReceivedEvent;
+
+                if (e.SourceEntity == this)
+                {
+                    this.HasMouseFocus = false;
+                }
+
+            }
+
+            if (ReceivedEvent is Simulation.Events.EntityHasFocusEvent)
+            {
+                Simulation.Events.EntityHasFocusEvent e = (Simulation.Events.EntityHasFocusEvent)ReceivedEvent;
+
+                if (e.SourceEntity == this)
+                {
+                    this.HasMouseFocus = true;
+                }
+
+            }
+            */
+            return false;
         }
 
         public void Initialize(Vector3 scale, Vector3 rotation)
@@ -39,6 +78,11 @@ namespace Simgame2.Buildings
             {
                 UpdateStatusScreen();
             }
+
+            if (!IsGhost)
+            {
+                GetSimEntity().Update(gameTime);
+            }
         }
 
  
@@ -58,7 +102,7 @@ namespace Simgame2.Buildings
         {
             if (this.resourceCell == null)
             {
-                resourceCell = this.getResourceCell(location.X, -location.Z);
+                resourceCell = this.getResourceCell(location.X, location.Z);
             }
             // TODO modifyvto allow custom string and images.
             if (statusBillboard.BillboardBackGroundTexture != null)
@@ -83,7 +127,7 @@ namespace Simgame2.Buildings
                // sb.Append("/");
                 //sb.Append(electricMax);
 
-                spriteBatch.DrawString(this.font, GetSimEntity().ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
+                spriteBatch.DrawString(this.font, GetSimEntity().ToString(), new Vector2(20, 20), Color.Black);
 
                 spriteBatch.End();
 
@@ -167,8 +211,11 @@ namespace Simgame2.Buildings
                 float timeDelta = gameTime.ElapsedGameTime.Milliseconds;
                 for (int i = 0; i < Simulation.ResourceStorage.ResourceCount; i++)
                 {
-                    ResourceOutput[i] = clamp(ResourceOutput[i] +
-                        (ProduceRate[i]/100 * timeDelta), ResourceMaxAmount[i]);
+                 //   ResourceOutput[i] = clamp(ResourceOutput[i] +
+                  //      (ProduceRate[i]/100 * timeDelta), ResourceMaxAmount[i]);
+                    mineParent.RunningGameSession.AvailableResources.AddResourceAmount((Simulation.ResourceStorage.Resource)i, (ProduceRate[i] / 100 * timeDelta));
+                   
+                   
                 }
             }
 
@@ -179,8 +226,8 @@ namespace Simgame2.Buildings
 
                 for (int i = 2; i < 14; i++)
                 {
-                    sb.Append((Simulation.ResourceStorage.Resource)(i)); sb.Append(": "); sb.Append((int)ResourceOutput[i]);
-                    sb.Append("/"); sb.Append(ResourceMaxAmount[i]); sb.Append(" @ ");
+                    sb.Append((Simulation.ResourceStorage.Resource)(i)); sb.Append(": ");  //sb.Append((int)ResourceOutput[i]);
+                    //sb.Append("/"); sb.Append(ResourceMaxAmount[i]); sb.Append(" @ ");
                     sb.Append(ProduceRate[i]);
                     sb.AppendLine();
                 }

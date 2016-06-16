@@ -12,10 +12,10 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    public class Entity
+    public abstract class Entity: Simulation.Events.EventReceiver
     {
 
-        public enum EntityTypes { NONE, BASIC_MINE, MELTER, SOLAR, WIND_TOWER, MOVER, LANDER };
+        public enum EntityTypes { NONE, BASIC_MINE, MELTER, SOLAR, WIND_TOWER, MOVER, FLYER, LANDER };
 
         protected GameSession.GameSession RunningGameSession;
 
@@ -53,6 +53,43 @@ namespace Simgame2
         public ResourceCell getResourceCell(float wx, float wy )
         {
             return this.LODMap.GetResourceFromWorldCoor(wx, wy);
+        }
+
+
+        public virtual bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            if (ReceivedEvent is Simulation.Events.BuildingContructionDoneEvent)
+            {
+                Simulation.Events.BuildingContructionDoneEvent e = (Simulation.Events.BuildingContructionDoneEvent)ReceivedEvent;
+
+                Console.WriteLine("Saw New Building");
+
+                return true;
+            }
+
+            if (ReceivedEvent is Simulation.Events.EntityLostFocusEvent)
+            {
+                Simulation.Events.EntityLostFocusEvent e = (Simulation.Events.EntityLostFocusEvent)ReceivedEvent;
+
+                if (e.SourceEntity == this)
+                {
+                    this.HasMouseFocus = false;
+                }
+
+            }
+
+            if (ReceivedEvent is Simulation.Events.EntityHasFocusEvent)
+            {
+                Simulation.Events.EntityHasFocusEvent e = (Simulation.Events.EntityHasFocusEvent)ReceivedEvent;
+
+                if (e.SourceEntity == this)
+                {
+                    this.HasMouseFocus = true;
+                }
+
+            }
+
+            return false;
         }
 
 

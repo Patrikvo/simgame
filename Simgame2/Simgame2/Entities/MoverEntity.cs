@@ -31,16 +31,23 @@ namespace Simgame2.Entities
             
         }
 
+        public override bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            base.OnEvent(ReceivedEvent);
+            // TODO IMPLEMENT
+            return false;
+        }
 
-        //public bool ManualControl { get; set; }
+
+        public bool ManualControl { get; set; }
 
         
 
-        public bool ManualControl
-        {
-            get { return ((MoverEntity.MoverSim)this.GetSimEntity()).ManualControl; }
-            set { ((MoverEntity.MoverSim)this.GetSimEntity()).ManualControl = value; }
-        }
+        //public bool ManualControl
+        //{
+        //    get { return ((MoverEntity.MoverSim)this.GetSimEntity()).ManualControl; }
+        //    set { ((MoverEntity.MoverSim)this.GetSimEntity()).ManualControl = value; }
+        //}
 
 
 

@@ -82,6 +82,7 @@
     <Compile Include="Buildings\SolarPlant.cs" />
     <Compile Include="Buildings\WindTower.cs" />
     <Compile Include="Camera.cs" />
+    <Compile Include="Entities\EntityFlyer.cs" />
     <Compile Include="Entities\MoverEntity.cs" />
     <Compile Include="Entities\Entity.cs" />
     <Compile Include="Entities\EntityBuilding.cs" />
@@ -112,6 +113,11 @@
     <Compile Include="Renderer\VertexMultitextured.cs" />
     <Compile Include="Renderer\VertexPositionColored.cs" />
     <Compile Include="ResourceCell.cs" />
+    <Compile Include="Simulation\Events\BuildingContructionDoneEvent.cs" />
+    <Compile Include="Simulation\Events\EntityHasFocusEvent.cs" />
+    <Compile Include="Simulation\Events\EntityLostFocusEvent.cs" />
+    <Compile Include="Simulation\Events\Event.cs" />
+    <Compile Include="Simulation\Events\EventReceiver.cs" />
     <Compile Include="Simulation\ResourceStorage.cs" />
     <Compile Include="Simulation\SimulationBuildingEnity.cs" />
     <Compile Include="Simulation\SimulationEntity.cs" />

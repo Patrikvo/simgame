@@ -66,8 +66,8 @@ namespace Simgame2.GameStates
                 moveVector += new Vector3(-1, 0, 0);
 
 
-            if (keyState.IsKeyDown(Keys.R))
-                this.RunningGameSession.PlayerCamera.cameraHeight = -this.RunningGameSession.PlayerCamera.cameraHeight;
+      //      if (keyState.IsKeyDown(Keys.R))
+       //         this.RunningGameSession.PlayerCamera.cameraHeight = -this.RunningGameSession.PlayerCamera.cameraHeight;
             if (keyState.IsKeyDown(Keys.F))
                 moveVector += new Vector3(0, -1, 0);
 
@@ -112,13 +112,26 @@ namespace Simgame2.GameStates
             if (keyState.IsKeyUp(Keys.Insert) && ButtonInsertDown == true)
             {
                 Entities.MoverEntity mover = this.RunningGameSession.entityFactory.CreateMover(this.RunningGameSession.PlayerCamera.GetCameraPostion());
-                //this.game.worldMap.AddEntity(mover);
                 this.RunningGameSession.LODMap.AddEntity(mover);
-     //           this.RunningGameSession.simulator.AddEntity(mover.movement.GetSimEntity());
-
-
-                    ButtonInsertDown = false;
+                ButtonInsertDown = false;
             }
+
+
+            if (keyState.IsKeyDown(Keys.Home))
+            {
+                ButtonHomeDown = true;
+            }
+
+            if (keyState.IsKeyUp(Keys.Home) && ButtonHomeDown == true)
+            {
+                Entities.EntityFlyer flyer = this.RunningGameSession.entityFactory.CreateFlyer(this.RunningGameSession.PlayerCamera.GetCameraPostion());
+                this.RunningGameSession.LODMap.AddEntity(flyer);
+                ButtonHomeDown = false;
+            }
+
+
+
+
 
 
             if (keyState.IsKeyDown(Keys.S))
@@ -141,6 +154,19 @@ namespace Simgame2.GameStates
                 this.RunningGameSession.LoadGame("savegame.dat");
                 ButtonLDown = false;
             }
+
+
+            if (keyState.IsKeyDown(Keys.R))
+            {
+                ButtonRDown = true;
+            }
+            if (keyState.IsKeyUp(Keys.R) && ButtonRDown == true)
+            {
+                this.RunningGameSession.HUD_overlay.ShowResourceWindow = !this.RunningGameSession.HUD_overlay.ShowResourceWindow;
+                ButtonRDown = false;
+            }
+
+
 
             if (keyState.IsKeyDown(Keys.N))
             {
@@ -187,7 +213,9 @@ namespace Simgame2.GameStates
         protected bool ButtonLDown = false;
         protected bool ButtonNDown = false;
 
+        protected bool ButtonRDown = false;
 
         protected GameSession.GameSession RunningGameSession;
+        private bool ButtonHomeDown;
     }
 }

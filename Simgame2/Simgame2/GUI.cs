@@ -12,7 +12,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    public class GUI
+    public class GUI : Simulation.Events.EventReceiver
     {
         const string ARROWL = "GUI\\Button_arrowL";
         const string ARROWL_P = "GUI\\Button_arrowL_P";
@@ -25,10 +25,20 @@ namespace Simgame2
         const string ARROWR = "GUI\\Button_arrowR";
         const string ARROWR_P = "GUI\\Button_arrowR_P";
 
+        
+        // TODO
+        // display resource list from RunningGameSession.AvailableResources
 
 
         List<Texture2D> images;
+        int resourceWindowWidth = 400;
+        int resourceWindowHeight = 800;
+        int resourceWindowX = 0;
+        int resourceWindowY = 100;
 
+
+        Texture2D dummyTexture;
+        Rectangle dummyRectangle;
 
         protected GameSession.GameSession RunningGameSession;
 
@@ -42,15 +52,28 @@ namespace Simgame2
             this.upper = this.RunningGameSession.device.Viewport.Height - this.buttonHeight;
             this.left = 0;
 
-            
+            ShowResourceWindow = false;
 
             images = new List<Texture2D>();
 
+            dummyTexture = new Texture2D(this.RunningGameSession.device, 1, 1);
+            dummyTexture.SetData(new Color[] { Color.White });
+            dummyRectangle = new Rectangle(resourceWindowX, resourceWindowY, resourceWindowWidth, resourceWindowHeight);
+
         }
+
+        public bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            return false;
+        }
+
 
         public void Initialize()
         {
         }
+
+        public bool ShowResourceWindow { get; set; }
+        public SpriteFont font { get { return this.RunningGameSession.font; } }
 
         public void PreloadImages(ContentManager Content)
         {
@@ -85,6 +108,7 @@ namespace Simgame2
                 {
                     buttons[i].Update(mouseX, mouseY, leftMouseButtonPressed);
                 }
+                
             }
         }
 
@@ -92,14 +116,38 @@ namespace Simgame2
         public void Draw(GameTime gameTime, GraphicsDevice device)
         {
             SpriteBatch batch = new SpriteBatch(device);
-            batch.Begin();
+            batch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend);
+           // batch.Begin();
             for (int i = 0; i < buttons.Length; i++)
             {
                 buttons[i].Draw(gameTime, batch);
                 
             }
+            if (ShowResourceWindow)
+            {
+                DrawResourceWindow(gameTime, batch);
+            }
+
+
             batch.End();
         }
+
+
+        public void DrawResourceWindow(GameTime gameTime, SpriteBatch batch)
+        {
+            string resources = RunningGameSession.AvailableResources.GetResourceString();
+            Vector2 size = this.font.MeasureString(resources);
+            this.dummyRectangle = new Rectangle(resourceWindowX, resourceWindowY, (int)size.X+40, (int)size.Y+40);
+            batch.Draw(dummyTexture, dummyRectangle, Color.White);
+
+            batch.DrawString(this.font, resources, new Vector2(resourceWindowX + 20, resourceWindowY + 20), Color.Red);
+
+        }
+
+
+
+ 
+
 
         public void doNothing()
         {
@@ -255,5 +303,7 @@ namespace Simgame2
 
         }
 
+
+        
     }
 }

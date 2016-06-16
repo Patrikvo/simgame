@@ -18,7 +18,8 @@ namespace Simgame2.Simulation
 
         public Simulator(GameSession.GameSession RunningGameSession)
         {
-            SimEntities = new List<SimulationEntity>();
+            EventQueue = new Queue<Event>();
+            SimEntities = new List<Simulation.Events.EventReceiver>();
             this.RunningGameSession = RunningGameSession;
 
             MapModified = false;
@@ -28,75 +29,99 @@ namespace Simgame2.Simulation
 
         public void Update(GameTime gameTime) 
         {
+            while (EventQueue.Count > 0)
+            {
+                Event currentEvent = EventQueue.Dequeue();
+
+                foreach (Events.EventReceiver e in SimEntities)
+                {
+                    if (e.OnEvent(currentEvent) == true)
+                    {
+                        if (!currentEvent.IsBroadcast)
+                        {
+                            break;
+                        }
+                    }
+                }
+
+
+            }
+
+
+
+/*
             foreach (SimulationEntity e in SimEntities)
             {
                 if (e != null)
                 {
                     e.Update(gameTime);
 
-                    if (e is Entities.MoverEntity.MoverSim)
-                    {
-                        Entities.MoverEntity.MoverSim s = (Entities.MoverEntity.MoverSim)e;
-                        if (s.ManualControl == true) { continue; }
-                        if (MapModified) { s.RefreshTarget = true; }
-
-                        if (s.MovementState == Entities.MoverEntity.MoverSim.UnitMovementState.IDLE)
-                        {
-                            if (s.PayloadState == Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY)
-                            {
-                                Vector3 target = SetTargetNearest(s, Entity.EntityTypes.BASIC_MINE);
-
-                                if (target != Vector3.Zero && s.DistanceToTarget(target) > Entities.MoverEntity.MoverSim.StopDistance)
-                                {
-                                    s.SetTarget(target);
-                                    s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.MOVING;
-                                }
-                            }
-                            else{
-                                Vector3 target = SetTargetNearest(s, Entity.EntityTypes.MELTER);
-                                if (target != Vector3.Zero){
-                                    s.SetTarget(target);
-                                    s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.MOVING;
-                                }
-                            }
-                        }
-                       // else
-                       // {
-                         //   if (s.MovementState == Entities.MoverEntity.MoverSim.UnitMovementState.MOVING)
-                          //  {
-                                if (s.ReachedGoal) // .DistanceToTarget() < 20)
-                                {
-                                    if (s.PayloadState == Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY)
-                                    {
-                                        s.PayloadState = Entities.MoverEntity.MoverSim.UnitPayloadState.LOADED;
-                                        s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.IDLE;
-                                    }
-                                    else
-                                    {
-                                        s.PayloadState = Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY;
-                                        s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.IDLE;
-                                    }
-                                }
-                        //    }
-                      //  }
 
 
+                    //if (e is Entities.MoverEntity.MoverSim)
+                    //{
+                    //    Entities.MoverEntity.MoverSim s = (Entities.MoverEntity.MoverSim)e;
+                    //    if (s.ManualControl == true) { continue; }
+                    //    if (MapModified) { s.RefreshTarget = true; }
 
-                    }
+                    //    if (s.MovementState == Entities.MoverEntity.MoverSim.UnitMovementState.IDLE)
+                    //    {
+                    //        if (s.PayloadState == Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY)
+                    //        {
+                    //            Vector3 target = SetTargetNearest(s, Entity.EntityTypes.BASIC_MINE);
+
+                    //            if (target != Vector3.Zero && s.DistanceToTarget(target) > Entities.MoverEntity.MoverSim.StopDistance)
+                    //            {
+                    //                s.SetTarget(target);
+                    //                s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.MOVING;
+                    //            }
+                    //        }
+                    //        else{
+                    //            Vector3 target = SetTargetNearest(s, Entity.EntityTypes.MELTER);
+                    //            if (target != Vector3.Zero){
+                    //                s.SetTarget(target);
+                    //                s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.MOVING;
+                    //            }
+                    //        }
+                    //    }
+                    //   // else
+                    //   // {
+                    //     //   if (s.MovementState == Entities.MoverEntity.MoverSim.UnitMovementState.MOVING)
+                    //      //  {
+                    //            if (s.ReachedGoal) // .DistanceToTarget() < 20)
+                    //            {
+                    //                if (s.PayloadState == Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY)
+                    //                {
+                    //                    s.PayloadState = Entities.MoverEntity.MoverSim.UnitPayloadState.LOADED;
+                    //                    s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.IDLE;
+                    //                }
+                    //                else
+                    //                {
+                    //                    s.PayloadState = Entities.MoverEntity.MoverSim.UnitPayloadState.EMPTY;
+                    //                    s.MovementState = Entities.MoverEntity.MoverSim.UnitMovementState.IDLE;
+                    //                }
+                    //            }
+                    //    //    }
+                    //  //  }
+
+
+
+                    //}
 
 
                 }
             }
+ * */
             MapModified = false;
 
         }
 
-        public void AddEntity(SimulationEntity s)
+        public void AddEntity(Simulation.Events.EventReceiver s)
         {
             SimEntities.Add(s);
         }
 
-        public void RemoveEntity(SimulationEntity s)
+        public void RemoveEntity(Simulation.Events.EventReceiver s)
         {
             SimEntities.Remove(s);
         }
@@ -131,8 +156,22 @@ namespace Simgame2.Simulation
         }
 
 
-       
 
-        private List<SimulationEntity> SimEntities;
+
+        private List<Simulation.Events.EventReceiver> SimEntities;
+
+
+
+
+        public void AddEvent(Event newEvent)
+        {
+            this.EventQueue.Enqueue(newEvent);
+        }
+
+
+        private Queue<Event> EventQueue;
+
+
+
     }
 }

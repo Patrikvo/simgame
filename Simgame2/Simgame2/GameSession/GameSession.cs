@@ -24,6 +24,10 @@ namespace Simgame2.GameSession
             this.game = (Game1)game;
         }
 
+
+    
+
+
         public void Initialize(GraphicsDevice graphicsDevice)
         {
 
@@ -32,12 +36,15 @@ namespace Simgame2.GameSession
             this.HUD_overlay = new GUI(this);
 
             this.simulator = new Simulation.Simulator(this);
+            this.simulator.AddEntity(this.HUD_overlay);
+
 
             this.FreeLookState = new GameStates.FreeLook(this);
             this.MousePointerLookState = new GameStates.MousePointerLook(this);
             this.PlaceBuildingState = new GameStates.PlaceBuilding(this);
             this.debugState = new GameStates.DebugState(this);
 
+            this.AvailableResources = new Simulation.ResourceStorage();
         }
 
         public void LoadContent(ContentManager Content)
@@ -49,9 +56,15 @@ namespace Simgame2.GameSession
             this.font = Content.Load<SpriteFont>("Courier New");
 
             this.PlayerCamera = new Camera(this.device.Viewport.AspectRatio);
+            
+            this.PlayerCamera.DoFixedAltitude = true;  
+
             this.LODMap = new LODTerrain.LODTerrain(this, GameSession.mapNumCellsPerSide, GameSession.mapNumCellsPerSide, this.effect, this.device, null);
 
             this.PlayerCamera.LODMap = this.LODMap;
+
+            this.simulator.AddEntity(this.LODMap);
+            this.simulator.AddEntity(this.PlayerCamera);
 
             this.PlayerCamera.DrawDistance = 1200.0f; // 300.0f;
 
@@ -91,6 +104,9 @@ namespace Simgame2.GameSession
             this.font = Content.Load<SpriteFont>("Courier New");
 
             this.PlayerCamera = new Camera(this.device.Viewport.AspectRatio);
+
+            this.PlayerCamera.DoFixedAltitude = true;
+
             this.PlayerCamera.Restore(storage);
             this.LODMap = new LODTerrain.LODTerrain(this, GameSession.mapNumCellsPerSide, GameSession.mapNumCellsPerSide, this.effect, this.device, mapstorage);
 
@@ -261,6 +277,8 @@ namespace Simgame2.GameSession
         public GameStates.DebugState debugState;
 
         public Simulation.Simulator simulator;
+
+        public Simulation.ResourceStorage AvailableResources;
 
         public EntityFactory entityFactory;
 

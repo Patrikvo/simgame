@@ -72,7 +72,7 @@ namespace Simgame2.GameStates
             this.RunningGameSession.selBuilding.UpdateBoundingBox();
 
             this.RunningGameSession.selBuilding.IsTransparant = true;
-            
+            this.RunningGameSession.selBuilding.IsGhost = true;
             
             // does the building collide with other buildings?
             //game.selBuilding.CanPlace = !game.worldMap.Collides(game.selBuilding.boundingBox);
@@ -97,16 +97,13 @@ namespace Simgame2.GameStates
                 mouseLeftButtonDown = false;
                 if (this.RunningGameSession.selBuilding.CanPlace)
                 {
-                    //this.RunningGameSession.selBuilding.RemoveBuilding(game.worldMap);
                     this.RunningGameSession.selBuilding.RemoveBuilding(this.RunningGameSession.LODMap);
                     this.RunningGameSession.selBuilding.IsTransparant = false;
                     this.RunningGameSession.selBuilding.IsGhost = false;
-                    //this.RunningGameSession.selBuilding.PlaceBuilding(game.worldMap, true);
                     this.RunningGameSession.selBuilding.PlaceBuilding(this.RunningGameSession.LODMap, true);
-                    this.RunningGameSession.simulator.AddEntity(this.RunningGameSession.selBuilding.GetSimEntity());
+//                    this.RunningGameSession.simulator.AddEntity(this.RunningGameSession.selBuilding.GetSimEntity());
                     this.RunningGameSession.simulator.MapModified = true;
 
-                 //   game.selBuilding = new EntityBuilding(game.selBuilding);
                     this.RunningGameSession.selBuilding = (EntityBuilding)this.RunningGameSession.entityFactory.CreateEnity(LastSelectedEntityType, markerLocation, false);
                     this.RunningGameSession.selBuilding.IsGhost = true;
                     this.RunningGameSession.ChangeGameState(this.RunningGameSession.MousePointerLookState);

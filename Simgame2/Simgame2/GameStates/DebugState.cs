@@ -144,7 +144,8 @@ namespace Simgame2.GameStates
             button_PageUp_pressed = false;
             button_PageDown_pressed = false;
             button_D_pressed = false;
-            this.RunningGameSession.PlayerCamera.ForceViewMatrix(this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightPosition, this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightTarget, Vector3.Up);
+            Vector3 ppos = this.RunningGameSession.PlayerCamera.GetCameraPostion();
+            this.RunningGameSession.PlayerCamera.ForceViewMatrix(ppos + this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightPosition, ppos+  this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightTarget, Vector3.Up);
             button_D_Reseted = false;
         }
 

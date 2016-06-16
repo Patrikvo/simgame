@@ -15,7 +15,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2.LODTerrain
 {
-    public class LODTerrain
+    public class LODTerrain : Simulation.Events.EventReceiver
     {
      
 
@@ -38,6 +38,13 @@ namespace Simgame2.LODTerrain
 
             this.Initialize();
         }
+
+
+        public bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            return false;
+        }
+
 
         public void Initialize()
         {
@@ -83,9 +90,9 @@ namespace Simgame2.LODTerrain
             prelightRender.drawLightMap(PlayerCamera.viewMatrix, PlayerCamera.projectionMatrix, PlayerCamera.GetCameraPostion(), this.frustum);
 
             this.prelightRender.DrawRefractionMap(PlayerCamera, waterHeight, mapHeightScale);
-        //    prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
+    //        prelightRender.DrawReflectionMap(PlayerCamera, waterHeight, mapHeightScale, this.entities, this.frustum);
 
-            if (prelightRender.DoShadowMapping) { prelightRender.drawShadowDepthMap(); }
+            if (prelightRender.DoShadowMapping) { prelightRender.drawShadowDepthMap();   }
 
 
 
@@ -151,7 +158,7 @@ namespace Simgame2.LODTerrain
         {
             Lander = (EntityBuilding)this.RunningGameSession.entityFactory.CreateEnity(Entity.EntityTypes.LANDER, this.playerCamera.GetCameraPostion(), true);
             Lander.PlaceBuilding(this.RunningGameSession.LODMap, true);
-            this.RunningGameSession.simulator.AddEntity(Lander.GetSimEntity());
+//            this.RunningGameSession.simulator.AddEntity(Lander.GetSimEntity());
             this.RunningGameSession.simulator.MapModified = true;
 
         }
@@ -527,6 +534,8 @@ namespace Simgame2.LODTerrain
         // selection
         public Texture2D selectionTexture;
 
+
+        
     }
 }
 

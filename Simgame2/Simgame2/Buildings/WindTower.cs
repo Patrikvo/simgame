@@ -23,6 +23,24 @@ namespace Simgame2.Buildings
 
         }
 
+        public override bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            base.OnEvent(ReceivedEvent);
+            // TODO IMPLEMENT
+/*
+            if (ReceivedEvent is Simulation.Events.BuildingContructionDoneEvent)
+            {
+                Simulation.Events.BuildingContructionDoneEvent e = (Simulation.Events.BuildingContructionDoneEvent)ReceivedEvent;
+
+                Console.WriteLine("Saw New Building");
+
+                return true;
+            }
+            */
+
+            return false;
+        }
+
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
             this.AddTexture("WindTower_bTex");  // base texture
@@ -42,6 +60,8 @@ namespace Simgame2.Buildings
         {
             rotorRotation += (float)((rotationSpeed * gameTime.ElapsedGameTime.TotalSeconds) % 2*Math.PI);
 
+            this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
+
             if (HasMouseFocus)
             {
                 UpdateStatusScreen();
@@ -53,8 +73,8 @@ namespace Simgame2.Buildings
 
         public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
-            this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
-                
+     //       this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
+              /*  
             Matrix worldMatrix = GetWorldMatrix();
             Matrix[] transforms = GetBoneTransforms();
 
@@ -107,6 +127,8 @@ namespace Simgame2.Buildings
             {
                 DrawBoundingBox(currentViewMatrix, cameraPosition);
             }
+            */
+            base.Draw(currentViewMatrix, cameraPosition);
 
             if (HasMouseFocus && !HideBillboard)
             {

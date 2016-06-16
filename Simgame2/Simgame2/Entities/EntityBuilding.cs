@@ -12,7 +12,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    public class EntityBuilding: Entity
+    public class EntityBuilding : Entity, Simulation.Events.EventReceiver
     {
         public EntityBuilding(GameSession.GameSession RuningGameSession)
             : base(RuningGameSession)
@@ -23,6 +23,14 @@ namespace Simgame2
             this.CanBeCommanded = true;
             
         }
+
+        public override bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            base.OnEvent(ReceivedEvent);
+            // TODO IMPLEMENT
+            return false;
+        }
+
 
         public bool PlaceBuilding(LODTerrain.LODTerrain map, bool flattening)
         //public bool PlaceBuilding(WorldMap map, bool flattening)
@@ -90,6 +98,12 @@ namespace Simgame2
             else
             {
                 surroundingCicle = h / 2;
+            }
+
+            if (flattening)
+            {
+                this.RunningGameSession.simulator.AddEntity(this);
+                this.RunningGameSession.simulator.AddEvent(new Simulation.Events.BuildingContructionDoneEvent(this));
             }
 
             return true;

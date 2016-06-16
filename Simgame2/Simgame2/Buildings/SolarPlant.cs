@@ -22,6 +22,15 @@ namespace Simgame2.Buildings
         }
 
 
+        public override bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            base.OnEvent(ReceivedEvent);
+            // TODO IMPLEMENT
+
+
+            return false;
+        }
+
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
 
@@ -32,7 +41,7 @@ namespace Simgame2.Buildings
             this.LoadModel("Models/SolarPlant");
 
             this.AddTexture("SolarPlantTex");  // base texture
-
+            
         }
 
         public override void Update(GameTime gameTime)
@@ -42,6 +51,10 @@ namespace Simgame2.Buildings
             if (HasMouseFocus)
             {
                 UpdateStatusScreen();
+            }
+            if (!IsGhost)
+            {
+                GetSimEntity();
             }
         }
 
@@ -112,7 +125,7 @@ namespace Simgame2.Buildings
         public void UpdateStatusScreen()
         {
             // TODO modifyvto allow custom string and images.
-            if (statusBillboard.BillboardBackGroundTexture != null)
+            if (!IsGhost && statusBillboard.BillboardBackGroundTexture != null)
             {
                 float electicAvail = GetSimEntity().GetAvailableOutResource(Simulation.ResourceStorage.Resource.ELECTRICITY);
                 float electricMax = GetSimEntity().GetMaxResourceAmount(Simulation.ResourceStorage.Resource.ELECTRICITY);
@@ -151,7 +164,7 @@ namespace Simgame2.Buildings
         {
             if (solarSimEntity == null)
             {
-                solarSimEntity = new SolorPlantSim();
+                solarSimEntity = new SolorPlantSim(this);
             }
 
             return solarSimEntity;
@@ -172,10 +185,19 @@ namespace Simgame2.Buildings
 
         private class SolorPlantSim : Simulation.SimulationBuildingEnity
         {
-            public SolorPlantSim()
+            private SolarPlant Parent;
+
+            public SolorPlantSim(SolarPlant parent)
             {
+                this.Parent = parent;
                 ProduceRate[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = 0.01f;
                 ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = 1000;
+
+                if (!parent.IsGhost)
+                {
+                    this.Parent.RunningGameSession.AvailableResources.AddResourceAmount(Simulation.ResourceStorage.Resource.ELECTRICITY, 100);
+                }
+
             }
 
 
@@ -184,8 +206,13 @@ namespace Simgame2.Buildings
                 float timeDelta = gameTime.ElapsedGameTime.Milliseconds;
                 for (int i = 0; i < Simulation.ResourceStorage.ResourceCount; i++)
                 {
-                    ResourceOutput[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = clamp(ResourceOutput[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] +
-                        (ProduceRate[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] * timeDelta), ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.ELECTRICITY]);
+                 //   ResourceOutput[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] = clamp(ResourceOutput[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] +
+                   //     (ProduceRate[(int)Simulation.ResourceStorage.Resource.ELECTRICITY] * timeDelta), ResourceMaxAmount[(int)Simulation.ResourceStorage.Resource.ELECTRICITY]);
+
+
+
+
+                    
                 }
             }
 

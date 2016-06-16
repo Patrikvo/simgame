@@ -13,7 +13,7 @@ using Microsoft.Xna.Framework.Media;
 
 namespace Simgame2
 {
-    public class Camera
+    public class Camera : Simulation.Events.EventReceiver
     {
 
         public float DrawDistance
@@ -38,6 +38,13 @@ namespace Simgame2
             this.cameraHeight = CameraHeightOffset;
 
         }
+
+        public bool OnEvent(Simulation.Event ReceivedEvent)
+        {
+            return false;
+
+        }
+
 
         private void UpdateProjectionMatrix()
         {
@@ -146,10 +153,23 @@ namespace Simgame2
 
         public void AdjustCameraAltitude(GameTime gameTime)
         {
-            // keeps camera at a set height above the terrain.
-            //double intendedCameraHeight = (worldMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, -this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
-            float intendedCameraHeight = (LODMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
+            float intendedCameraHeight = 0;
+
+            if (DoFixedAltitude)
+            {
+                intendedCameraHeight = 75;
+            }
+            else
+            {
+                // keeps camera at a set height above the terrain.
+                //double intendedCameraHeight = (worldMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, -this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
+                intendedCameraHeight = (LODMap.getCellHeightFromWorldCoor(this.GetCameraPostion().X, this.GetCameraPostion().Z)) + Camera.CameraHeightOffset;
+
+            }
             
+
+            
+
             
             // int intendedCameraHeight = worldMap.getAltitude(cameraPosition.X, cameraPosition.Z) + CameraHeightOffset;
 
@@ -349,6 +369,9 @@ namespace Simgame2
         public const float rotationSpeed = 0.3f;
 
         public LODTerrain.LODTerrain LODMap { get; set; }
+
+        public bool DoFixedAltitude;
+        public int FixedAltitude = 75;
 
 
 

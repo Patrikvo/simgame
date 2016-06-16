@@ -89,6 +89,7 @@ namespace Simgame2.Tools
             this.labelLightvalues.Text = "yaw: " + yaw.ToString("0.00") + " / pitch: " + pitch.ToString("0.00") + " / roll: " + roll.ToString("0.00");
 
             this.RunningGameSession.LODMap.GetRenderer().SunLight.SetLightDirection((float)yaw, (float)pitch, (float)roll);
+            //this.RunningGameSession.LODMap.GetRenderer().SunLight.ShadowLightPosition
         }
 
        

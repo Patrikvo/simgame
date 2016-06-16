@@ -96,6 +96,7 @@ namespace Simgame2
             mover.UpdateBoundingBox();
             //mover.ShowBoundingBox = true;
             this.Movers.Add(mover);
+            this.RunningGameSession.simulator.AddEntity(mover);
             return mover;
 
         }
@@ -111,9 +112,27 @@ namespace Simgame2
             mover.UpdateBoundingBox();
           //  mover.ShowBoundingBox = true;
             this.Movers.Add(mover);
+            this.RunningGameSession.simulator.AddEntity(mover);
             return mover;
 
         }
+
+        public Entities.EntityFlyer CreateFlyer(Vector3 location)
+        {
+            Entities.EntityFlyer flyer = new Entities.EntityFlyer(this.RunningGameSession);
+            flyer.projectionMatrix = this.projectionMatrix;
+            float height = this.RunningGameSession.LODMap.getCellHeightFromWorldCoor(location.X, location.Z) + flyer.MinHeight;
+
+            flyer.location = new Vector3(location.X, height, location.Z);
+            flyer.scale = new Vector3(5.0f, 5.0f, 5.0f);
+            flyer.UpdateBoundingBox();
+            //mover.ShowBoundingBox = true;
+            this.Movers.Add(flyer);
+            this.RunningGameSession.simulator.AddEntity(flyer);
+            return flyer;
+
+        }
+
 
 
         public Buildings.Lander CreateLander(Vector3 location, bool flatten)
@@ -125,6 +144,7 @@ namespace Simgame2
 
             lander.location = new Vector3(location.X, height, location.Z);
             this.buildings.Add(lander);
+            //this.RunningGameSession.simulator.AddEntity(lander);
             return lander;
         }
 
@@ -136,6 +156,7 @@ namespace Simgame2
             mine.projectionMatrix = this.projectionMatrix;
             mine.Initialize(Buildings.BasicMine.StandardScale, Buildings.BasicMine.StandardRotation);
             this.buildings.Add(mine);
+            //this.RunningGameSession.simulator.AddEntity(mine);
             return mine;
         }
 
@@ -145,6 +166,7 @@ namespace Simgame2
             tower.projectionMatrix = this.projectionMatrix;
             tower.Initialize(Buildings.WindTower.StandardScale, Buildings.WindTower.StandardRotation);
             this.buildings.Add(tower);
+            //this.RunningGameSession.simulator.AddEntity(tower);
             return tower;
         }
 
@@ -154,6 +176,7 @@ namespace Simgame2
             melter.projectionMatrix = this.projectionMatrix;
             melter.Initialize(Buildings.Melter.StandardScale, Buildings.Melter.StandardRotation);
             this.buildings.Add(melter);
+            //this.RunningGameSession.simulator.AddEntity(melter);
             return melter;
         }
 
@@ -163,6 +186,7 @@ namespace Simgame2
             solar.projectionMatrix = this.projectionMatrix;
             solar.Initialize(Buildings.SolarPlant.StandardScale, Buildings.SolarPlant.StandardRotation);
             this.buildings.Add(solar);
+            //this.RunningGameSession.simulator.AddEntity(solar);
             return solar;
         }
 
