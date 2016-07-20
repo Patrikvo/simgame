@@ -9,6 +9,7 @@ using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
 
+
 namespace Simgame2
 {
     
@@ -24,6 +25,9 @@ namespace Simgame2
         private bool doneLoading = false;
 
 
+
+
+        //AnimationPlayer animationPlayer;
         
 
         public Game1()

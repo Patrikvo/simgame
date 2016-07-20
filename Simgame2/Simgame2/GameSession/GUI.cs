@@ -91,7 +91,7 @@ namespace Simgame2
 
         public void ConstructButtons()
         {
-            AddButton(0, 1, doNothing);  // Arrow L
+            AddButton(0, 1, PlaceBuildingFoundation);  // Arrow L
             AddButton(2, 3, PlaceBuildingSolar);  // SOLAR
             AddButton(4, 5, PlaceBuildingMelter); // MELTER
             AddButton(6, 7, PlaceBuildingMine); // MINE
@@ -174,6 +174,12 @@ namespace Simgame2
         public void PlaceBuildingWind()
         {
             this.RunningGameSession.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.WIND_TOWER;
+            this.RunningGameSession.ChangeGameState(this.RunningGameSession.PlaceBuildingState);
+        }
+
+        public void PlaceBuildingFoundation()
+        {
+            this.RunningGameSession.PlaceBuildingState.LastSelectedEntityType = Entity.EntityTypes.FOUNDATION;
             this.RunningGameSession.ChangeGameState(this.RunningGameSession.PlaceBuildingState);
         }
 

@@ -61,6 +61,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Microsoft.Xna.Framework, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
+    
     <Reference Include="Microsoft.Xna.Framework.Game, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
     <Reference Include="Microsoft.Xna.Framework.Graphics, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
     <Reference Include="Microsoft.Xna.Framework.GamerServices, Version=4.0.0.0, Culture=neutral, PublicKeyToken=842cf8be1de50553, processorArchitecture=x86" />
@@ -75,7 +76,8 @@
     <Reference Include="System.Net" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Billboard.cs" />
+    <Compile Include="Buildings\Foundation.cs" />
+    <Compile Include="Entities\Billboard.cs" />
     <Compile Include="Buildings\BasicMine.cs" />
     <Compile Include="Buildings\Lander.cs" />
     <Compile Include="Buildings\Melter.cs" />
@@ -94,7 +96,7 @@
     <Compile Include="GameStates\GameState.cs" />
     <Compile Include="GameStates\MousePointerLook.cs" />
     <Compile Include="GameStates\PlaceBuilding.cs" />
-    <Compile Include="GUI.cs" />
+    <Compile Include="GameSession\GUI.cs" />
     <Compile Include="LODTerrain\BufferManager.cs" />
     <Compile Include="LODTerrain\LODTerrain.cs" />
     <Compile Include="LODTerrain\NodeType.cs" />
@@ -102,8 +104,8 @@
     <Compile Include="LODTerrain\QuadNodeVertex.cs" />
     <Compile Include="LODTerrain\QuadTree.cs" />
     <Compile Include="LODTerrain\TreeVertexCollection.cs" />
-    <Compile Include="Noise.cs" />
-    <Compile Include="PathFinder.cs" />
+    <Compile Include="ProceduralGeneration\Noise.cs" />
+    <Compile Include="Simulation\PathFinder.cs" />
     <Compile Include="Renderer\MainLightSource.cs" />
     <Compile Include="Renderer\PPPointLight.cs" />
     <Compile Include="Renderer\PrelightingRenderer.cs" />
@@ -112,7 +114,7 @@
     <Compile Include="Game1.cs" />
     <Compile Include="Renderer\VertexMultitextured.cs" />
     <Compile Include="Renderer\VertexPositionColored.cs" />
-    <Compile Include="ResourceCell.cs" />
+    <Compile Include="LODTerrain\ResourceCell.cs" />
     <Compile Include="Simulation\Events\BuildingContructionDoneEvent.cs" />
     <Compile Include="Simulation\Events\EntityHasFocusEvent.cs" />
     <Compile Include="Simulation\Events\EntityLostFocusEvent.cs" />
@@ -122,14 +124,14 @@
     <Compile Include="Simulation\SimulationBuildingEnity.cs" />
     <Compile Include="Simulation\SimulationEntity.cs" />
     <Compile Include="Simulation\Simulator.cs" />
-    <Compile Include="TextureGenerator.cs" />
+    <Compile Include="ProceduralGeneration\TextureGenerator.cs" />
     <Compile Include="Tools\FormDebug.cs">
       <SubType>Form</SubType>
     </Compile>
     <Compile Include="Tools\FormDebug.Designer.cs">
       <DependentUpon>FormDebug.cs</DependentUpon>
     </Compile>
-    <Compile Include="WorldGenerator.cs" />
+    <Compile Include="ProceduralGeneration\WorldGenerator.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />

@@ -5,7 +5,7 @@ VisualStudioVersion = 12.0.31101.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simgame2", "Simgame2\Simgame2\Simgame2.csproj", "{B85064C4-325A-4A4F-ACFF-F3E087354229}"
 EndProject
-Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "Simgame2Content", "Simgame2\Simgame2Content\Simgame2Content.contentproj", "{36B5027F-964F-4109-8BF0-4F1DC9907C0F}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Simgame2Content", "Simgame2\Simgame2Content\Simgame2Content.contentproj", "{36B5027F-964F-4109-8BF0-4F1DC9907C0F}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

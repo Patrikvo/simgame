@@ -33,7 +33,6 @@ namespace Simgame2.Buildings
 
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
-
             this.scale = scale;
             this.Rotation = rotation;
             this.location = location;
@@ -41,7 +40,8 @@ namespace Simgame2.Buildings
             this.LoadModel("Models/SolarPlant");
 
             this.AddTexture("SolarPlantTex");  // base texture
-            
+
+
         }
 
         public override void Update(GameTime gameTime)

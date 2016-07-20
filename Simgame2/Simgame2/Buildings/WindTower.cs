@@ -60,7 +60,7 @@ namespace Simgame2.Buildings
         {
             rotorRotation += (float)((rotationSpeed * gameTime.ElapsedGameTime.TotalSeconds) % 2*Math.PI);
 
-            this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
+      //      this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
 
             if (HasMouseFocus)
             {
@@ -73,56 +73,9 @@ namespace Simgame2.Buildings
 
         public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
-     //       this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
+            this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
+
               /*  
-            Matrix worldMatrix = GetWorldMatrix();
-            Matrix[] transforms = GetBoneTransforms();
-
-
-            int meshNum = 0;
-            foreach (ModelMesh mesh in model.Meshes)
-            {
-                
-                foreach (Effect currentEffect in mesh.Effects)
-                {
-                    
-                    currentEffect.Parameters["View"].SetValue(currentViewMatrix);
-                    currentEffect.Parameters["Projection"].SetValue(projectionMatrix);
-                    currentEffect.CurrentTechnique = currentEffect.Techniques["Textured"];
-
-                    currentEffect.Parameters["xTexture"].SetValue(this.texture[meshNum]);
-                    currentEffect.Parameters["World"].SetValue(transforms[mesh.ParentBone.Index] * worldMatrix);
-
-                    currentEffect.Parameters["xIsTransparant"].SetValue(this.IsTransparant);
-                    if (CanPlace)
-                    {
-                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(0.0f, 1.0f, 0.0f, 0.5f));
-                    }
-                    else
-                    {
-                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 0.0f, 0.0f, 0.5f));
-                    }
-
-                    if (HasMouseFocus)
-                    {
-                        currentEffect.Parameters["xIsTransparant"].SetValue(true);
-                        currentEffect.Parameters["xTransparantColor"].SetValue(new Vector4(1.0f, 1.0f, 0.0f, 0.7f));
-                    }
-                    currentEffect.Parameters["xEnableLighting"].SetValue(true);
-                    currentEffect.Parameters["xAmbient"].SetValue(this.RunningGameSession.LODMap.GetRenderer().AmbientLightLevel);
-                    currentEffect.Parameters["LightDirection"].SetValue(this.RunningGameSession.LODMap.GetRenderer().SunLight.GetInvertedLightDirection());
-
-                    currentEffect.Parameters["cameraPos"].SetValue(cameraPosition);
-                    currentEffect.Parameters["FogColor"].SetValue(FOGCOLOR.ToVector4());
-                    currentEffect.Parameters["FogNear"].SetValue(FOGNEAR);
-                    currentEffect.Parameters["FogFar"].SetValue(FOGFAR);
-
-
-                }
-                mesh.Draw();
-                meshNum++;
-            }
-
             if (ShowBoundingBox)
             {
                 DrawBoundingBox(currentViewMatrix, cameraPosition);

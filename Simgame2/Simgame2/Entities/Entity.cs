@@ -15,7 +15,7 @@ namespace Simgame2
     public abstract class Entity: Simulation.Events.EventReceiver
     {
 
-        public enum EntityTypes { NONE, BASIC_MINE, MELTER, SOLAR, WIND_TOWER, MOVER, FLYER, LANDER };
+        public enum EntityTypes { NONE, FOUNDATION, BASIC_MINE, MELTER, SOLAR, WIND_TOWER, MOVER, FLYER, LANDER };
 
         protected GameSession.GameSession RunningGameSession;
 
@@ -25,7 +25,7 @@ namespace Simgame2
         {
             this.RunningGameSession = RunningGameSession;
             basicEffect = new BasicEffect(this.RunningGameSession.device);
-            this.ShowBoundingBox = false;
+            
             this.Type = EntityTypes.NONE;
             this.IsGhost = false;
             this.CanBeCommanded = false;
@@ -290,7 +290,11 @@ namespace Simgame2
             Matrix worldMatrix = GetWorldMatrix();
             LODMap.GetRenderer().DrawModel(this.model, this.texture, this.IsTransparant, this.CanPlace, this.HasMouseFocus, this.GetWorldMatrix(), currentViewMatrix,
                 projectionMatrix, cameraPosition, "Textured");
-           
+
+            if (ShowBoundingBox)
+            {
+                DrawBoundingBox(currentViewMatrix, cameraPosition);
+            }
         }
 
         public virtual void DrawShadow(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
@@ -426,7 +430,7 @@ namespace Simgame2
         
 
 
-        public bool ShowBoundingBox = false;
+        public bool ShowBoundingBox = true;
 
 
 

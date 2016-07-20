@@ -75,6 +75,8 @@ namespace Simgame2
                     return CreateWindTower(location, flatten);
                 case Entity.EntityTypes.LANDER:
                     return CreateLander(location, flatten);
+                case Entity.EntityTypes.FOUNDATION:
+                    return CreateFoundation(location, flatten);
                 case Entity.EntityTypes.MOVER:
                     
 
@@ -189,6 +191,20 @@ namespace Simgame2
             //this.RunningGameSession.simulator.AddEntity(solar);
             return solar;
         }
+
+
+        public Buildings.Foundation CreateFoundation(Vector3 location, bool flatten)
+        {
+            Buildings.Foundation foundation = new Buildings.Foundation(this.RunningGameSession);
+            foundation.projectionMatrix = this.projectionMatrix;
+            foundation.Initialize(Buildings.Foundation.StandardScale, Buildings.Foundation.StandardRotation);
+            this.buildings.Add(foundation);
+            //this.RunningGameSession.simulator.AddEntity(solar);
+            return foundation;
+        }
+
+
+
 
 
         public void RemoveBuilding(EntityBuilding building)

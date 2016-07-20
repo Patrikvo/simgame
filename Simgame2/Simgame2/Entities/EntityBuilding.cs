@@ -74,6 +74,7 @@ namespace Simgame2
             }
 
             int height;
+            /*
             if (flattening)
             {
                 height = map.levelTerrainWorldCoor(MinX, MinZ, MaxX, MaxZ);
@@ -82,6 +83,12 @@ namespace Simgame2
             {
                 height = map.getCellHeightFromWorldCoor((MinX + MaxX) / 2, ((MinZ + MaxZ) / 2));
             }
+            */
+            height = map.getCellHeightFromWorldCoor((MinX + MaxX) / 2, ((MinZ + MaxZ) / 2));
+            // removed flattening of terrain
+
+
+
             this.location = new Vector3(location.X, height, location.Z);
 
             this.boundingBox = this.UpdateBoundingBox();

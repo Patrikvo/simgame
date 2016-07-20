@@ -37,11 +37,25 @@ namespace Simgame2.Entities
         }
 
 
+        float height;
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
-            UpdateDirection(gameTime);
+
             this.location = this.location + (this.Velocity * (this.MaxSpeed * gameTime.ElapsedGameTime.Milliseconds / 1000));
+            height = this.LODMap.getCellHeightFromWorldCoor(location.X, location.Z);
+
+            if (height < LODTerrain.LODTerrain.waterHeight)
+            //if (height < WorldMap.waterHeight)
+            {
+                //height = WorldMap.waterHeight;
+                height = LODTerrain.LODTerrain.waterHeight;
+            }
+
+            
+
+            UpdateDirection(gameTime);
+            //this.location = this.location + (this.Velocity * (this.MaxSpeed * gameTime.ElapsedGameTime.Milliseconds / 1000));
             this.UpdateBoundingBox();
 
             
@@ -66,23 +80,23 @@ namespace Simgame2.Entities
 
             float altitude = this.location.Y;
             float VerticalDirection = this.Velocity.Y;
-            if (altitude > MinHeight + ((MaxHeight - MinHeight) / 2))
+            if (altitude > (height + MinHeight) + ((MaxHeight - MinHeight) / 2))
             {
-                VerticalDirection = VerticalDirection - (0.1f * gameTime.ElapsedGameTime.Milliseconds / 1000);
+                VerticalDirection = VerticalDirection - (1f * gameTime.ElapsedGameTime.Milliseconds / 1000);
             }
-            else if (altitude < MinHeight - ((MaxHeight - MinHeight) / 2))
+            else if (altitude < (height + MinHeight) - ((MaxHeight - MinHeight) / 2))
             {
-                VerticalDirection = VerticalDirection + (0.1f * gameTime.ElapsedGameTime.Milliseconds / 1000);
+                VerticalDirection = VerticalDirection + (1f * gameTime.ElapsedGameTime.Milliseconds / 1000);
             }
 
-            double x = (this.Velocity.X + (0.1f * gameTime.ElapsedGameTime.Milliseconds / 1000));
+            double x = (this.Velocity.X + (1f * gameTime.ElapsedGameTime.Milliseconds / 1000));
             if (x > (2 * Math.PI)) { x = x - (2* Math.PI); }
-            double y = (this.Velocity.Y + (0.1f * gameTime.ElapsedGameTime.Milliseconds / 1000));
+            double y = (this.Velocity.Y + (1f * gameTime.ElapsedGameTime.Milliseconds / 1000));
             if (y > (2 * Math.PI)) { y = y - (2 * Math.PI); }
                 
 
             this.Velocity = new Vector3((float)x, VerticalDirection, (float)y);
-            this.Velocity.Normalize();
+       //     this.Velocity.Normalize();
 
 
 
