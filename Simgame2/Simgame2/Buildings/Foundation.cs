@@ -14,6 +14,7 @@ namespace Simgame2.Buildings
             : base(RuningGameSession)
         {
             this.Type = EntityTypes.FOUNDATION;
+            this.CurrentState = States.UNDER_CONSTRUCTION;
         }
 
         public void Initialize(Vector3 scale, Vector3 rotation)

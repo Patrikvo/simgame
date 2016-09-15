@@ -9,6 +9,7 @@ namespace Simgame2.Buildings
             : base(RuningGameSession)
         {
             this.Type = EntityTypes.BASIC_MINE;
+            this.CurrentState = States.UNDER_CONSTRUCTION;
         }
 
         public override bool OnEvent(Simulation.Event ReceivedEvent)

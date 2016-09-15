@@ -17,7 +17,18 @@ namespace Simgame2
 
         public enum EntityTypes { NONE, FOUNDATION, BASIC_MINE, MELTER, SOLAR, WIND_TOWER, MOVER, FLYER, LANDER };
 
+        
+
         protected GameSession.GameSession RunningGameSession;
+
+        public enum States { UNDER_CONSTRUCTION, IDLE, ACTIVE, UPGRADING, BEING_REMOVED }
+        private States _CurrentState;
+
+        public States CurrentState
+        {
+            get { return _CurrentState; }
+            set { _CurrentState = value; }
+        }
 
 
 

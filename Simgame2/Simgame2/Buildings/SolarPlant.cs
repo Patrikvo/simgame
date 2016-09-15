@@ -19,6 +19,7 @@ namespace Simgame2.Buildings
             : base(RuningGameSession)
         {
             this.Type = EntityTypes.SOLAR;
+            this.CurrentState = States.UNDER_CONSTRUCTION;
         }
 
 

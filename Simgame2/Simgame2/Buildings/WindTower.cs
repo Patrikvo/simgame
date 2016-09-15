@@ -20,6 +20,7 @@ namespace Simgame2.Buildings
             : base(RuningGameSession)
         {
             this.Type = EntityTypes.WIND_TOWER;
+            this.CurrentState = States.UNDER_CONSTRUCTION;
 
         }
 
@@ -58,6 +59,20 @@ namespace Simgame2.Buildings
 
         public override void Update(GameTime gameTime)
         {
+            if (CurrentState == States.UNDER_CONSTRUCTION)
+            {
+                if (this.rotationSpeed >= rotationMaxSpeed)
+                {
+                    this.rotationSpeed = this.rotationMaxSpeed;
+                    this.CurrentState = States.IDLE;
+                }
+                else
+                {
+                    this.rotationSpeed += (float)(rotationAcceleration * gameTime.ElapsedGameTime.TotalSeconds);
+                }
+            }
+
+
             rotorRotation += (float)((rotationSpeed * gameTime.ElapsedGameTime.TotalSeconds) % 2*Math.PI);
 
       //      this.model.Bones["Rotor"].Transform = Matrix.CreateRotationZ(rotorRotation) * rotorTransform; 
@@ -115,8 +130,10 @@ namespace Simgame2.Buildings
                 sb.Append(electicAvail.ToString("0.0"));
                 sb.Append("/");
                 sb.Append(electricMax);
+                sb.AppendLine();
+                sb.AppendLine(this.CurrentState.ToString());
 
-                spriteBatch.DrawString(this.font, sb.ToString(), new Vector2(20, 20), Color.Black);//Do your stuff here
+                spriteBatch.DrawString(this.font, sb.ToString(), new Vector2(20, 20), Color.Black);
 
                 spriteBatch.End();
 
@@ -146,7 +163,9 @@ namespace Simgame2.Buildings
         public static Vector3 StandardRotation = new Vector3(0, MathHelper.Pi, 0);
 
         private float rotorRotation = 0;
-        private float rotationSpeed = 1;
+        private float rotationSpeed = 0;
+        private float rotationAcceleration = 0.01f;
+        private float rotationMaxSpeed = 1;
         private Matrix rotorTransform;
 
         private WindTowerSim windTowerSim;
