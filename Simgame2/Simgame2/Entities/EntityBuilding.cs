@@ -31,6 +31,10 @@ namespace Simgame2
             return false;
         }
 
+        public virtual void Reset()
+        {
+            ;
+        }
 
         public bool PlaceBuilding(LODTerrain.LODTerrain map, bool flattening)
         //public bool PlaceBuilding(WorldMap map, bool flattening)
@@ -42,6 +46,7 @@ namespace Simgame2
                 statusBillboard.offset = surroundingCicle;
                 statusBillboard.Show = true;
             }
+            this.Reset();
             return res;
         }
         

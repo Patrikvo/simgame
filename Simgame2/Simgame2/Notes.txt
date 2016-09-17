@@ -1,4 +1,13 @@
 ﻿
+TODO:
+
+BasicMine:
+Add multiple animations (constructing, idle and active)
+
+
+
+
+
 
 
 
