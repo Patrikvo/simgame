@@ -437,23 +437,9 @@ namespace Simgame2
         public bool IsTransparant { get; set; }
         public bool CanPlace { get; set; }
 
-       // public bool IsGhost { get; set; }
-
-        private bool _IsGhost;
-
-        public bool IsGhost
-        {
-            get { return _IsGhost; }
-            set 
-            { 
-                _IsGhost = value;
-                if (value == true)
-                {
-                    this.CurrentState = States.IDLE;
-                }
-            }
-        }
+        public bool IsGhost { get; set; }
         
+
 
         public bool ShowBoundingBox = false;
 

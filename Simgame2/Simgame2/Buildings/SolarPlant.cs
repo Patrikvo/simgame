@@ -32,22 +32,59 @@ namespace Simgame2.Buildings
             return false;
         }
 
+        public override void Reset()
+        {
+            if (!IsGhost)
+            {
+                CurrentAnimation = ConstructionAnimation;
+                CurrentAnimation.Reset();
+            }
+        }
+
+        // Parts
+        const int BaseIndex = 0;
+
+        const int Left_downIndex = 1;
+        const int Left_upIndex = 2;
+        const int Right_downIndex = 3;
+        const int Right_upIndex = 4;
+        const int TopIndex = 5;
+
+        private string[] BoneNames = { "Base", "Left_down", "Left_up", "Right_down", "Right_up", "Top" };
+
         public void Initialize(Vector3 scale, Vector3 rotation)
         {
             this.scale = scale;
             this.Rotation = rotation;
             this.location = location;
 
-            this.LoadModel("Models/SolarPlant");
+            this.LoadModel("Models/Solarplant/solarplant");
+            this.AddTexture("Models/Solarplant/Base");
+            this.AddTexture("Models/Solarplant/Panel");
+            this.AddTexture("Models/Solarplant/Panel");
+            this.AddTexture("Models/Solarplant/Panel");
+            this.AddTexture("Models/Solarplant/Panel");
+            this.AddTexture("Models/Solarplant/Top");
 
-            this.AddTexture("SolarPlantTex");  // base texture
+            ConstructionAnimation = new AnimConstruction(this.model, this.BoneNames);
+            ActiveAnimation = new AnimActive(this.model, this.BoneNames);
+            IdleAnimation = new AnimIdle(this.model, this.BoneNames);
 
+            ConstructionAnimation.NextAnimation = ActiveAnimation;
+
+            CurrentAnimation = ConstructionAnimation;
 
         }
 
         public override void Update(GameTime gameTime)
         {
             base.Update(gameTime);
+
+            if (this.IsGhost) { CurrentAnimation = IdleAnimation; }
+
+            CurrentAnimation.Update(gameTime);
+            if (CurrentAnimation.HasFinished) { CurrentAnimation = CurrentAnimation.NextAnimation; }
+
 
             if (HasMouseFocus)
             {
@@ -63,6 +100,14 @@ namespace Simgame2.Buildings
 
         public override void Draw(Matrix currentViewMatrix, Vector3 cameraPosition)
         {
+            CurrentAnimation.SetModelTransforms();
+            
+            base.Draw(currentViewMatrix, cameraPosition);
+
+
+
+
+            /*
             Matrix worldMatrix = GetWorldMatrix();
             Matrix[] transforms = GetBoneTransforms();
 
@@ -110,6 +155,10 @@ namespace Simgame2.Buildings
                 mesh.Draw();
                 meshNum++;
             }
+             */ 
+              
+              
+              
             if (ShowBoundingBox)
             {
                 DrawBoundingBox(currentViewMatrix, cameraPosition);
@@ -120,7 +169,20 @@ namespace Simgame2.Buildings
                 statusBillboard.Draw(this.playerCamera);
             }
 
+
+            // reset model
+            CurrentAnimation.ResetModelTransforms();
+
         }
+
+        public override void DrawShadow(Matrix currentViewMatrix, Matrix projectionMatrix, Vector3 cameraPosition)
+        {
+            CurrentAnimation.SetModelTransforms();
+            base.DrawShadow(currentViewMatrix, projectionMatrix, cameraPosition);
+            CurrentAnimation.ResetModelTransforms();
+        }
+
+
 
         SpriteBatch spriteBatch;
         public void UpdateStatusScreen()
@@ -173,14 +235,10 @@ namespace Simgame2.Buildings
 
         SolorPlantSim solarSimEntity;
 
-    //    public Effect effect { get; set; }
-
         public static Vector3 StandardScale = new Vector3(10, 10, 10);    // (5, 5, 5);
         public static Vector3 StandardRotation = new Vector3(0, MathHelper.Pi, 0);
 
-       // private float rotorRotation = 0;
-      //  private float rotationSpeed = 1;
-     //   private Matrix rotorTransform;
+
 
 
 
@@ -236,6 +294,233 @@ namespace Simgame2.Buildings
             
         }
 
+
+
+
+
+
+
+
+        AnimConstruction ConstructionAnimation;
+        AnimActive ActiveAnimation;
+        AnimIdle IdleAnimation;
+
+        Entities.Animation CurrentAnimation;
+
+
+        private class AnimConstruction : Entities.Animation
+        {
+            public AnimConstruction(Model model, string[] boneNames)
+                : base(model, boneNames)
+            {
+                this.Reset();
+                Transform = Matrix.CreateTranslation(0.4899f, -1.19249f, 1.02549f) + 
+                    Matrix.CreateRotationZ(0.02041f) + 
+                    Matrix.CreateRotationY(-1.338318f);
+
+                transformBack = Matrix.CreateRotationY(1.338318f) +
+                    Matrix.CreateRotationZ(-0.02041f) + 
+                    Matrix.CreateTranslation(-0.4899f, +1.19249f, -1.02549f);
+            }
+
+            Matrix Transform;
+            Matrix transformBack;
+
+            public override void Reset()
+            {
+                base.Reset();
+   //             this.currentposition = new float[] { 0.0f, 11.0f, 12.0f, 13.0f };
+    //            this.currentSpeed = new float[] { 0.0f, 10.0f, 10.0f, 10.0f };
+
+
+            }
+
+            public override void SetModelTransforms()
+            {
+                //  "Left_down", "Left_up", "Right_down", "Right_up"
+
+                this.model.Bones["Base"].Transform = this.InitialBoneTransforms[BaseIndex];
+
+
+                float shift = 1.308f;
+                float angle = MathHelper.ToRadians(24.85f);
+                float angle2 = MathHelper.ToRadians(-0.49f);
+
+
+                // TODO find correct rotation axis
+                //this.model.Bones["Left_down"].Transform = Matrix.CreateTranslation(0, -1.5f, 0) * Matrix.CreateRotationX(PanelLeftDownRotation) * Matrix.CreateTranslation(0, 1.5f, 0) * this.InitialBoneTransforms[Left_downIndex];
+                this.model.Bones["Left_down"].Transform =
+                    //Matrix.CreateTranslation(0, -shift, 0) *
+                    //Matrix.CreateRotationZ(angle2) *
+                    //Matrix.CreateRotationY(angle) *
+                    
+                    Transform *
+
+
+           //         Matrix.CreateRotationX(PanelLeftDownRotation) *
+                    
+        //            transformBack *
+
+                    //Matrix.CreateRotationY(-angle) *
+                    //Matrix.CreateRotationZ(-angle2) *
+                    //Matrix.CreateTranslation(0, shift, 0) * 
+                    this.InitialBoneTransforms[Left_downIndex];
+                
+                
+                this.model.Bones["Left_up"].Transform = this.InitialBoneTransforms[Left_upIndex];
+                this.model.Bones["Right_down"].Transform = this.InitialBoneTransforms[Right_downIndex];
+                this.model.Bones["Right_up"].Transform = this.InitialBoneTransforms[Right_upIndex];
+                this.model.Bones["Top"].Transform = this.InitialBoneTransforms[TopIndex];
+
+
+           //     this.model.Bones["Base"].Transform = this.InitialBoneTransforms[BaseIndex] * Matrix.CreateTranslation(0, 0, currentposition[BaseIndex]);
+            //    this.model.Bones["Drill"].Transform = this.InitialBoneTransforms[DrillIndex] * Matrix.CreateTranslation(0, 0, currentposition[DrillIndex]);
+             //   this.model.Bones["Top"].Transform = this.InitialBoneTransforms[TopIndex] * Matrix.CreateTranslation(0, 0, currentposition[TopIndex]);
+              //  this.model.Bones["Wheel"].Transform = this.InitialBoneTransforms[WheelIndex] * Matrix.CreateTranslation(0, 0, currentposition[WheelIndex]);
+            }
+
+            public override void Update(GameTime gameTime)
+            {
+                PanelLeftDownRotation = PanelLeftDownRotation + (float)(PanelSpeed * gameTime.ElapsedGameTime.TotalSeconds);
+                if (PanelLeftDownRotation > PanelLeftDownMaxRotation) { PanelLeftDownRotation = PanelLeftDownMaxRotation; }
+
+
+    //            for (int i = 0; i < this.InitialBoneTransforms.Length; i++)
+     //           {
+      //              currentposition[i] -= (float)(currentSpeed[i] * gameTime.ElapsedGameTime.TotalSeconds);
+       //             if (currentposition[i] <= 0)
+        //            {
+         //               currentposition[i] = 0;
+          //          }
+           //     }
+
+                // has this animation finished?
+      //          this.HasFinished = true;
+       //         for (int i = 0; i < this.InitialBoneTransforms.Length; i++)
+        //        {
+         //           if (currentposition[i] > 0)
+          //          {
+           //             this.HasFinished = false;
+            //            break;
+             //       }
+              //  }
+            }
+
+
+
+            // construction animation
+
+//            float[] currentposition;
+  //          float[] currentSpeed;
+
+
+            private float PanelLeftDownRotation = 0;
+            private float PanelLeftDownMaxRotation = (float)Math.PI;
+            private float PanelSpeed = 0.2f;
+        }
+
+
+
+
+
+
+        private class AnimActive : Entities.Animation
+        {
+            public AnimActive(Model model, string[] boneNames)
+                : base(model, boneNames)
+            {
+                this.Reset();
+            }
+
+            public override void Reset()
+            {
+                base.Reset();
+
+            }
+
+            public override void SetModelTransforms()
+            {
+                this.model.Bones["Base"].Transform = this.InitialBoneTransforms[BaseIndex];
+                this.model.Bones["Left_down"].Transform = this.InitialBoneTransforms[Left_downIndex];
+                this.model.Bones["Left_up"].Transform = this.InitialBoneTransforms[Left_upIndex];
+                this.model.Bones["Right_down"].Transform = this.InitialBoneTransforms[Right_downIndex];
+                this.model.Bones["Right_up"].Transform = this.InitialBoneTransforms[Right_upIndex];
+                this.model.Bones["Top"].Transform = this.InitialBoneTransforms[TopIndex];
+
+
+          //      this.model.Bones["Wheel"].Transform = Matrix.CreateRotationZ(WheelRotation) * this.InitialBoneTransforms[WheelIndex];
+           //     this.model.Bones["Drill"].Transform = Matrix.CreateRotationZ(DrillRotation) * this.InitialBoneTransforms[DrillIndex] *
+            //        Matrix.CreateTranslation(0, 0, DrillPosition);
+            }
+
+            public override void Update(GameTime gameTime)
+            {
+    //            WheelRotation += (float)((WheelRotationSpeed * gameTime.ElapsedGameTime.TotalSeconds) % 2 * Math.PI);
+     //           DrillRotation += (float)((DrillRotationSpeed * gameTime.ElapsedGameTime.TotalSeconds) % 2 * Math.PI);
+
+       //         DrillPosition += (float)((DrillSpeed));
+        //        if (DrillPosition > DrillMaxPosition || DrillPosition < DrillMinPosition) { DrillSpeed = -DrillSpeed; }
+            }
+
+
+            // Wheel
+
+    //        private float WheelRotation = 0;
+     //       private float WheelRotationSpeed = 1;
+
+            // Drill
+
+     //       private float DrillRotation = 0;
+    //        private float DrillRotationSpeed = 1;
+
+     //       private float DrillPosition = 0;
+    //        private float DrillMinPosition = 0;
+     //       private float DrillMaxPosition = 1;
+     //       private float DrillSpeed = 0.01f;
+
+
+            
+
+
+        }
+
+
+
+        private class AnimIdle : Entities.Animation
+        {
+            public AnimIdle(Model model, string[] boneNames)
+                : base(model, boneNames)
+            {
+                this.Reset();
+            }
+
+            public override void Reset()
+            {
+                base.Reset();
+
+            }
+
+            public override void SetModelTransforms()
+            {
+                this.model.Bones["Base"].Transform = this.InitialBoneTransforms[BaseIndex];
+                this.model.Bones["Left_down"].Transform = this.InitialBoneTransforms[Left_downIndex];
+                this.model.Bones["Left_up"].Transform = this.InitialBoneTransforms[Left_upIndex];
+                this.model.Bones["Right_down"].Transform = this.InitialBoneTransforms[Right_downIndex];
+                this.model.Bones["Right_up"].Transform = this.InitialBoneTransforms[Right_upIndex];
+                this.model.Bones["Top"].Transform = this.InitialBoneTransforms[TopIndex];
+            }
+
+            public override void Update(GameTime gameTime)
+            {
+                ; // do nothing
+            }
+
+
+
+
+
+
+        }
 
     }
 }

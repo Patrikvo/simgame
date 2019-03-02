@@ -172,7 +172,7 @@ namespace Simgame2.Renderer
             foreach (Entity e in entities)
             {
                 //if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
-                if (e.IsVisible && !e.IsGhost)
+                if (e.IsVisible)
                 {
                  //   e.CacheEffects();
                     e.SetModelEffect(depthNormalEffect, false);
@@ -306,7 +306,7 @@ namespace Simgame2.Renderer
             foreach (Entity e in entities)
             {
                 //if (frustum.Contains(e.boundingBox) != ContainmentType.Disjoint)
-                if (e.IsVisible && !e.IsGhost)
+                if (!e.IsGhost)
                 {
                     //   e.CacheEffects();
                     e.SetModelEffect(shadowDepthEffect, false);
